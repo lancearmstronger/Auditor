@@ -115,37 +115,14 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
         }
     }
 
-    private void testEcAttestation() throws Exception {
-        String ecCurve = "secp256r1";
-        int keySize = 256;
-        String keystoreAlias = "fresh_attestation_key";
-
+    private byte[] getChallenge() {
         final SecureRandom random = new SecureRandom();
         final byte[] challenge = new byte[32];
         random.nextBytes(challenge);
+        return challenge;
+    }
 
-        KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
-        keyStore.load(null);
-
-        keyStore.deleteEntry(keystoreAlias);
-
-        Date startTime = new Date(new Date().getTime() - 1000);
-        Log.d("****", "Start Time is: " + startTime.toString());
-        Date originationEnd = new Date(startTime.getTime() + ORIGINATION_TIME_OFFSET);
-        Date consumptionEnd = new Date(startTime.getTime() + CONSUMPTION_TIME_OFFSET);
-        KeyGenParameterSpec.Builder builder = new KeyGenParameterSpec.Builder(keystoreAlias,
-                KeyProperties.PURPOSE_SIGN | KeyProperties.PURPOSE_VERIFY)
-                .setAlgorithmParameterSpec(new ECGenParameterSpec(ecCurve))
-                .setDigests(DIGEST_SHA256)
-                .setAttestationChallenge(challenge);
-
-        builder.setKeyValidityStart(startTime)
-                .setKeyValidityForOriginationEnd(originationEnd)
-                .setKeyValidityForConsumptionEnd(consumptionEnd);
-
-        generateKeyPair(KEY_ALGORITHM_EC, builder.build());
-
-        Certificate certificates[] = keyStore.getCertificateChain(keystoreAlias);
+    private void verifyAttestation(final Certificate certificates[], final byte[] challenge) throws GeneralSecurityException {
         verifyCertificateSignatures(certificates);
 
         X509Certificate attestationCert = (X509Certificate) certificates[0];
@@ -226,6 +203,39 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
         publishProgress("OS patch level: " + osPatchLevel.substring(0, 4) + "-" + osPatchLevel.substring(4, 6) + "\n");
 
         //publishProgress("\n\n\n\n" + attestation.toString() + "\n");
+    }
+
+    private void testEcAttestation() throws Exception {
+        String ecCurve = "secp256r1";
+        int keySize = 256;
+        String keystoreAlias = "fresh_attestation_key";
+
+        // this will be done by another device running the app to verify this one
+        final byte[] challenge = getChallenge();
+
+        KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
+        keyStore.load(null);
+
+        keyStore.deleteEntry(keystoreAlias);
+
+        Date startTime = new Date(new Date().getTime() - 1000);
+        Log.d("****", "Start Time is: " + startTime.toString());
+        Date originationEnd = new Date(startTime.getTime() + ORIGINATION_TIME_OFFSET);
+        Date consumptionEnd = new Date(startTime.getTime() + CONSUMPTION_TIME_OFFSET);
+        KeyGenParameterSpec.Builder builder = new KeyGenParameterSpec.Builder(keystoreAlias,
+                KeyProperties.PURPOSE_SIGN | KeyProperties.PURPOSE_VERIFY)
+                .setAlgorithmParameterSpec(new ECGenParameterSpec(ecCurve))
+                .setDigests(DIGEST_SHA256)
+                .setAttestationChallenge(challenge);
+
+        builder.setKeyValidityStart(startTime)
+                .setKeyValidityForOriginationEnd(originationEnd)
+                .setKeyValidityForConsumptionEnd(consumptionEnd);
+
+        generateKeyPair(KEY_ALGORITHM_EC, builder.build());
+
+        // this will be done by another device running the app to verify this one
+        verifyAttestation(keyStore.getCertificateChain(keystoreAlias), challenge);
 
         Signature signer = Signature.getInstance("SHA256WithECDSA");
         KeyStore keystore = KeyStore.getInstance("AndroidKeyStore");
