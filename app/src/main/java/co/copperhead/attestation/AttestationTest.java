@@ -202,10 +202,19 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
         if (device == null) {
             throw new GeneralSecurityException("invalid key fingerprint");
         }
+
         publishProgress("Successfully verified CopperheadOS installation via basic unpaired attestation.\n\n");
+
         publishProgress("Device: " + device + "\n");
-        publishProgress("OS version: " + teeEnforced.getOsVersion() + "\n");
-        publishProgress("OS patch level: " + teeEnforced.getOsPatchLevel() + "\n");
+
+        final String osVersion = String.format("%06d", teeEnforced.getOsVersion());
+        publishProgress("OS version: " +
+                Integer.parseInt(osVersion.substring(0, 2)) + "." +
+                Integer.parseInt(osVersion.substring(2, 4)) + "." +
+                Integer.parseInt(osVersion.substring(4, 6)) + "\n");
+
+        final String osPatchLevel = teeEnforced.getOsPatchLevel().toString();
+        publishProgress("OS patch level: " + osPatchLevel.substring(0, 4) + "-" + osPatchLevel.substring(4, 6) + "\n");
 
         //publishProgress("\n\n\n\n" + attestation.toString() + "\n");
 
