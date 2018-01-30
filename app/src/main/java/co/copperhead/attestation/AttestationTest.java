@@ -24,6 +24,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.Certificate;
@@ -130,8 +131,11 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
     private void testEcAttestation() throws Exception {
         String ecCurve = "secp256r1";
         int keySize = 256;
-        byte[] challenge = "challenge".getBytes();
         String keystoreAlias = "test_key";
+
+        final SecureRandom random = new SecureRandom();
+        final byte[] challenge = new byte[32];
+        random.nextBytes(challenge);
 
         KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
         keyStore.load(null);
