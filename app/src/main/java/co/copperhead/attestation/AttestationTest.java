@@ -1,4 +1,4 @@
-package com.google.attestationexample;
+package co.copperhead.attestation;
 
 import android.os.AsyncTask;
 import android.security.keystore.KeyGenParameterSpec;

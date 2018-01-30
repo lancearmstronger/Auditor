@@ -1,4 +1,4 @@
-package com.google.attestationexample;
+package co.copperhead.attestation;
 
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;

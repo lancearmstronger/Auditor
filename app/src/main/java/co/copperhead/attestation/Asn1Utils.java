@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.attestationexample;
+package co.copperhead.attestation;
 
 import com.google.common.collect.ImmutableSet;
 
