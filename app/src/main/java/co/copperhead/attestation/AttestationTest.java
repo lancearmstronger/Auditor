@@ -1,5 +1,7 @@
 package co.copperhead.attestation;
 
+import com.google.common.io.BaseEncoding;
+
 import android.os.AsyncTask;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
@@ -101,6 +103,11 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
                     + "wDB5y0USicV3YgYGmi+NZfhA4URSh77Yd6uuJOJENRaNVTzk\n"
                     + "-----END CERTIFICATE-----";
 
+    private static final String COPPERHEADOS_FINGERPRINT_TAIMEN =
+            "815DCBA82BAC1B1758211FF53CAA0B6883CB6C901BE285E1B291C8BDAA12DF75";
+    private static final String COPPERHEADOS_FINGERPRINT_WALLEYE =
+            "36D067F8517A2284781B99A2984966BFF02D3F47310F831FCDCC4D792426B6DF";
+
     @Override
     protected Void doInBackground(Void... params) {
         try {
@@ -168,7 +175,7 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
         if (!Arrays.equals(attestation.getAttestationChallenge(), challenge)) {
             throw new GeneralSecurityException("challenge mismatch");
         }
-        RootOfTrust rootOfTrust = attestation.getTeeEnforced().getRootOfTrust();
+        final RootOfTrust rootOfTrust = attestation.getTeeEnforced().getRootOfTrust();
         if (rootOfTrust == null) {
             throw new GeneralSecurityException("missing root of trust");
         }
@@ -178,6 +185,18 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
         if (rootOfTrust.getVerifiedBootState() != RootOfTrust.KM_VERIFIED_BOOT_SELF_SIGNED) {
             throw new GeneralSecurityException("verified boot state is not self signed");
         }
+        final String verifiedBootKey = BaseEncoding.base16().encode(rootOfTrust.getVerifiedBootKey());
+        String device = null;
+        if (verifiedBootKey.equals(COPPERHEADOS_FINGERPRINT_TAIMEN)) {
+            device = "Pixel 2 XL";
+        } else if (verifiedBootKey.equals(COPPERHEADOS_FINGERPRINT_WALLEYE)) {
+            device = "Pixel 2";
+        }
+        if (device == null) {
+            throw new GeneralSecurityException("invalid key fingerprint");
+        }
+        publishProgress("Validated as CopperheadOS " + device + " device\n");
+
         publishProgress(attestation.toString() + "\n");
 
         Signature signer = Signature.getInstance("SHA256WithECDSA");
