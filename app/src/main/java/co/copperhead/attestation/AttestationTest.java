@@ -207,7 +207,6 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
         signer.initSign(key);
         signer.update("Hello".getBytes());
         signer.sign();
-        publishProgress("\n\nSuccessfully generated signature\n");
     }
 
     private void generateKeyPair(String algorithm, KeyGenParameterSpec spec)
