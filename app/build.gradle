@@ -34,5 +34,5 @@ dependencies {
     compile 'com.android.support:design:27.0.2'
     testCompile 'junit:junit:4.12'
     compile 'com.google.guava:guava:23.6-android'
-    compile 'org.bouncycastle:bcpkix-jdk15on:1.55'
+    compile 'org.bouncycastle:bcpkix-jdk15on:1.59'
 }
