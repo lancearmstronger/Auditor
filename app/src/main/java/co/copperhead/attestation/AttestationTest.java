@@ -161,12 +161,8 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
                         new ByteArrayInputStream(
                                 GOOGLE_ROOT_CERTIFICATE.getBytes()));
         X509Certificate rootCert = (X509Certificate) certificates[certificates.length - 1];
-        if (Arrays.equals(secureRoot.getEncoded(), rootCert.getEncoded())) {
-            publishProgress(
-                    "\nRoot certificate IS the Google root. This attestation is STRONG\n\n");
-        } else {
-            publishProgress(
-                    "\nRoot certificate IS NOT the Google root. This attestation is WEAK\n\n");
+        if (!Arrays.equals(secureRoot.getEncoded(), rootCert.getEncoded())) {
+            throw new GeneralSecurityException("root certificate is not the Google root");
         }
         printKeyUsage(attestationCert);
 
