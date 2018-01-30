@@ -170,12 +170,14 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
             throw new GeneralSecurityException("root certificate is not the Google root");
         }
         printKeyUsage(attestationCert);
+        publishProgress("\n\n\n\n");
 
         Attestation attestation = new Attestation(attestationCert);
         if (!Arrays.equals(attestation.getAttestationChallenge(), challenge)) {
             throw new GeneralSecurityException("challenge mismatch");
         }
-        final RootOfTrust rootOfTrust = attestation.getTeeEnforced().getRootOfTrust();
+        final AuthorizationList teeEnforced = attestation.getTeeEnforced();
+        final RootOfTrust rootOfTrust = teeEnforced.getRootOfTrust();
         if (rootOfTrust == null) {
             throw new GeneralSecurityException("missing root of trust");
         }
@@ -195,9 +197,12 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
         if (device == null) {
             throw new GeneralSecurityException("invalid key fingerprint");
         }
-        publishProgress("Validated as CopperheadOS " + device + " device\n");
+        publishProgress("Successfully verified CopperheadOS installation via basic unpaired attestation.\n\n");
+        publishProgress("Device: " + device + "\n");
+        publishProgress("OS version: " + teeEnforced.getOsVersion() + "\n");
+        publishProgress("OS patch level: " + teeEnforced.getOsPatchLevel() + "\n");
 
-        publishProgress(attestation.toString() + "\n");
+        publishProgress("\n\n\n\n" + attestation.toString() + "\n");
 
         Signature signer = Signature.getInstance("SHA256WithECDSA");
         KeyStore keystore = KeyStore.getInstance("AndroidKeyStore");
