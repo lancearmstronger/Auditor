@@ -82,7 +82,7 @@ public class RootOfTrust {
     public String toString() {
         return new StringBuilder()
                 .append("Verified boot Key: ")
-                .append(BaseEncoding.base64().encode(verifiedBootKey))
+                .append(BaseEncoding.base16().encode(verifiedBootKey))
                 .append("\nDevice locked: ")
                 .append(deviceLocked)
                 .append("\nVerified boot state: ")
