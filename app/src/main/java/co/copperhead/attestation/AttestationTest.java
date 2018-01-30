@@ -142,7 +142,6 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
 
         keyStore.deleteEntry(keystoreAlias);
 
-        publishProgress("Generating key pair...");
         Date startTime = new Date(new Date().getTime() - 1000);
         Log.d("****", "Start Time is: " + startTime.toString());
         Date originationEnd = new Date(startTime.getTime() + ORIGINATION_TIME_OFFSET);
@@ -158,7 +157,6 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
                 .setKeyValidityForConsumptionEnd(consumptionEnd);
 
         generateKeyPair(KEY_ALGORITHM_EC, builder.build());
-        publishProgress("Key pair generated\n\n");
 
         Certificate certificates[] = keyStore.getCertificateChain(keystoreAlias);
         publishProgress("Retrieved certificate chain of length " + certificates.length + "\n");
@@ -209,7 +207,7 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
         publishProgress("OS version: " + teeEnforced.getOsVersion() + "\n");
         publishProgress("OS patch level: " + teeEnforced.getOsPatchLevel() + "\n");
 
-        publishProgress("\n\n\n\n" + attestation.toString() + "\n");
+        //publishProgress("\n\n\n\n" + attestation.toString() + "\n");
 
         Signature signer = Signature.getInstance("SHA256WithECDSA");
         KeyStore keystore = KeyStore.getInstance("AndroidKeyStore");
