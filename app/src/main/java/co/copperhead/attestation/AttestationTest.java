@@ -12,7 +12,6 @@ import android.widget.TextView;
 import java.io.ByteArrayInputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.reflect.Method;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -33,7 +32,6 @@ import java.security.cert.CertificateFactory;
 import java.security.spec.ECGenParameterSpec;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.regex.Pattern;
 
 import java.security.cert.X509Certificate;
 
@@ -52,17 +50,6 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
     private static final int KEY_USAGE_DIGITAL_SIGNATURE_BIT_OFFSET = 0;
     private static final int KEY_USAGE_KEY_ENCIPHERMENT_BIT_OFFSET = 2;
     private static final int KEY_USAGE_DATA_ENCIPHERMENT_BIT_OFFSET = 3;
-
-    private static final int OS_MAJOR_VERSION_MATCH_GROUP_NAME = 1;
-    private static final int OS_MINOR_VERSION_MATCH_GROUP_NAME = 2;
-    private static final int OS_SUBMINOR_VERSION_MATCH_GROUP_NAME = 3;
-    private static final Pattern OS_VERSION_STRING_PATTERN = Pattern
-            .compile("([0-9]{1,2})(?:\\.([0-9]{1,2}))?(?:\\.([0-9]{1,2}))?(?:[^0-9.]+.*)?");
-
-    private static final int OS_PATCH_LEVEL_YEAR_GROUP_NAME = 1;
-    private static final int OS_PATCH_LEVEL_MONTH_GROUP_NAME = 2;
-    private static final Pattern OS_PATCH_LEVEL_STRING_PATTERN = Pattern
-            .compile("([0-9]{4})-([0-9]{2})-[0-9]{2}");
 
     private static final int KM_ERROR_INVALID_INPUT_LENGTH = -21;
     private final TextView view;
@@ -159,7 +146,6 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
         generateKeyPair(KEY_ALGORITHM_EC, builder.build());
 
         Certificate certificates[] = keyStore.getCertificateChain(keystoreAlias);
-        publishProgress("Retrieved certificate chain of length " + certificates.length + "\n");
         verifyCertificateSignatures(certificates);
 
         X509Certificate attestationCert = (X509Certificate) certificates[0];
@@ -171,17 +157,40 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
         if (!Arrays.equals(secureRoot.getEncoded(), rootCert.getEncoded())) {
             throw new GeneralSecurityException("root certificate is not the Google root");
         }
-        printKeyUsage(attestationCert);
-        publishProgress("\n\n\n\n");
+        //printKeyUsage(attestationCert);
 
         Attestation attestation = new Attestation(attestationCert);
+
+        // prevent replay attacks
         if (!Arrays.equals(attestation.getAttestationChallenge(), challenge)) {
             throw new GeneralSecurityException("challenge mismatch");
         }
+
+        // version sanity checks
+        if (attestation.getAttestationVersion() < 2) {
+            throw new GeneralSecurityException("attestation version below 2");
+        }
+        if (attestation.getAttestationSecurityLevel() != Attestation.KM_SECURITY_LEVEL_TRUSTED_ENVIRONMENT) {
+            throw new GeneralSecurityException("attestation security level is software");
+        }
+        if (attestation.getKeymasterVersion() < 3) {
+            throw new GeneralSecurityException("keymaster version below 3");
+        }
+        if (attestation.getKeymasterSecurityLevel() != Attestation.KM_SECURITY_LEVEL_TRUSTED_ENVIRONMENT) {
+            throw new GeneralSecurityException("keymaster security level is software");
+        }
+
         final AuthorizationList teeEnforced = attestation.getTeeEnforced();
+
+        // key sanity checks
+        if (teeEnforced.getOrigin() != AuthorizationList.KM_ORIGIN_GENERATED) {
+            throw new GeneralSecurityException("not a generated key");
+        }
         if (!teeEnforced.isRollbackResistant()) {
             throw new GeneralSecurityException("expected rollback resistant key");
         }
+
+        // verified boot security checks
         final RootOfTrust rootOfTrust = teeEnforced.getRootOfTrust();
         if (rootOfTrust == null) {
             throw new GeneralSecurityException("missing root of trust");
@@ -283,14 +292,5 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
             publishProgress(" encrypt_keys");
         }
         publishProgress("\n");
-    }
-
-    private void printRootOfTrust(Attestation attestation) {
-        RootOfTrust rootOfTrust = attestation.getTeeEnforced().getRootOfTrust();
-//        assertNotNull(rootOfTrust);
-//        assertNotNull(rootOfTrust.getVerifiedBootKey());
-//        assertTrue(rootOfTrust.getVerifiedBootKey().length >= 32);
-//        assertTrue(rootOfTrust.isDeviceLocked());
-//        assertEquals(KM_VERIFIED_BOOT_VERIFIED, rootOfTrust.getVerifiedBootState());
     }
 }
