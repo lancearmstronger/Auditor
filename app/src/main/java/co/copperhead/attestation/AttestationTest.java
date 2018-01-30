@@ -265,7 +265,6 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
                 }
             }
         }
-        publishProgress("Certificate chain signatures are valid\n");
     }
 
     private void printKeyUsage(X509Certificate attestationCert) {
