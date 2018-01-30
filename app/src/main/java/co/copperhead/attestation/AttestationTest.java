@@ -175,6 +175,9 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
         if (!rootOfTrust.isDeviceLocked()) {
             throw new GeneralSecurityException("device is not locked");
         }
+        if (rootOfTrust.getVerifiedBootState() != RootOfTrust.KM_VERIFIED_BOOT_SELF_SIGNED) {
+            throw new GeneralSecurityException("verified boot state is not self signed");
+        }
         publishProgress(attestation.toString() + "\n");
 
         Signature signer = Signature.getInstance("SHA256WithECDSA");
