@@ -189,7 +189,7 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
             throw new GeneralSecurityException("invalid key fingerprint");
         }
 
-        publishProgress("Successfully verified CopperheadOS installation via basic unpaired attestation.\n\n");
+        publishProgress("Successfully verified CopperheadOS attestation.\n\n");
 
         publishProgress("Device: " + device + "\n");
 
@@ -213,38 +213,69 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
         // this will be done by another device running the app to verify this one
         final byte[] challenge = getChallenge();
 
+        String persistentKeystoreAlias = "persistent_attestation_key";
+
         KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
         keyStore.load(null);
 
         keyStore.deleteEntry(keystoreAlias);
 
-        Date startTime = new Date(new Date().getTime() - 1000);
-        Log.d("****", "Start Time is: " + startTime.toString());
-        Date originationEnd = new Date(startTime.getTime() + ORIGINATION_TIME_OFFSET);
-        Date consumptionEnd = new Date(startTime.getTime() + CONSUMPTION_TIME_OFFSET);
-        KeyGenParameterSpec.Builder builder = new KeyGenParameterSpec.Builder(keystoreAlias,
-                KeyProperties.PURPOSE_SIGN | KeyProperties.PURPOSE_VERIFY)
-                .setAlgorithmParameterSpec(new ECGenParameterSpec(ecCurve))
-                .setDigests(DIGEST_SHA256)
-                .setAttestationChallenge(challenge);
+        {
+            Date startTime = new Date(new Date().getTime() - 1000);
+            Log.d("****", "Start Time is: " + startTime.toString());
+            Date originationEnd = new Date(startTime.getTime() + ORIGINATION_TIME_OFFSET);
+            Date consumptionEnd = new Date(startTime.getTime() + CONSUMPTION_TIME_OFFSET);
+            KeyGenParameterSpec.Builder builder = new KeyGenParameterSpec.Builder(keystoreAlias,
+                    KeyProperties.PURPOSE_SIGN | KeyProperties.PURPOSE_VERIFY)
+                    .setAlgorithmParameterSpec(new ECGenParameterSpec(ecCurve))
+                    .setDigests(DIGEST_SHA256)
+                    .setAttestationChallenge(challenge)
+                    .setKeyValidityStart(startTime)
+                    .setKeyValidityForOriginationEnd(originationEnd)
+                    .setKeyValidityForConsumptionEnd(consumptionEnd);
 
-        builder.setKeyValidityStart(startTime)
-                .setKeyValidityForOriginationEnd(originationEnd)
-                .setKeyValidityForConsumptionEnd(consumptionEnd);
+            generateKeyPair(KEY_ALGORITHM_EC, builder.build());
+        }
 
-        generateKeyPair(KEY_ALGORITHM_EC, builder.build());
+        final boolean hasPersistentKey = keyStore.containsAlias(persistentKeystoreAlias);
+        if (!hasPersistentKey) {
+            Date startTime = new Date(new Date().getTime() - 1000);
+            Log.d("****", "Start Time is: " + startTime.toString());
+            Date originationEnd = new Date(startTime.getTime() + ORIGINATION_TIME_OFFSET);
+            Date consumptionEnd = new Date(startTime.getTime() + CONSUMPTION_TIME_OFFSET);
+            KeyGenParameterSpec.Builder builder = new KeyGenParameterSpec.Builder(persistentKeystoreAlias,
+                    KeyProperties.PURPOSE_SIGN | KeyProperties.PURPOSE_VERIFY)
+                    .setAlgorithmParameterSpec(new ECGenParameterSpec(ecCurve))
+                    .setDigests(DIGEST_SHA256)
+                    .setAttestationChallenge(challenge)
+                    .setKeyValidityStart(startTime);
+
+            generateKeyPair(KEY_ALGORITHM_EC, builder.build());
+        }
 
         // this will be done by another device running the app to verify this one
+        publishProgress("Verifying ephemeral key...\n\n");
         verifyAttestation(keyStore.getCertificateChain(keystoreAlias), challenge);
 
-        Signature signer = Signature.getInstance("SHA256WithECDSA");
-        KeyStore keystore = KeyStore.getInstance("AndroidKeyStore");
-        keystore.load(null);
+        publishProgress("\n------------------\n\n");
 
-        PrivateKey key = (PrivateKey) keystore.getKey(keystoreAlias, null);
-        signer.initSign(key);
-        signer.update("Hello".getBytes());
-        signer.sign();
+        if (hasPersistentKey) {
+            publishProgress("Checking persistent key...\n\n");
+
+            Signature signer = Signature.getInstance("SHA256WithECDSA");
+            KeyStore keystore = KeyStore.getInstance("AndroidKeyStore");
+            keystore.load(null);
+
+            PrivateKey key = (PrivateKey) keystore.getKey(persistentKeystoreAlias, null);
+            signer.initSign(key);
+            signer.update("Hello".getBytes());
+            byte[] signature = signer.sign();
+
+            publishProgress("\nSuccessfully verified expected device.\n\n");
+        } else {
+            publishProgress("Verifying persistent key...\n\n");
+            verifyAttestation(keyStore.getCertificateChain(persistentKeystoreAlias), challenge);
+        }
     }
 
     private void generateKeyPair(String algorithm, KeyGenParameterSpec spec)
