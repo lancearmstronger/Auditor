@@ -181,6 +181,9 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
             throw new GeneralSecurityException("challenge mismatch");
         }
         final AuthorizationList teeEnforced = attestation.getTeeEnforced();
+        if (!teeEnforced.isRollbackResistant()) {
+            throw new GeneralSecurityException("expected rollback resistant key");
+        }
         final RootOfTrust rootOfTrust = teeEnforced.getRootOfTrust();
         if (rootOfTrust == null) {
             throw new GeneralSecurityException("missing root of trust");
