@@ -118,7 +118,7 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
     private void testEcAttestation() throws Exception {
         String ecCurve = "secp256r1";
         int keySize = 256;
-        String keystoreAlias = "test_key";
+        String keystoreAlias = "fresh_attestation_key";
 
         final SecureRandom random = new SecureRandom();
         final byte[] challenge = new byte[32];
