@@ -141,8 +141,6 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
                 .setAlgorithmParameterSpec(new ECGenParameterSpec(ecCurve))
                 .setDigests(DIGEST_SHA256)
                 .setAttestationChallenge(challenge);
-                //.setUserAuthenticationRequired(true)
-                //.setUserAuthenticationValidityDurationSeconds(30);
 
         builder.setKeyValidityStart(startTime)
                 .setKeyValidityForOriginationEnd(originationEnd)
