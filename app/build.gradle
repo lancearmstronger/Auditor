@@ -33,6 +33,6 @@ dependencies {
     compile 'com.android.support:appcompat-v7:27.0.2'
     compile 'com.android.support:design:27.0.2'
     testCompile 'junit:junit:4.12'
-    compile group: 'com.google.guava', name: 'guava', version: '19.0'
+    compile 'com.google.guava:guava:23.6-android'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.55'
 }
