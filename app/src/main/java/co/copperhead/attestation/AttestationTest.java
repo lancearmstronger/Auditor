@@ -168,6 +168,13 @@ public class AttestationTest extends AsyncTask<Void, String, Void> {
         if (!Arrays.equals(attestation.getAttestationChallenge(), challenge)) {
             throw new GeneralSecurityException("challenge mismatch");
         }
+        RootOfTrust rootOfTrust = attestation.getTeeEnforced().getRootOfTrust();
+        if (rootOfTrust == null) {
+            throw new GeneralSecurityException("missing root of trust");
+        }
+        if (!rootOfTrust.isDeviceLocked()) {
+            throw new GeneralSecurityException("device is not locked");
+        }
         publishProgress(attestation.toString() + "\n");
 
         Signature signer = Signature.getInstance("SHA256WithECDSA");
