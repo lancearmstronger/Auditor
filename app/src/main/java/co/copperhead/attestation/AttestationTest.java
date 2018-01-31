@@ -1,5 +1,9 @@
 package co.copperhead.attestation;
 
+import co.copperhead.attestation.attestation.AuthorizationList;
+import co.copperhead.attestation.attestation.Attestation;
+import co.copperhead.attestation.attestation.RootOfTrust;
+
 import com.google.common.io.BaseEncoding;
 
 import android.content.Context;

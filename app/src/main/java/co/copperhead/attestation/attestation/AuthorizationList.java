@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package co.copperhead.attestation;
+package co.copperhead.attestation.attestation;
 
 import static com.google.common.base.Functions.forMap;
 import static com.google.common.collect.Collections2.transform;

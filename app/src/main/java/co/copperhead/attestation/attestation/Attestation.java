@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package co.copperhead.attestation;
+package co.copperhead.attestation.attestation;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.io.BaseEncoding;
