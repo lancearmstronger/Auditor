@@ -38,7 +38,7 @@ public class AttestationActivity extends AppCompatActivity {
         TextView textView = (TextView) findViewById(R.id.textview);
         textView.setText("");
         try {
-            new AttestationTest(textView).execute(this);
+            new AttestationService(textView).execute(this);
         } catch (Exception e) {
             e.printStackTrace();
         }

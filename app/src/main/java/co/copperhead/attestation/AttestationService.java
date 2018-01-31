@@ -46,7 +46,7 @@ import static android.security.keystore.KeyProperties.DIGEST_SHA256;
 import static android.security.keystore.KeyProperties.KEY_ALGORITHM_EC;
 
 // TODO: switch to IntentService to use a queue and avoid races
-public class AttestationTest extends AsyncTask<Object, String, Void> {
+public class AttestationService extends AsyncTask<Object, String, Void> {
     private static final String KEY_PERSISTENT_CHALLENGE = "persistent_challenge";
     private static final String KEY_PINNED_CERTIFICATE = "pinned_certificate";
     private static final String KEY_PINNED_CERTIFICATE_LENGTH = "pinned_certificate_length";
@@ -95,7 +95,7 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
     private final TextView view;
     private Context context;
 
-    AttestationTest(TextView view) {
+    AttestationService(TextView view) {
         this.view = view;
     }
 
