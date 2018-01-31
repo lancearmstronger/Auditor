@@ -242,6 +242,18 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
         }
         generateKeyPair(KEY_ALGORITHM_EC, builder.build());
 
+        byte[] signature;
+        if (hasPersistentKey) {
+            Signature signer = Signature.getInstance("SHA256WithECDSA");
+            KeyStore keystore = KeyStore.getInstance("AndroidKeyStore");
+            keystore.load(null);
+
+            PrivateKey key = (PrivateKey) keystore.getKey(persistentKeystoreAlias, null);
+            signer.initSign(key);
+            signer.update("Hello".getBytes());
+            signature = signer.sign();
+        }
+
         // all of this verification will be done by a separate device
 
         final Certificate attestationCertificates[] = keyStore.getCertificateChain(attestationKeystoreAlias);
@@ -301,15 +313,6 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
                 }
             }
             publishProgress("\nCertificate chain matches pinned certificate chain.\n");
-
-            Signature signer = Signature.getInstance("SHA256WithECDSA");
-            KeyStore keystore = KeyStore.getInstance("AndroidKeyStore");
-            keystore.load(null);
-
-            PrivateKey key = (PrivateKey) keystore.getKey(persistentKeystoreAlias, null);
-            signer.initSign(key);
-            signer.update("Hello".getBytes());
-            byte[] signature = signer.sign();
 
             // TODO: verify signature via attestation certificate?
 
