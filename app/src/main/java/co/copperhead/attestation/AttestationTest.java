@@ -301,7 +301,7 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
 
             // TODO: verify signature via attestation certificate?
 
-            publishProgress("\nSuccessfully verified signature.");
+            publishProgress("\nSuccessfully verified signature (not actually implemented yet).");
         } else {
             publishProgress("\n\nPinning certificate chain...\n");
             final SharedPreferences.Editor editor = preferences.edit();
