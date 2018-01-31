@@ -65,6 +65,8 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
     // TODO: switch to release signing key
     private static final String ATTESTATION_APP_SIGNATURE_DIGEST =
             "17727D8B61D55A864936B1A7B4A2554A15151F32EBCF44CDAA6E6C3258231890";
+    private static final int OS_VERSION_MINIMUM = 80100;
+    private static final int OS_PATCH_LEVEL_MINIMUM = 201801;
 
     private static final String GOOGLE_ROOT_CERTIFICATE =
             "-----BEGIN CERTIFICATE-----\n"
@@ -217,6 +219,14 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         }
 
         // verified boot security checks
+        final int osVersion = teeEnforced.getOsVersion();
+        if (osVersion < OS_VERSION_MINIMUM) {
+            throw new GeneralSecurityException("OS version too old");
+        }
+        final int osPatchLevel = teeEnforced.getOsPatchLevel();
+        if (osPatchLevel < OS_PATCH_LEVEL_MINIMUM) {
+            throw new GeneralSecurityException("OS patch level too old");
+        }
         final RootOfTrust rootOfTrust = teeEnforced.getRootOfTrust();
         if (rootOfTrust == null) {
             throw new GeneralSecurityException("missing root of trust");
@@ -238,7 +248,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
             throw new GeneralSecurityException("invalid key fingerprint");
         }
 
-        return new Verified(device, teeEnforced.getOsVersion(), teeEnforced.getOsPatchLevel());
+        return new Verified(device, osVersion, osPatchLevel);
     }
 
     private static void verifyCertificateSignatures(Certificate[] certChain)
