@@ -238,17 +238,12 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
             throw new GeneralSecurityException("verified boot state is not self signed");
         }
         final String verifiedBootKey = BaseEncoding.base16().encode(rootOfTrust.getVerifiedBootKey());
-        String device = null;
         if (verifiedBootKey.equals(COPPERHEADOS_FINGERPRINT_TAIMEN)) {
-            device = "Pixel 2 XL";
+            return new Verified("Pixel 2 XL", osVersion, osPatchLevel);
         } else if (verifiedBootKey.equals(COPPERHEADOS_FINGERPRINT_WALLEYE)) {
-            device = "Pixel 2";
+            return new Verified("Pixel 2", osVersion, osPatchLevel);
         }
-        if (device == null) {
-            throw new GeneralSecurityException("invalid key fingerprint");
-        }
-
-        return new Verified(device, osVersion, osPatchLevel);
+        throw new GeneralSecurityException("invalid key fingerprint");
     }
 
     private static void verifyCertificateSignatures(Certificate[] certChain)
