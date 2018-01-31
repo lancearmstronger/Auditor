@@ -141,17 +141,19 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         }
     }
 
-    private static Verified verifyAttestation(final Certificate certificates[], final byte[] challenge) throws GeneralSecurityException {
+    private static Verified verifyAttestation(final Certificate certificates[], final byte[] challenge)
+            throws GeneralSecurityException {
+
         verifyCertificateSignatures(certificates);
 
-        X509Certificate attestationCert = (X509Certificate) certificates[0];
-        X509Certificate secureRoot = (X509Certificate) CertificateFactory
+        // check that the root certificate is the Google key attestation root
+        final X509Certificate attestationCert = (X509Certificate) certificates[0];
+        final X509Certificate secureRoot = (X509Certificate) CertificateFactory
                 .getInstance("X.509").generateCertificate(
-                        new ByteArrayInputStream(
-                                GOOGLE_ROOT_CERTIFICATE.getBytes()));
-        X509Certificate rootCert = (X509Certificate) certificates[certificates.length - 1];
+                        new ByteArrayInputStream(GOOGLE_ROOT_CERTIFICATE.getBytes()));
+        final X509Certificate rootCert = (X509Certificate) certificates[certificates.length - 1];
         if (!Arrays.equals(secureRoot.getEncoded(), rootCert.getEncoded())) {
-            throw new GeneralSecurityException("root certificate is not the Google root");
+            throw new GeneralSecurityException("root certificate is not the Google key attestation root");
         }
 
         final Attestation attestation = new Attestation(attestationCert);
@@ -224,6 +226,36 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         }
 
         return new Verified(device, teeEnforced.getOsVersion(), teeEnforced.getOsPatchLevel());
+    }
+
+    private static void verifyCertificateSignatures(Certificate[] certChain)
+            throws GeneralSecurityException {
+
+        for (Certificate cert : certChain) {
+            final byte[] derCert = cert.getEncoded();
+            final String pemCertPre = Base64.encodeToString(derCert, Base64.NO_WRAP);
+            Log.d("****", pemCertPre);
+        }
+
+        for (int i = 1; i < certChain.length; ++i) {
+            PublicKey pubKey = certChain[i].getPublicKey();
+            try {
+                certChain[i - 1].verify(pubKey);
+            } catch (InvalidKeyException | CertificateException | NoSuchAlgorithmException
+                    | NoSuchProviderException | SignatureException e) {
+                throw new GeneralSecurityException("Failed to verify certificate "
+                        + certChain[i - 1] + " with public key " + certChain[i].getPublicKey(), e);
+            }
+            if (i == certChain.length - 1) {
+                // Last cert is self-signed.
+                try {
+                    certChain[i].verify(pubKey);
+                } catch (CertificateException e) {
+                    throw new GeneralSecurityException(
+                            "Root cert " + certChain[i] + " is not correctly self-signed", e);
+                }
+            }
+        }
     }
 
     private void testEcAttestation() throws Exception {
@@ -378,35 +410,5 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
                 "AndroidKeyStore");
         keyPairGenerator.initialize(spec);
         keyPairGenerator.generateKeyPair();
-    }
-
-    private static void verifyCertificateSignatures(Certificate[] certChain)
-            throws GeneralSecurityException {
-
-        for (Certificate cert : certChain) {
-            final byte[] derCert = cert.getEncoded();
-            final String pemCertPre = Base64.encodeToString(derCert, Base64.NO_WRAP);
-            Log.d("****", pemCertPre);
-        }
-
-        for (int i = 1; i < certChain.length; ++i) {
-            PublicKey pubKey = certChain[i].getPublicKey();
-            try {
-                certChain[i - 1].verify(pubKey);
-            } catch (InvalidKeyException | CertificateException | NoSuchAlgorithmException
-                    | NoSuchProviderException | SignatureException e) {
-                throw new GeneralSecurityException("Failed to verify certificate "
-                        + certChain[i - 1] + " with public key " + certChain[i].getPublicKey(), e);
-            }
-            if (i == certChain.length - 1) {
-                // Last cert is self-signed.
-                try {
-                    certChain[i].verify(pubKey);
-                } catch (CertificateException e) {
-                    throw new GeneralSecurityException(
-                            "Root cert " + certChain[i] + " is not correctly self-signed", e);
-                }
-            }
-        }
     }
 }
