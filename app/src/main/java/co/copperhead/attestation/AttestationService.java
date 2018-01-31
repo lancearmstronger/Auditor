@@ -50,6 +50,8 @@ import static android.security.keystore.KeyProperties.KEY_ALGORITHM_EC;
 
 // TODO: switch to IntentService to queue up requests
 public class AttestationService extends AsyncTask<Object, String, Void> {
+    private static final String TAG = "AttestationService";
+
     private static final String KEY_PERSISTENT_CHALLENGE = "persistent_challenge";
     private static final String KEY_PINNED_CERTIFICATE = "pinned_certificate";
     private static final String KEY_PINNED_CERTIFICATE_LENGTH = "pinned_certificate_length";
@@ -228,10 +230,8 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
     private static void verifyCertificateSignatures(Certificate[] certChain)
             throws GeneralSecurityException {
 
-        for (Certificate cert : certChain) {
-            final byte[] derCert = cert.getEncoded();
-            final String pemCertPre = Base64.encodeToString(derCert, Base64.NO_WRAP);
-            Log.d("****", pemCertPre);
+        for (final Certificate cert : certChain) {
+            Log.d(TAG, Base64.encodeToString(cert.getEncoded(), Base64.NO_WRAP));
         }
 
         for (int i = 1; i < certChain.length; ++i) {
