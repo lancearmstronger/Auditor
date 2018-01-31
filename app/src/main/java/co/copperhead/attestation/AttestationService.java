@@ -274,55 +274,13 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         }
     }
 
-    private void testAttestation(final Context context) throws Exception {
-        final String ecCurve = "secp256r1";
-        final int keySize = 256;
-
-        final KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
-        keyStore.load(null);
-
-        final String freshKeystoreAlias = "fresh_attestation_key";
-        keyStore.deleteEntry(freshKeystoreAlias);
-
-        final String persistentKeystoreAlias = "persistent_attestation_key";
-        final boolean hasPersistentKey = keyStore.containsAlias(persistentKeystoreAlias);
-
-        // generate a new key for fresh attestation results unless the persistent key is not yet created
-        final String attestationKeystoreAlias;
-        if (hasPersistentKey) {
-            attestationKeystoreAlias = "fresh_attestation_key";
-        } else {
-            attestationKeystoreAlias = persistentKeystoreAlias;
-        }
+    // all of this verification will be done by a separate device
+    private void verify(final Context context, final byte[] challenge, final byte[] signature,
+            final Certificate attestationCertificates[], final boolean hasPersistentKey)
+            throws GeneralSecurityException {
 
         final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
 
-        // this will be provided by another device running the app to verify this one
-        final byte[] challenge = getChallenge();
-
-        Date startTime = new Date(new Date().getTime() - 10 * 1000);
-        KeyGenParameterSpec.Builder builder = new KeyGenParameterSpec.Builder(attestationKeystoreAlias,
-                KeyProperties.PURPOSE_SIGN | KeyProperties.PURPOSE_VERIFY)
-                .setAlgorithmParameterSpec(new ECGenParameterSpec(ecCurve))
-                .setDigests(DIGEST_SHA256)
-                .setAttestationChallenge(challenge)
-                .setKeyValidityStart(startTime);
-        if (hasPersistentKey) {
-            builder.setKeyValidityEnd(new Date(startTime.getTime() + 60 * 1000));
-        }
-        generateKeyPair(KEY_ALGORITHM_EC, builder.build());
-
-        byte[] signature = null;
-        if (hasPersistentKey) {
-            final Signature sig = Signature.getInstance(SIGNATURE_ALGORITHM);
-            sig.initSign((PrivateKey) keyStore.getKey(persistentKeystoreAlias, null));
-            sig.update(challenge);
-            signature = sig.sign();
-        }
-
-        final Certificate attestationCertificates[] = keyStore.getCertificateChain(attestationKeystoreAlias);
-
-        // all of this verification will be done by a separate device
         final Verified verified = verifyAttestation(attestationCertificates, challenge);
 
         publishProgress("Successfully verified CopperheadOS attestation.\n\n");
@@ -395,6 +353,54 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
                 .putInt(KEY_PINNED_OS_VERSION, verified.osVersion)
                 .putInt(KEY_PINNED_OS_PATCH_LEVEL, verified.osPatchLevel)
                 .apply();
+    }
+
+    private void testAttestation(final Context context) throws Exception {
+        final String ecCurve = "secp256r1";
+        final int keySize = 256;
+
+        final KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
+        keyStore.load(null);
+
+        final String freshKeystoreAlias = "fresh_attestation_key";
+        keyStore.deleteEntry(freshKeystoreAlias);
+
+        final String persistentKeystoreAlias = "persistent_attestation_key";
+        final boolean hasPersistentKey = keyStore.containsAlias(persistentKeystoreAlias);
+
+        // generate a new key for fresh attestation results unless the persistent key is not yet created
+        final String attestationKeystoreAlias;
+        if (hasPersistentKey) {
+            attestationKeystoreAlias = "fresh_attestation_key";
+        } else {
+            attestationKeystoreAlias = persistentKeystoreAlias;
+        }
+
+        // this will be provided by another device running the app to verify this one
+        final byte[] challenge = getChallenge();
+
+        Date startTime = new Date(new Date().getTime() - 10 * 1000);
+        KeyGenParameterSpec.Builder builder = new KeyGenParameterSpec.Builder(attestationKeystoreAlias,
+                KeyProperties.PURPOSE_SIGN | KeyProperties.PURPOSE_VERIFY)
+                .setAlgorithmParameterSpec(new ECGenParameterSpec(ecCurve))
+                .setDigests(DIGEST_SHA256)
+                .setAttestationChallenge(challenge)
+                .setKeyValidityStart(startTime);
+        if (hasPersistentKey) {
+            builder.setKeyValidityEnd(new Date(startTime.getTime() + 60 * 1000));
+        }
+        generateKeyPair(KEY_ALGORITHM_EC, builder.build());
+
+        byte[] signature = null;
+        if (hasPersistentKey) {
+            final Signature sig = Signature.getInstance(SIGNATURE_ALGORITHM);
+            sig.initSign((PrivateKey) keyStore.getKey(persistentKeystoreAlias, null));
+            sig.update(challenge);
+            signature = sig.sign();
+        }
+
+        final Certificate attestationCertificates[] = keyStore.getCertificateChain(attestationKeystoreAlias);
+        verify(context, challenge, signature, attestationCertificates, hasPersistentKey);
     }
 
     private static void generateKeyPair(String algorithm, KeyGenParameterSpec spec)
