@@ -2,6 +2,8 @@ package co.copperhead.attestation;
 
 import co.copperhead.attestation.attestation.AuthorizationList;
 import co.copperhead.attestation.attestation.Attestation;
+import co.copperhead.attestation.attestation.AttestationApplicationId;
+import co.copperhead.attestation.attestation.AttestationPackageInfo;
 import co.copperhead.attestation.attestation.RootOfTrust;
 
 import com.google.common.io.BaseEncoding;
@@ -39,6 +41,7 @@ import java.security.cert.CertificateFactory;
 import java.security.spec.ECGenParameterSpec;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 import java.security.cert.X509Certificate;
 
@@ -151,7 +154,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
             throw new GeneralSecurityException("root certificate is not the Google root");
         }
 
-        Attestation attestation = new Attestation(attestationCert);
+        final Attestation attestation = new Attestation(attestationCert);
 
         // prevent replay attacks
         if (!Arrays.equals(attestation.getAttestationChallenge(), challenge)) {
@@ -171,6 +174,21 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         if (attestation.getKeymasterSecurityLevel() != Attestation.KM_SECURITY_LEVEL_TRUSTED_ENVIRONMENT) {
             throw new GeneralSecurityException("keymaster security level is software");
         }
+
+        final AuthorizationList softwareEnforced = attestation.getSoftwareEnforced();
+        final AttestationApplicationId attestationApplicationId = softwareEnforced.getAttestationApplicationId();
+        final List<AttestationPackageInfo> infos = attestationApplicationId.getAttestationPackageInfos();
+        if (infos.size() != 1) {
+            throw new GeneralSecurityException("wrong number of attestation packages");
+        }
+        final AttestationPackageInfo info = infos.get(0);
+        if (!"co.copperhead.attestation".equals(info.getPackageName())) {
+            throw new GeneralSecurityException("wrong attestation app package name");
+        }
+        if (info.getVersion() < 1) {
+            throw new GeneralSecurityException("attestation app is too old");
+        }
+        // TODO: check attestation package signature once it uses a release signature
 
         final AuthorizationList teeEnforced = attestation.getTeeEnforced();
 
