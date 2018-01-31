@@ -46,6 +46,8 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
     private static final String KEY_PINNED_CERTIFICATE = "pinned_certificate";
     private static final String KEY_PINNED_CERTIFICATE_LENGTH = "pinned_certificate_length";
     private static final String KEY_PINNED_DEVICE = "pinned_device";
+    private static final String KEY_PINNED_OS_VERSION = "pinned_os_version";
+    private static final String KEY_PINNED_OS_PATCH_LEVEL = "pinned_os_patch_level";
 
     private static final String GOOGLE_ROOT_CERTIFICATE =
             "-----BEGIN CERTIFICATE-----\n"
@@ -121,9 +123,13 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
 
     private class Verified {
         final String device;
+        final int osVersion;
+        final int osPatchLevel;
 
-        Verified(final String device) {
+        Verified(final String device, final int osVersion, final int osPatchLevel) {
             this.device = device;
+            this.osVersion = osVersion;
+            this.osPatchLevel = osPatchLevel;
         }
     }
 
@@ -197,16 +203,18 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
 
         publishProgress("Device: " + device + "\n");
 
-        final String osVersion = String.format("%06d", teeEnforced.getOsVersion());
+        final int osVersion = teeEnforced.getOsVersion();
+        final String osVersionPadded = String.format("%06d", osVersion);
         publishProgress("OS version: " +
-                Integer.parseInt(osVersion.substring(0, 2)) + "." +
-                Integer.parseInt(osVersion.substring(2, 4)) + "." +
-                Integer.parseInt(osVersion.substring(4, 6)) + "\n");
+                Integer.parseInt(osVersionPadded.substring(0, 2)) + "." +
+                Integer.parseInt(osVersionPadded.substring(2, 4)) + "." +
+                Integer.parseInt(osVersionPadded.substring(4, 6)) + "\n");
 
-        final String osPatchLevel = teeEnforced.getOsPatchLevel().toString();
-        publishProgress("OS patch level: " + osPatchLevel.substring(0, 4) + "-" + osPatchLevel.substring(4, 6) + "\n");
+        final Integer osPatchLevel = teeEnforced.getOsPatchLevel();
+        final String osPatchLevelString = osPatchLevel.toString();
+        publishProgress("OS patch level: " + osPatchLevelString.toString().substring(0, 4) + "-" + osPatchLevelString.substring(4, 6) + "\n");
 
-        return new Verified(device);
+        return new Verified(device, osVersion, osPatchLevel);
     }
 
     private void testEcAttestation() throws Exception {
@@ -279,6 +287,15 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
             }
             publishProgress("Pinned device matches.\n");
 
+            publishProgress("\nChecking for OS version and OS patch level downgrades...\n");
+            if (verified.osVersion < preferences.getInt(KEY_PINNED_OS_VERSION, Integer.MAX_VALUE)) {
+                throw new GeneralSecurityException("OS version downgrade detected");
+            }
+            if (verified.osPatchLevel < preferences.getInt(KEY_PINNED_OS_PATCH_LEVEL, Integer.MAX_VALUE)) {
+                throw new GeneralSecurityException("OS patch level downgrade detected");
+            }
+            publishProgress("No downgrade detected.\n");
+
             publishProgress("\nVerifying matching pinned certificate chain...\n");
             if (attestationCertificates.length - 1 != preferences.getInt(KEY_PINNED_CERTIFICATE_LENGTH, 0)) {
                 throw new GeneralSecurityException("certificate chain mismatch");
@@ -309,21 +326,22 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
         } else {
             final SharedPreferences.Editor editor = preferences.edit();
 
-            publishProgress("\n\nPinning device variant...\n");
             editor.putString(KEY_PINNED_DEVICE, verified.device);
-            publishProgress("Device variant pinned.\n");
 
-            publishProgress("\n\nPinning certificate chain...\n");
             editor.putInt(KEY_PINNED_CERTIFICATE_LENGTH, attestationCertificates.length - 1);
             for (int i = 1; i < attestationCertificates.length; i++) {
                 final X509Certificate cert = (X509Certificate) attestationCertificates[i];
                 final String encoded = BaseEncoding.base64().encode(cert.getEncoded());
                 editor.putString(KEY_PINNED_CERTIFICATE + "_" + i, encoded);
             }
-            publishProgress("Pinned certificate chain\n");
 
             editor.apply();
         }
+
+        preferences.edit()
+                .putInt(KEY_PINNED_OS_VERSION, verified.osVersion)
+                .putInt(KEY_PINNED_OS_PATCH_LEVEL, verified.osPatchLevel)
+                .apply();
     }
 
     private void generateKeyPair(String algorithm, KeyGenParameterSpec spec)
