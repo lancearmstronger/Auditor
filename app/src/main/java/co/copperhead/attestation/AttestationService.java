@@ -306,9 +306,9 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
             signature = sig.sign();
         }
 
-        // all of this verification will be done by a separate device
-
         final Certificate attestationCertificates[] = keyStore.getCertificateChain(attestationKeystoreAlias);
+
+        // all of this verification will be done by a separate device
         final Verified verified = verifyAttestation(attestationCertificates, challenge);
 
         publishProgress("Successfully verified CopperheadOS attestation.\n\n");
