@@ -234,7 +234,7 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
         // this will be done by another device running the app to verify this one
         final byte[] challenge = getChallenge();
         if (!hasPersistentKey) {
-            preferences.edit().putString(KEY_PERSISTENT_CHALLENGE, BaseEncoding.base16().encode(challenge)).apply();
+            preferences.edit().putString(KEY_PERSISTENT_CHALLENGE, BaseEncoding.base64().encode(challenge)).apply();
         }
 
         Date startTime = new Date(new Date().getTime() - 1000);
@@ -258,7 +258,7 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
         if (hasPersistentKey) {
             publishProgress("\n\nVerifying persistent key...\n");
             final Certificate persistentCertificates[] = keyStore.getCertificateChain(persistentKeystoreAlias);
-            verifyAttestation(persistentCertificates, BaseEncoding.base16().decode(preferences.getString(KEY_PERSISTENT_CHALLENGE, null)));
+            verifyAttestation(persistentCertificates, BaseEncoding.base64().decode(preferences.getString(KEY_PERSISTENT_CHALLENGE, null)));
 
             publishProgress("\n\nVerifying matching certificate chain...\n");
             if (attestationCertificates.length != persistentCertificates.length) {
