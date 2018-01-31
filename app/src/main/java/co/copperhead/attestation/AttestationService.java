@@ -266,14 +266,14 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         }
         generateKeyPair(KEY_ALGORITHM_EC, builder.build());
 
-        byte[] signature;
+        byte[] signature = null;
         if (hasPersistentKey) {
-            Signature signer = Signature.getInstance("SHA256WithECDSA");
+            Signature sig = Signature.getInstance("SHA256WithECDSA");
 
             PrivateKey key = (PrivateKey) keyStore.getKey(persistentKeystoreAlias, null);
-            signer.initSign(key);
-            signer.update(challenge);
-            signature = signer.sign();
+            sig.initSign(key);
+            sig.update(challenge);
+            signature = sig.sign();
         }
 
         // all of this verification will be done by a separate device
@@ -336,9 +336,16 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
             }
             publishProgress("\nCertificate chain matches pinned certificate chain.\n");
 
-            // TODO: verify signature via attestation certificate?
+            // TODO: pin the certificate
+            final PublicKey persistentPublicKey = persistentCertificates[0].getPublicKey();
+            final Signature sig = Signature.getInstance("SHA256WithECDSA");
+            sig.initVerify(persistentPublicKey);
+            sig.update(challenge);
+            if (!sig.verify(signature)) {
+                throw new GeneralSecurityException("signature verification failed");
+            }
 
-            publishProgress("\nSuccessfully verified signature (not actually implemented yet).");
+            publishProgress("\nSuccessfully verified signature.");
         } else {
             final SharedPreferences.Editor editor = preferences.edit();
 
