@@ -122,7 +122,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         }
     }
 
-    private byte[] getChallenge() {
+    private static byte[] getChallenge() {
         final SecureRandom random = new SecureRandom();
         final byte[] challenge = new byte[32];
         random.nextBytes(challenge);
@@ -403,7 +403,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
                 .apply();
     }
 
-    private void generateKeyPair(String algorithm, KeyGenParameterSpec spec)
+    private static void generateKeyPair(String algorithm, KeyGenParameterSpec spec)
             throws NoSuchAlgorithmException, NoSuchProviderException,
             InvalidAlgorithmParameterException {
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(algorithm,
