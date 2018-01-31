@@ -52,7 +52,6 @@ import static android.security.keystore.KeyProperties.KEY_ALGORITHM_EC;
 public class AttestationService extends AsyncTask<Object, String, Void> {
     private static final String TAG = "AttestationService";
 
-    private static final String KEY_PERSISTENT_CHALLENGE = "persistent_challenge";
     private static final String KEY_PINNED_CERTIFICATE = "pinned_certificate";
     private static final String KEY_PINNED_CERTIFICATE_LENGTH = "pinned_certificate_length";
     private static final String KEY_PINNED_DEVICE = "pinned_device";
@@ -278,11 +277,8 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
 
         final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
 
-        // this will be done by another device running the app to verify this one
+        // this will be provided by another device running the app to verify this one
         final byte[] challenge = getChallenge();
-        if (!hasPersistentKey) {
-            preferences.edit().putString(KEY_PERSISTENT_CHALLENGE, BaseEncoding.base64().encode(challenge)).apply();
-        }
 
         Date startTime = new Date(new Date().getTime() - 10 * 1000);
         KeyGenParameterSpec.Builder builder = new KeyGenParameterSpec.Builder(attestationKeystoreAlias,
