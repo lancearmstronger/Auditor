@@ -58,6 +58,8 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
     private static final String KEY_PINNED_OS_VERSION = "pinned_os_version";
     private static final String KEY_PINNED_OS_PATCH_LEVEL = "pinned_os_patch_level";
 
+    private static final String SIGNATURE_ALGORITHM = "SHA256WithECDSA";
+
     private static final String ATTESTATION_APP_PACKAGE_NAME = "co.copperhead.attestation";
     private static final int ATTESTATION_APP_MINIMUM_VERSION = 1;
     // TODO: switch to release signing key
@@ -307,10 +309,8 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
 
         byte[] signature = null;
         if (hasPersistentKey) {
-            Signature sig = Signature.getInstance("SHA256WithECDSA");
-
-            PrivateKey key = (PrivateKey) keyStore.getKey(persistentKeystoreAlias, null);
-            sig.initSign(key);
+            final Signature sig = Signature.getInstance(SIGNATURE_ALGORITHM);
+            sig.initSign((PrivateKey) keyStore.getKey(persistentKeystoreAlias, null));
             sig.update(challenge);
             signature = sig.sign();
         }
@@ -363,9 +363,8 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
                     .getInstance("X.509").generateCertificate(
                             new ByteArrayInputStream(
                                     persistentCertificateEncoded));
-            PublicKey persistentPublicKey = persistentCertificate.getPublicKey();
-            final Signature sig = Signature.getInstance("SHA256WithECDSA");
-            sig.initVerify(persistentPublicKey);
+            final Signature sig = Signature.getInstance(SIGNATURE_ALGORITHM);
+            sig.initVerify(persistentCertificate.getPublicKey());
             sig.update(challenge);
             if (!sig.verify(signature)) {
                 throw new GeneralSecurityException("signature verification failed");
