@@ -121,7 +121,7 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
         return challenge;
     }
 
-    private class Verified {
+    private static class Verified {
         final String device;
         final int osVersion;
         final int osPatchLevel;
@@ -133,7 +133,7 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
         }
     }
 
-    private Verified verifyAttestation(final Certificate certificates[], final byte[] challenge) throws GeneralSecurityException {
+    private static Verified verifyAttestation(final Certificate certificates[], final byte[] challenge) throws GeneralSecurityException {
         verifyCertificateSignatures(certificates);
 
         X509Certificate attestationCert = (X509Certificate) certificates[0];
@@ -199,22 +199,7 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
             throw new GeneralSecurityException("invalid key fingerprint");
         }
 
-        publishProgress("Successfully verified CopperheadOS attestation.\n\n");
-
-        publishProgress("Device: " + device + "\n");
-
-        final int osVersion = teeEnforced.getOsVersion();
-        final String osVersionPadded = String.format("%06d", osVersion);
-        publishProgress("OS version: " +
-                Integer.parseInt(osVersionPadded.substring(0, 2)) + "." +
-                Integer.parseInt(osVersionPadded.substring(2, 4)) + "." +
-                Integer.parseInt(osVersionPadded.substring(4, 6)) + "\n");
-
-        final Integer osPatchLevel = teeEnforced.getOsPatchLevel();
-        final String osPatchLevelString = osPatchLevel.toString();
-        publishProgress("OS patch level: " + osPatchLevelString.toString().substring(0, 4) + "-" + osPatchLevelString.substring(4, 6) + "\n");
-
-        return new Verified(device, osVersion, osPatchLevel);
+        return new Verified(device, teeEnforced.getOsVersion(), teeEnforced.getOsPatchLevel());
     }
 
     private void testEcAttestation() throws Exception {
@@ -262,6 +247,18 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
 
         final Certificate attestationCertificates[] = keyStore.getCertificateChain(attestationKeystoreAlias);
         Verified verified = verifyAttestation(attestationCertificates, challenge);
+
+        publishProgress("Successfully verified CopperheadOS attestation.\n\n");
+        publishProgress("Device: " + verified.device + "\n");
+
+        final String osVersion = String.format("%06d", verified.osVersion);
+        publishProgress("OS version: " +
+                Integer.parseInt(osVersion.substring(0, 2)) + "." +
+                Integer.parseInt(osVersion.substring(2, 4)) + "." +
+                Integer.parseInt(osVersion.substring(4, 6)) + "\n");
+
+        final String osPatchLevel = Integer.toString(verified.osPatchLevel);
+        publishProgress("OS patch level: " + osPatchLevel.toString().substring(0, 4) + "-" + osPatchLevel.substring(4, 6) + "\n");
 
         if (hasPersistentKey) {
             publishProgress("\nVerifying persistent key...\n");
@@ -353,7 +350,7 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
         keyPairGenerator.generateKeyPair();
     }
 
-    private void verifyCertificateSignatures(Certificate[] certChain)
+    private static void verifyCertificateSignatures(Certificate[] certChain)
             throws GeneralSecurityException {
 
         for (Certificate cert : certChain) {
