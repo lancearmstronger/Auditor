@@ -55,7 +55,6 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
     private static final String KEY_PINNED_CERTIFICATE = "pinned_certificate";
     private static final String KEY_PINNED_CERTIFICATE_LENGTH = "pinned_certificate_length";
 
-    private static final int KM_ERROR_INVALID_INPUT_LENGTH = -21;
     private final TextView view;
     private Context context;
 
@@ -331,7 +330,7 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
         for (Certificate cert : certChain) {
             final byte[] derCert = cert.getEncoded();
             final String pemCertPre = Base64.encodeToString(derCert, Base64.NO_WRAP);
-            Log.e("****", pemCertPre);
+            Log.d("****", pemCertPre);
         }
 
         for (int i = 1; i < certChain.length; ++i) {
