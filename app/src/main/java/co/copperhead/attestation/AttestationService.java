@@ -175,6 +175,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
             throw new GeneralSecurityException("keymaster security level is software");
         }
 
+        // enforce communicating with the attestation app via OS level security
         final AuthorizationList softwareEnforced = attestation.getSoftwareEnforced();
         final AttestationApplicationId attestationApplicationId = softwareEnforced.getAttestationApplicationId();
         final List<AttestationPackageInfo> infos = attestationApplicationId.getAttestationPackageInfos();
