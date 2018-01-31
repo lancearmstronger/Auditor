@@ -46,13 +46,6 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
     private static final String KEY_PINNED_CERTIFICATE = "pinned_certificate";
     private static final String KEY_PINNED_CERTIFICATE_LENGTH = "pinned_certificate_length";
 
-    private final TextView view;
-    private Context context;
-
-    AttestationTest(TextView view) {
-        this.view = view;
-    }
-
     private static final String GOOGLE_ROOT_CERTIFICATE =
             "-----BEGIN CERTIFICATE-----\n"
                     + "MIIFYDCCA0igAwIBAgIJAOj6GWMU0voYMA0GCSqGSIb3DQEBCwUAMBsxGTAXBgNV"
@@ -90,6 +83,13 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
             "815DCBA82BAC1B1758211FF53CAA0B6883CB6C901BE285E1B291C8BDAA12DF75";
     private static final String COPPERHEADOS_FINGERPRINT_WALLEYE =
             "36D067F8517A2284781B99A2984966BFF02D3F47310F831FCDCC4D792426B6DF";
+
+    private final TextView view;
+    private Context context;
+
+    AttestationTest(TextView view) {
+        this.view = view;
+    }
 
     @Override
     protected Void doInBackground(Object... params) {
