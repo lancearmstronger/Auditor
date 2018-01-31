@@ -272,7 +272,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
 
             PrivateKey key = (PrivateKey) keyStore.getKey(persistentKeystoreAlias, null);
             signer.initSign(key);
-            signer.update("Hello".getBytes());
+            signer.update(challenge);
             signature = signer.sign();
         }
 
