@@ -284,7 +284,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
             preferences.edit().putString(KEY_PERSISTENT_CHALLENGE, BaseEncoding.base64().encode(challenge)).apply();
         }
 
-        Date startTime = new Date(new Date().getTime() - 1000);
+        Date startTime = new Date(new Date().getTime() - 10 * 1000);
         KeyGenParameterSpec.Builder builder = new KeyGenParameterSpec.Builder(attestationKeystoreAlias,
                 KeyProperties.PURPOSE_SIGN | KeyProperties.PURPOSE_VERIFY)
                 .setAlgorithmParameterSpec(new ECGenParameterSpec(ecCurve))
