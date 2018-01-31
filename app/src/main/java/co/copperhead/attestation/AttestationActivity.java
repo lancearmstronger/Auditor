@@ -1,5 +1,6 @@
 package co.copperhead.attestation;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -15,6 +16,7 @@ import java.io.IOException;
 import java.io.Writer;
 
 public class AttestationActivity extends AppCompatActivity {
+    AsyncTask<Object, String, Void> task = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,9 +38,12 @@ public class AttestationActivity extends AppCompatActivity {
 
     private void doIt() {
         TextView textView = (TextView) findViewById(R.id.textview);
+        if (task != null && task.getStatus() == AsyncTask.Status.RUNNING) {
+            return;
+        }
         textView.setText("");
         try {
-            new AttestationService(textView).execute(this);
+            task = new AttestationService(textView).execute(this);
         } catch (Exception e) {
             e.printStackTrace();
         }
