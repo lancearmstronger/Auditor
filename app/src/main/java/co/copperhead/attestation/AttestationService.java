@@ -324,7 +324,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
             }
             publishProgress("\nNo downgrade detected from pinned OS version and OS patch level.\n");
 
-            if (attestationCertificates.length - 1 != preferences.getInt(KEY_PINNED_CERTIFICATE_LENGTH, 0)) {
+            if (attestationCertificates.length != preferences.getInt(KEY_PINNED_CERTIFICATE_LENGTH, 0)) {
                 throw new GeneralSecurityException("certificate chain mismatch");
             }
             for (int i = 1; i < attestationCertificates.length; i++) {
@@ -336,8 +336,12 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
             }
             publishProgress("\nCertificate chain matches pinned certificate chain.\n");
 
-            // TODO: pin the certificate
-            final PublicKey persistentPublicKey = persistentCertificates[0].getPublicKey();
+            final byte[] persistentCertificateEncoded = BaseEncoding.base64().decode(preferences.getString(KEY_PINNED_CERTIFICATE + "_0", null));
+            X509Certificate persistentCertificate = (X509Certificate) CertificateFactory
+                    .getInstance("X.509").generateCertificate(
+                            new ByteArrayInputStream(
+                                    persistentCertificateEncoded));
+            PublicKey persistentPublicKey = persistentCertificate.getPublicKey();
             final Signature sig = Signature.getInstance("SHA256WithECDSA");
             sig.initVerify(persistentPublicKey);
             sig.update(challenge);
@@ -351,8 +355,8 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
 
             editor.putString(KEY_PINNED_DEVICE, verified.device);
 
-            editor.putInt(KEY_PINNED_CERTIFICATE_LENGTH, attestationCertificates.length - 1);
-            for (int i = 1; i < attestationCertificates.length; i++) {
+            editor.putInt(KEY_PINNED_CERTIFICATE_LENGTH, attestationCertificates.length);
+            for (int i = 0; i < attestationCertificates.length; i++) {
                 final X509Certificate cert = (X509Certificate) attestationCertificates[i];
                 final String encoded = BaseEncoding.base64().encode(cert.getEncoded());
                 editor.putString(KEY_PINNED_CERTIFICATE + "_" + i, encoded);
