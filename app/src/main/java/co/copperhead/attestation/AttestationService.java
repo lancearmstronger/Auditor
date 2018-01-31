@@ -58,6 +58,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
     private static final String KEY_PINNED_OS_VERSION = "pinned_os_version";
     private static final String KEY_PINNED_OS_PATCH_LEVEL = "pinned_os_patch_level";
 
+    private static final String EC_CURVE = "secp256r1";
     private static final String SIGNATURE_ALGORITHM = "SHA256WithECDSA";
 
     private static final String ATTESTATION_APP_PACKAGE_NAME = "co.copperhead.attestation";
@@ -358,9 +359,6 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
     }
 
     private void testAttestation(final Context context) throws Exception {
-        final String ecCurve = "secp256r1";
-        final int keySize = 256;
-
         final KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
         keyStore.load(null);
 
@@ -384,7 +382,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         final Date startTime = new Date(new Date().getTime() - 10 * 1000);
         final KeyGenParameterSpec.Builder builder = new KeyGenParameterSpec.Builder(attestationKeystoreAlias,
                 KeyProperties.PURPOSE_SIGN | KeyProperties.PURPOSE_VERIFY)
-                .setAlgorithmParameterSpec(new ECGenParameterSpec(ecCurve))
+                .setAlgorithmParameterSpec(new ECGenParameterSpec(EC_CURVE))
                 .setDigests(DIGEST_SHA256)
                 .setAttestationChallenge(challenge)
                 .setKeyValidityStart(startTime);
