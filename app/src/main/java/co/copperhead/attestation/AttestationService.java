@@ -104,7 +104,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
     @Override
     protected Void doInBackground(Object... params) {
         try {
-            testEcAttestation((Context) params[0]);
+            testAttestation((Context) params[0]);
         } catch (Exception e) {
             StringWriter s = new StringWriter();
             e.printStackTrace(new PrintWriter(s));
@@ -145,7 +145,6 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         verifyCertificateSignatures(certificates);
 
         // check that the root certificate is the Google key attestation root
-        final X509Certificate attestationCert = (X509Certificate) certificates[0];
         final X509Certificate secureRoot = (X509Certificate) CertificateFactory
                 .getInstance("X.509").generateCertificate(
                         new ByteArrayInputStream(GOOGLE_ROOT_CERTIFICATE.getBytes()));
@@ -154,7 +153,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
             throw new GeneralSecurityException("root certificate is not the Google key attestation root");
         }
 
-        final Attestation attestation = new Attestation(attestationCert);
+        final Attestation attestation = new Attestation((X509Certificate) certificates[0]);
 
         // prevent replay attacks
         if (!Arrays.equals(attestation.getAttestationChallenge(), challenge)) {
@@ -256,11 +255,11 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         }
     }
 
-    private void testEcAttestation(Context context) throws Exception {
-        String ecCurve = "secp256r1";
-        int keySize = 256;
+    private void testAttestation(final Context context) throws Exception {
+        final String ecCurve = "secp256r1";
+        final int keySize = 256;
 
-        KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
+        final KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
         keyStore.load(null);
 
         final String freshKeystoreAlias = "fresh_attestation_key";
@@ -269,6 +268,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         final String persistentKeystoreAlias = "persistent_attestation_key";
         final boolean hasPersistentKey = keyStore.containsAlias(persistentKeystoreAlias);
 
+        // generate a new key for fresh attestation results unless the persistent key is not yet created
         final String attestationKeystoreAlias;
         if (hasPersistentKey) {
             attestationKeystoreAlias = "fresh_attestation_key";
@@ -309,7 +309,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         // all of this verification will be done by a separate device
 
         final Certificate attestationCertificates[] = keyStore.getCertificateChain(attestationKeystoreAlias);
-        Verified verified = verifyAttestation(attestationCertificates, challenge);
+        final Verified verified = verifyAttestation(attestationCertificates, challenge);
 
         publishProgress("Successfully verified CopperheadOS attestation for ephemeral key.\n\n");
         publishProgress("Device: " + verified.device + "\n");
