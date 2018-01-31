@@ -256,11 +256,11 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
         Verified verified = verifyAttestation(attestationCertificates, challenge);
 
         if (hasPersistentKey) {
-            publishProgress("\n\nVerifying persistent key...\n");
+            publishProgress("\nVerifying persistent key...\n");
             final Certificate persistentCertificates[] = keyStore.getCertificateChain(persistentKeystoreAlias);
             verifyAttestation(persistentCertificates, BaseEncoding.base64().decode(preferences.getString(KEY_PERSISTENT_CHALLENGE, null)));
 
-            publishProgress("\n\nVerifying matching certificate chain...\n");
+            publishProgress("\nVerifying matching certificate chain...\n");
             if (attestationCertificates.length != persistentCertificates.length) {
                 throw new GeneralSecurityException("certificate chain mismatch");
             }
@@ -273,13 +273,13 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
             }
             publishProgress("Certificate chain matches.\n");
 
-            publishProgress("\n\nVerifying matching pinned device...\n");
+            publishProgress("\nVerifying matching pinned device...\n");
             if (!verified.device.equals(preferences.getString(KEY_PINNED_DEVICE, null))) {
                 throw new GeneralSecurityException("pinned device mismatch");
             }
             publishProgress("Pinned device matches.\n");
 
-            publishProgress("\n\nVerifying matching pinned certificate chain...\n");
+            publishProgress("\nVerifying matching pinned certificate chain...\n");
             if (attestationCertificates.length - 1 != preferences.getInt(KEY_PINNED_CERTIFICATE_LENGTH, 0)) {
                 throw new GeneralSecurityException("certificate chain mismatch");
             }
