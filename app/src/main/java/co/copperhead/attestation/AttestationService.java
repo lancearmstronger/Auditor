@@ -311,7 +311,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         final Certificate attestationCertificates[] = keyStore.getCertificateChain(attestationKeystoreAlias);
         final Verified verified = verifyAttestation(attestationCertificates, challenge);
 
-        publishProgress("Successfully verified CopperheadOS attestation for ephemeral key.\n\n");
+        publishProgress("Successfully verified CopperheadOS attestation.\n\n");
         publishProgress("Device: " + verified.device + "\n");
 
         final String osVersion = String.format("%06d", verified.osVersion);
@@ -324,23 +324,6 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         publishProgress("OS patch level: " + osPatchLevel.toString().substring(0, 4) + "-" + osPatchLevel.substring(4, 6) + "\n");
 
         if (hasPersistentKey) {
-            final Certificate persistentCertificates[] = keyStore.getCertificateChain(persistentKeystoreAlias);
-            verifyAttestation(persistentCertificates, BaseEncoding.base64().decode(preferences.getString(KEY_PERSISTENT_CHALLENGE, null)));
-
-            publishProgress("\nSuccessfully verified CopperheadOS attestation for persistent key.\n");
-
-            if (attestationCertificates.length != persistentCertificates.length) {
-                throw new GeneralSecurityException("certificate chain mismatch");
-            }
-            for (int i = 1; i < attestationCertificates.length; i++) {
-                X509Certificate a = (X509Certificate) attestationCertificates[i];
-                X509Certificate b = (X509Certificate) persistentCertificates[i];
-                if (!Arrays.equals(a.getEncoded(), b.getEncoded())) {
-                    throw new GeneralSecurityException("certificate chain mismatch");
-                }
-            }
-            publishProgress("\nEphemeral key certificate chain matches persistent key.\n");
-
             if (!verified.device.equals(preferences.getString(KEY_PINNED_DEVICE, null))) {
                 throw new GeneralSecurityException("pinned device mismatch");
             }
