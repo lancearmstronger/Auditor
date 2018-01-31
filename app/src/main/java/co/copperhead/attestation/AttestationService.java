@@ -96,7 +96,6 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
             "36D067F8517A2284781B99A2984966BFF02D3F47310F831FCDCC4D792426B6DF";
 
     private final TextView view;
-    private Context context;
 
     AttestationService(TextView view) {
         this.view = view;
@@ -104,9 +103,8 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
 
     @Override
     protected Void doInBackground(Object... params) {
-        context = (Context)params[0];
         try {
-            testEcAttestation();
+            testEcAttestation((Context) params[0]);
         } catch (Exception e) {
             StringWriter s = new StringWriter();
             e.printStackTrace(new PrintWriter(s));
@@ -258,7 +256,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         }
     }
 
-    private void testEcAttestation() throws Exception {
+    private void testEcAttestation(Context context) throws Exception {
         String ecCurve = "secp256r1";
         int keySize = 256;
 
