@@ -117,7 +117,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         try {
             testAttestation((Context) params[0]);
         } catch (Exception e) {
-            StringWriter s = new StringWriter();
+            final StringWriter s = new StringWriter();
             e.printStackTrace(new PrintWriter(s));
             publishProgress(s.toString());
         }
@@ -254,7 +254,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         }
 
         for (int i = 1; i < certChain.length; ++i) {
-            PublicKey pubKey = certChain[i].getPublicKey();
+            final PublicKey pubKey = certChain[i].getPublicKey();
             try {
                 certChain[i - 1].verify(pubKey);
             } catch (InvalidKeyException | CertificateException | NoSuchAlgorithmException
@@ -279,8 +279,6 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
             final Certificate attestationCertificates[], final boolean hasPersistentKey)
             throws GeneralSecurityException {
 
-        final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
-
         final Verified verified = verifyAttestation(attestationCertificates, challenge);
 
         publishProgress("Successfully verified CopperheadOS attestation.\n\n");
@@ -293,7 +291,11 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
                 Integer.parseInt(osVersion.substring(4, 6)) + "\n");
 
         final String osPatchLevel = Integer.toString(verified.osPatchLevel);
-        publishProgress("OS patch level: " + osPatchLevel.toString().substring(0, 4) + "-" + osPatchLevel.substring(4, 6) + "\n");
+        publishProgress("OS patch level: " +
+                osPatchLevel.toString().substring(0, 4) + "-" +
+                osPatchLevel.substring(4, 6) + "\n");
+
+        final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
 
         if (hasPersistentKey) {
             if (!verified.device.equals(preferences.getString(KEY_PINNED_DEVICE, null))) {
@@ -322,7 +324,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
             publishProgress("\nCertificate chain matches pinned certificate chain.\n");
 
             final byte[] persistentCertificateEncoded = BaseEncoding.base64().decode(preferences.getString(KEY_PINNED_CERTIFICATE + "_0", null));
-            X509Certificate persistentCertificate = (X509Certificate) CertificateFactory
+            final X509Certificate persistentCertificate = (X509Certificate) CertificateFactory
                     .getInstance("X.509").generateCertificate(
                             new ByteArrayInputStream(
                                     persistentCertificateEncoded));
@@ -371,7 +373,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         // generate a new key for fresh attestation results unless the persistent key is not yet created
         final String attestationKeystoreAlias;
         if (hasPersistentKey) {
-            attestationKeystoreAlias = "fresh_attestation_key";
+            attestationKeystoreAlias = freshKeystoreAlias;
         } else {
             attestationKeystoreAlias = persistentKeystoreAlias;
         }
@@ -379,8 +381,8 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         // this will be provided by another device running the app to verify this one
         final byte[] challenge = getChallenge();
 
-        Date startTime = new Date(new Date().getTime() - 10 * 1000);
-        KeyGenParameterSpec.Builder builder = new KeyGenParameterSpec.Builder(attestationKeystoreAlias,
+        final Date startTime = new Date(new Date().getTime() - 10 * 1000);
+        final KeyGenParameterSpec.Builder builder = new KeyGenParameterSpec.Builder(attestationKeystoreAlias,
                 KeyProperties.PURPOSE_SIGN | KeyProperties.PURPOSE_VERIFY)
                 .setAlgorithmParameterSpec(new ECGenParameterSpec(ecCurve))
                 .setDigests(DIGEST_SHA256)
@@ -403,10 +405,10 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         verify(context, challenge, signature, attestationCertificates, hasPersistentKey);
     }
 
-    private static void generateKeyPair(String algorithm, KeyGenParameterSpec spec)
+    private static void generateKeyPair(final String algorithm, final KeyGenParameterSpec spec)
             throws NoSuchAlgorithmException, NoSuchProviderException,
             InvalidAlgorithmParameterException {
-        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(algorithm,
+        final KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(algorithm,
                 "AndroidKeyStore");
         keyPairGenerator.initialize(spec);
         keyPairGenerator.generateKeyPair();
