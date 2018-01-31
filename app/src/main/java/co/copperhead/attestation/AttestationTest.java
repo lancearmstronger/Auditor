@@ -242,13 +242,12 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
         }
         generateKeyPair(KEY_ALGORITHM_EC, builder.build());
 
-        // this will be done by another device running the app to verify this one
-        publishProgress("Verifying fresh key...\n");
+        // all of this verification will be done by a separate device
 
         final Certificate attestationCertificates[] = keyStore.getCertificateChain(attestationKeystoreAlias);
         Verified verified = verifyAttestation(attestationCertificates, challenge);
 
-        publishProgress("Successfully verified CopperheadOS attestation.\n\n");
+        publishProgress("Successfully verified CopperheadOS attestation for ephemeral key.\n\n");
         publishProgress("Device: " + verified.device + "\n");
 
         final String osVersion = String.format("%06d", verified.osVersion);
@@ -261,11 +260,11 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
         publishProgress("OS patch level: " + osPatchLevel.toString().substring(0, 4) + "-" + osPatchLevel.substring(4, 6) + "\n");
 
         if (hasPersistentKey) {
-            publishProgress("\nVerifying persistent key...\n");
             final Certificate persistentCertificates[] = keyStore.getCertificateChain(persistentKeystoreAlias);
             verifyAttestation(persistentCertificates, BaseEncoding.base64().decode(preferences.getString(KEY_PERSISTENT_CHALLENGE, null)));
 
-            publishProgress("\nVerifying matching certificate chain...\n");
+            publishProgress("\nSuccessfully verified CopperheadOS attestation for persistent key.\n");
+
             if (attestationCertificates.length != persistentCertificates.length) {
                 throw new GeneralSecurityException("certificate chain mismatch");
             }
@@ -276,24 +275,21 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
                     throw new GeneralSecurityException("certificate chain mismatch");
                 }
             }
-            publishProgress("Certificate chain matches.\n");
+            publishProgress("\nEphemeral key certificate chain matches persistent key.\n");
 
-            publishProgress("\nVerifying matching pinned device...\n");
             if (!verified.device.equals(preferences.getString(KEY_PINNED_DEVICE, null))) {
                 throw new GeneralSecurityException("pinned device mismatch");
             }
-            publishProgress("Pinned device matches.\n");
+            publishProgress("\nPinned device variant matches verified device variant.\n");
 
-            publishProgress("\nChecking for OS version and OS patch level downgrades...\n");
             if (verified.osVersion < preferences.getInt(KEY_PINNED_OS_VERSION, Integer.MAX_VALUE)) {
                 throw new GeneralSecurityException("OS version downgrade detected");
             }
             if (verified.osPatchLevel < preferences.getInt(KEY_PINNED_OS_PATCH_LEVEL, Integer.MAX_VALUE)) {
                 throw new GeneralSecurityException("OS patch level downgrade detected");
             }
-            publishProgress("No downgrade detected.\n");
+            publishProgress("\nNo downgrade detected from pinned OS version and OS patch level.\n");
 
-            publishProgress("\nVerifying matching pinned certificate chain...\n");
             if (attestationCertificates.length - 1 != preferences.getInt(KEY_PINNED_CERTIFICATE_LENGTH, 0)) {
                 throw new GeneralSecurityException("certificate chain mismatch");
             }
@@ -304,9 +300,7 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
                     throw new GeneralSecurityException("certificate chain mismatch");
                 }
             }
-            publishProgress("Pinned certificate chain matches.\n");
-
-            publishProgress("\nChecking signature...");
+            publishProgress("\nCertificate chain matches pinned certificate chain.\n");
 
             Signature signer = Signature.getInstance("SHA256WithECDSA");
             KeyStore keystore = KeyStore.getInstance("AndroidKeyStore");
