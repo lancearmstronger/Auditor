@@ -58,6 +58,12 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
     private static final String KEY_PINNED_OS_VERSION = "pinned_os_version";
     private static final String KEY_PINNED_OS_PATCH_LEVEL = "pinned_os_patch_level";
 
+    private static final String ATTESTATION_APP_PACKAGE_NAME = "co.copperhead.attestation";
+    private static final int ATTESTATION_APP_MINIMUM_VERSION = 1;
+    // TODO: switch to release signing key
+    private static final String ATTESTATION_APP_SIGNATURE_DIGEST =
+            "17727D8B61D55A864936B1A7B4A2554A15151F32EBCF44CDAA6E6C3258231890";
+
     private static final String GOOGLE_ROOT_CERTIFICATE =
             "-----BEGIN CERTIFICATE-----\n"
                     + "MIIFYDCCA0igAwIBAgIJAOj6GWMU0voYMA0GCSqGSIb3DQEBCwUAMBsxGTAXBgNV"
@@ -183,13 +189,20 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
             throw new GeneralSecurityException("wrong number of attestation packages");
         }
         final AttestationPackageInfo info = infos.get(0);
-        if (!"co.copperhead.attestation".equals(info.getPackageName())) {
+        if (!ATTESTATION_APP_PACKAGE_NAME.equals(info.getPackageName())) {
             throw new GeneralSecurityException("wrong attestation app package name");
         }
-        if (info.getVersion() < 1) {
+        if (info.getVersion() < ATTESTATION_APP_MINIMUM_VERSION) {
             throw new GeneralSecurityException("attestation app is too old");
         }
-        // TODO: check attestation package signature once it uses a release signature
+        final List<byte[]> signatureDigests = attestationApplicationId.getSignatureDigests();
+        if (signatureDigests.size() != 1) {
+            throw new GeneralSecurityException("wrong number of attestation app signature digests");
+        }
+        final String signatureDigest = BaseEncoding.base16().encode(signatureDigests.get(0));
+        if (!ATTESTATION_APP_SIGNATURE_DIGEST.equals(signatureDigest)) {
+            throw new GeneralSecurityException("wrong attestation app signature digest");
+        }
 
         final AuthorizationList teeEnforced = attestation.getTeeEnforced();
 
