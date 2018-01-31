@@ -45,6 +45,7 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
     private static final String KEY_PERSISTENT_CHALLENGE = "persistent_challenge";
     private static final String KEY_PINNED_CERTIFICATE = "pinned_certificate";
     private static final String KEY_PINNED_CERTIFICATE_LENGTH = "pinned_certificate_length";
+    private static final String KEY_PINNED_DEVICE = "pinned_device";
 
     private static final String GOOGLE_ROOT_CERTIFICATE =
             "-----BEGIN CERTIFICATE-----\n"
@@ -118,7 +119,15 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
         return challenge;
     }
 
-    private void verifyAttestation(final Certificate certificates[], final byte[] challenge) throws GeneralSecurityException {
+    private class Verified {
+        final String device;
+
+        Verified(final String device) {
+            this.device = device;
+        }
+    }
+
+    private Verified verifyAttestation(final Certificate certificates[], final byte[] challenge) throws GeneralSecurityException {
         verifyCertificateSignatures(certificates);
 
         X509Certificate attestationCert = (X509Certificate) certificates[0];
@@ -197,7 +206,7 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
         final String osPatchLevel = teeEnforced.getOsPatchLevel().toString();
         publishProgress("OS patch level: " + osPatchLevel.substring(0, 4) + "-" + osPatchLevel.substring(4, 6) + "\n");
 
-        //publishProgress("\n\n\n\n" + attestation.toString() + "\n");
+        return new Verified(device);
     }
 
     private void testEcAttestation() throws Exception {
@@ -244,7 +253,7 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
         publishProgress("Verifying fresh key...\n");
 
         final Certificate attestationCertificates[] = keyStore.getCertificateChain(attestationKeystoreAlias);
-        verifyAttestation(attestationCertificates, challenge);
+        Verified verified = verifyAttestation(attestationCertificates, challenge);
 
         if (hasPersistentKey) {
             publishProgress("\n\nVerifying persistent key...\n");
@@ -264,13 +273,19 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
             }
             publishProgress("Certificate chain matches.\n");
 
+            publishProgress("\n\nVerifying matching pinned device...\n");
+            if (!verified.device.equals(preferences.getString(KEY_PINNED_DEVICE, null))) {
+                throw new GeneralSecurityException("pinned device mismatch");
+            }
+            publishProgress("Pinned device matches.\n");
+
             publishProgress("\n\nVerifying matching pinned certificate chain...\n");
             if (attestationCertificates.length - 1 != preferences.getInt(KEY_PINNED_CERTIFICATE_LENGTH, 0)) {
                 throw new GeneralSecurityException("certificate chain mismatch");
             }
             for (int i = 1; i < attestationCertificates.length; i++) {
                 final X509Certificate a = (X509Certificate) attestationCertificates[i];
-                final byte[] b = BaseEncoding.base64().decode(preferences.getString(KEY_PINNED_CERTIFICATE + "_" + i, ""));
+                final byte[] b = BaseEncoding.base64().decode(preferences.getString(KEY_PINNED_CERTIFICATE + "_" + i, null));
                 if (!Arrays.equals(a.getEncoded(), b)) {
                     throw new GeneralSecurityException("certificate chain mismatch");
                 }
@@ -292,16 +307,22 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
 
             publishProgress("\nSuccessfully verified signature (not actually implemented yet).");
         } else {
-            publishProgress("\n\nPinning certificate chain...\n");
             final SharedPreferences.Editor editor = preferences.edit();
+
+            publishProgress("\n\nPinning device variant...\n");
+            editor.putString(KEY_PINNED_DEVICE, verified.device);
+            publishProgress("Device variant pinned.\n");
+
+            publishProgress("\n\nPinning certificate chain...\n");
             editor.putInt(KEY_PINNED_CERTIFICATE_LENGTH, attestationCertificates.length - 1);
             for (int i = 1; i < attestationCertificates.length; i++) {
                 final X509Certificate cert = (X509Certificate) attestationCertificates[i];
                 final String encoded = BaseEncoding.base64().encode(cert.getEncoded());
                 editor.putString(KEY_PINNED_CERTIFICATE + "_" + i, encoded);
             }
-            editor.apply();
             publishProgress("Pinned certificate chain\n");
+
+            editor.apply();
         }
     }
 
