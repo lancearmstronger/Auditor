@@ -46,11 +46,6 @@ import static android.security.keystore.KeyProperties.KEY_ALGORITHM_EC;
  * TextView provided to its constructor.
  */
 public class AttestationTest extends AsyncTask<Object, String, Void> {
-    private static final int KEY_USAGE_BITSTRING_LENGTH = 9;
-    private static final int KEY_USAGE_DIGITAL_SIGNATURE_BIT_OFFSET = 0;
-    private static final int KEY_USAGE_KEY_ENCIPHERMENT_BIT_OFFSET = 2;
-    private static final int KEY_USAGE_DATA_ENCIPHERMENT_BIT_OFFSET = 3;
-
     private static final String KEY_PERSISTENT_CHALLENGE = "persistent_challenge";
     private static final String KEY_PINNED_CERTIFICATE = "pinned_certificate";
     private static final String KEY_PINNED_CERTIFICATE_LENGTH = "pinned_certificate_length";
@@ -139,7 +134,6 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
         if (!Arrays.equals(secureRoot.getEncoded(), rootCert.getEncoded())) {
             throw new GeneralSecurityException("root certificate is not the Google root");
         }
-        //printKeyUsage(attestationCert);
 
         Attestation attestation = new Attestation(attestationCert);
 
@@ -354,21 +348,4 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
         }
     }
 
-    private void printKeyUsage(X509Certificate attestationCert) {
-        publishProgress("Key usage:");
-        if (attestationCert.getKeyUsage() == null) {
-            publishProgress(" NONE\n");
-            return;
-        }
-        if (attestationCert.getKeyUsage()[KEY_USAGE_DIGITAL_SIGNATURE_BIT_OFFSET]) {
-            publishProgress(" sign");
-        }
-        if (attestationCert.getKeyUsage()[KEY_USAGE_DATA_ENCIPHERMENT_BIT_OFFSET]) {
-            publishProgress(" encrypt_data");
-        }
-        if (attestationCert.getKeyUsage()[KEY_USAGE_KEY_ENCIPHERMENT_BIT_OFFSET]) {
-            publishProgress(" encrypt_keys");
-        }
-        publishProgress("\n");
-    }
 }
