@@ -269,10 +269,8 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         byte[] signature;
         if (hasPersistentKey) {
             Signature signer = Signature.getInstance("SHA256WithECDSA");
-            KeyStore keystore = KeyStore.getInstance("AndroidKeyStore");
-            keystore.load(null);
 
-            PrivateKey key = (PrivateKey) keystore.getKey(persistentKeystoreAlias, null);
+            PrivateKey key = (PrivateKey) keyStore.getKey(persistentKeystoreAlias, null);
             signer.initSign(key);
             signer.update("Hello".getBytes());
             signature = signer.sign();
