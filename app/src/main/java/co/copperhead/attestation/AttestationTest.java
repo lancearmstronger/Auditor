@@ -52,6 +52,8 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
     private static final int KEY_USAGE_DATA_ENCIPHERMENT_BIT_OFFSET = 3;
 
     private static final String KEY_PERSISTENT_CHALLENGE = "persistent_challenge";
+    private static final String KEY_PINNED_CERTIFICATE = "pinned_certificate";
+    private static final String KEY_PINNED_CERTIFICATE_LENGTH = "pinned_certificate_length";
 
     private static final int KM_ERROR_INVALID_INPUT_LENGTH = -21;
     private final TextView view;
@@ -274,7 +276,16 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
             publishProgress("Certificate chain matches.\n");
 
             publishProgress("\n\nVerifying matching pinned certificate chain...\n");
-            // TODO: pin certificate chain
+            if (attestationCertificates.length - 1 != preferences.getInt(KEY_PINNED_CERTIFICATE_LENGTH, 0)) {
+                throw new GeneralSecurityException("certificate chain mismatch");
+            }
+            for (int i = 1; i < attestationCertificates.length; i++) {
+                final X509Certificate a = (X509Certificate) attestationCertificates[i];
+                final byte[] b = BaseEncoding.base64().decode(preferences.getString(KEY_PINNED_CERTIFICATE + "_" + i, ""));
+                if (!Arrays.equals(a.getEncoded(), b)) {
+                    throw new GeneralSecurityException("certificate chain mismatch");
+                }
+            }
             publishProgress("Pinned certificate chain matches.\n");
 
             publishProgress("\nChecking signature...");
@@ -291,6 +302,17 @@ public class AttestationTest extends AsyncTask<Object, String, Void> {
             // TODO: verify signature via attestation certificate?
 
             publishProgress("\nSuccessfully verified signature.");
+        } else {
+            publishProgress("\n\nPinning certificate chain...\n");
+            final SharedPreferences.Editor editor = preferences.edit();
+            editor.putInt(KEY_PINNED_CERTIFICATE_LENGTH, attestationCertificates.length - 1);
+            for (int i = 1; i < attestationCertificates.length; i++) {
+                final X509Certificate cert = (X509Certificate) attestationCertificates[i];
+                final String encoded = BaseEncoding.base64().encode(cert.getEncoded());
+                editor.putString(KEY_PINNED_CERTIFICATE + "_" + i, encoded);
+            }
+            editor.apply();
+            publishProgress("Pinned certificate chain\n");
         }
     }
 
