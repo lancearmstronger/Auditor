@@ -353,6 +353,11 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
             }
 
             publishProgress("\nIdentity: " + realFingerprint + ".\n");
+
+            preferences.edit()
+                    .putInt(KEY_PINNED_OS_VERSION, verified.osVersion)
+                    .putInt(KEY_PINNED_OS_PATCH_LEVEL, verified.osPatchLevel)
+                    .apply();
         } else {
             final String realFingerprint = getFingerprint((X509Certificate) attestationCertificates[0]);
             if (!fingerprint.equals(realFingerprint)) {
@@ -371,13 +376,10 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
                 editor.putString(KEY_PINNED_CERTIFICATE + "_" + i, encoded);
             }
 
+            editor.putInt(KEY_PINNED_OS_VERSION, verified.osVersion);
+            editor.putInt(KEY_PINNED_OS_PATCH_LEVEL, verified.osPatchLevel);
             editor.apply();
         }
-
-        preferences.edit()
-                .putInt(KEY_PINNED_OS_VERSION, verified.osVersion)
-                .putInt(KEY_PINNED_OS_PATCH_LEVEL, verified.osPatchLevel)
-                .apply();
     }
 
     private void testAttestation(final Context context) throws Exception {
