@@ -138,10 +138,14 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
                     + "hJdzo2/IBw==\n"
                     + "-----END CERTIFICATE-----";
 
-    private static final String COPPERHEADOS_FINGERPRINT_TAIMEN =
+    private static final String FINGERPRINT_COPPERHEADOS_TAIMEN =
             "815DCBA82BAC1B1758211FF53CAA0B6883CB6C901BE285E1B291C8BDAA12DF75";
-    private static final String COPPERHEADOS_FINGERPRINT_WALLEYE =
+    private static final String FINGERPRINT_COPPERHEADOS_WALLEYE =
             "36D067F8517A2284781B99A2984966BFF02D3F47310F831FCDCC4D792426B6DF";
+    private static final String FINGERPRINT_STOCK_TAIMEN =
+            "171616EAEF26009FC46DC6D89F3D24217E926C81A67CE65D2E3A9DC27040C7AB";
+    private static final String FINGERPRINT_STOCK_WALLEYE =
+            "1962B0538579FFCE9AC9F507C46AFE3B92055BAC7146462283C85C500BE78D82";
 
     private final TextView view;
 
@@ -184,11 +188,13 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         final String device;
         final int osVersion;
         final int osPatchLevel;
+        final boolean isStock;
 
-        Verified(final String device, final int osVersion, final int osPatchLevel) {
+        Verified(final String device, final int osVersion, final int osPatchLevel, final boolean isStock) {
             this.device = device;
             this.osVersion = osVersion;
             this.osPatchLevel = osPatchLevel;
+            this.isStock = isStock;
         }
     }
 
@@ -290,16 +296,24 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         if (!rootOfTrust.isDeviceLocked()) {
             throw new GeneralSecurityException("device is not locked");
         }
-        if (rootOfTrust.getVerifiedBootState() != RootOfTrust.KM_VERIFIED_BOOT_SELF_SIGNED) {
-            throw new GeneralSecurityException("verified boot state is not self signed");
-        }
+        final int verifiedBootState = rootOfTrust.getVerifiedBootState();
         final String verifiedBootKey = BaseEncoding.base16().encode(rootOfTrust.getVerifiedBootKey());
-        if (verifiedBootKey.equals(COPPERHEADOS_FINGERPRINT_TAIMEN)) {
-            return new Verified("Pixel 2 XL", osVersion, osPatchLevel);
-        } else if (verifiedBootKey.equals(COPPERHEADOS_FINGERPRINT_WALLEYE)) {
-            return new Verified("Pixel 2", osVersion, osPatchLevel);
+        if (verifiedBootState == RootOfTrust.KM_VERIFIED_BOOT_SELF_SIGNED) {
+            if (verifiedBootKey.equals(FINGERPRINT_COPPERHEADOS_TAIMEN)) {
+                return new Verified("Pixel 2 XL", osVersion, osPatchLevel, false);
+            } else if (verifiedBootKey.equals(FINGERPRINT_COPPERHEADOS_WALLEYE)) {
+                return new Verified("Pixel 2", osVersion, osPatchLevel, false);
+            }
+            throw new GeneralSecurityException("invalid key fingerprint");
+        } else if (verifiedBootState == RootOfTrust.KM_VERIFIED_BOOT_VERIFIED) {
+            if (verifiedBootKey.equals(FINGERPRINT_STOCK_TAIMEN)) {
+                return new Verified("Pixel 2 XL", osVersion, osPatchLevel, true);
+            } else if (verifiedBootKey.equals(FINGERPRINT_STOCK_WALLEYE)) {
+                return new Verified("Pixel 2", osVersion, osPatchLevel, true);
+            }
+            throw new GeneralSecurityException("invalid key fingerprint");
         }
-        throw new GeneralSecurityException("invalid key fingerprint");
+        throw new GeneralSecurityException("verified boot state is not verified or self signed");
     }
 
     private static void verifyCertificateSignatures(Certificate[] certChain)
@@ -333,7 +347,11 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
     private void publishVerifiedInformation(final Verified verified, final String fingerprint) {
         publishProgress("\nVerified device information:\n");
         publishProgress("\nDevice: " + verified.device + "\n");
-        publishProgress("OS: CopperheadOS (official release)\n");
+        if (verified.isStock) {
+            publishProgress("OS: Google Android (unmodified official release)\n");
+        } else {
+            publishProgress("OS: CopperheadOS (unmodified official release)\n");
+        }
 
         final String osVersion = String.format("%06d", verified.osVersion);
         publishProgress("OS version: " +
