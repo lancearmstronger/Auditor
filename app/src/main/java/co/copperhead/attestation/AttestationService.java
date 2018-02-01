@@ -61,6 +61,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
     private static final String KEY_VERIFIED_TIME_FIRST = "verified_time_first";
     private static final String KEY_VERIFIED_TIME_LAST = "verified_time_last";
 
+    private static final int CHALLENGE_LENGTH = 32;
     private static final String EC_CURVE = "secp256r1";
     private static final String SIGNATURE_ALGORITHM = "SHA256WithECDSA";
 
@@ -137,7 +138,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
 
     private static byte[] getChallenge() {
         final SecureRandom random = new SecureRandom();
-        final byte[] challenge = new byte[32];
+        final byte[] challenge = new byte[CHALLENGE_LENGTH];
         random.nextBytes(challenge);
         return challenge;
     }
