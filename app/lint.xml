@@ -2,4 +2,7 @@
   <issue id="InvalidPackage">
     <ignore regexp="org.bouncycastle.cert.dane.fetcher.JndiDANEFetcherFactory"/>
   </issue>
+  <issue id="TrustAllX509TrustManager">
+    <ignore regexp="JcaJceUtils"/>
+  </issue>
 </lint>
