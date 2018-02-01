@@ -285,7 +285,9 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
     }
 
     private void publishVerifiedInformation(final Verified verified, final String fingerprint) {
+        publishProgress("\nVerified device information:\n");
         publishProgress("\nDevice: " + verified.device + "\n");
+        publishProgress("OS: CopperheadOS (official release)\n");
 
         final String osVersion = String.format("%06d", verified.osVersion);
         publishProgress("OS version: " +
@@ -298,7 +300,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
                 osPatchLevel.toString().substring(0, 4) + "-" +
                 osPatchLevel.substring(4, 6) + "\n");
 
-        publishProgress("Identity: " + fingerprint + ".\n");
+        publishProgress("Identity: " + fingerprint + "\n");
     }
 
     // TODO: all of this verification will be done by a separate device
@@ -316,7 +318,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
 
         final Verified verified = verifyAttestation(attestationCertificates, challenge);
 
-        publishProgress("Successfully verified CopperheadOS attestation.\n");
+        publishProgress("Verified attestation with trusted root.\n");
 
         if (hasPersistentKey) {
             if (!verified.device.equals(preferences.getString(KEY_PINNED_DEVICE, null))) {
@@ -358,10 +360,11 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
             if (!sig.verify(signature)) {
                 throw new GeneralSecurityException("signature verification failed");
             }
+            publishProgress("\nDevice identity confirmed with signed challenge.\n");
 
             publishVerifiedInformation(verified, fingerprint);
-            publishProgress("First verified at " + new Date(preferences.getLong(KEY_VERIFIED_TIME_FIRST, 0)) + ".\n");
-            publishProgress("Last verified at " + new Date(preferences.getLong(KEY_VERIFIED_TIME_LAST, 0)) + ".\n");
+            publishProgress("First verified: " + new Date(preferences.getLong(KEY_VERIFIED_TIME_FIRST, 0)) + "\n");
+            publishProgress("Last verified: " + new Date(preferences.getLong(KEY_VERIFIED_TIME_LAST, 0)) + "\n");
 
             preferences.edit()
                     .putInt(KEY_PINNED_OS_VERSION, verified.osVersion)
