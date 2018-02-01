@@ -5,4 +5,7 @@
   <issue id="TrustAllX509TrustManager">
     <ignore regexp="JcaJceUtils"/>
   </issue>
+  <issue id="PackageManagerGetSignatures">
+    <ignore path="src/main/java/co/copperhead/attestation/attestation/AttestationApplicationId.java"/>
+  </issue>
 </lint>
