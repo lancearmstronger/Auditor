@@ -284,6 +284,23 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         }
     }
 
+    private void publishVerifiedInformation(final Verified verified, final String fingerprint) {
+        publishProgress("\nDevice: " + verified.device + "\n");
+
+        final String osVersion = String.format("%06d", verified.osVersion);
+        publishProgress("OS version: " +
+                Integer.parseInt(osVersion.substring(0, 2)) + "." +
+                Integer.parseInt(osVersion.substring(2, 4)) + "." +
+                Integer.parseInt(osVersion.substring(4, 6)) + "\n");
+
+        final String osPatchLevel = Integer.toString(verified.osPatchLevel);
+        publishProgress("OS patch level: " +
+                osPatchLevel.toString().substring(0, 4) + "-" +
+                osPatchLevel.substring(4, 6) + "\n");
+
+        publishProgress("Identity: " + fingerprint + ".\n");
+    }
+
     // TODO: all of this verification will be done by a separate device
     private void verify(final Context context, final String fingerprint, final byte[] challenge,
             final byte[] signature, final Certificate attestationCertificates[],
@@ -299,19 +316,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
 
         final Verified verified = verifyAttestation(attestationCertificates, challenge);
 
-        publishProgress("Successfully verified CopperheadOS attestation.\n\n");
-        publishProgress("Device: " + verified.device + "\n");
-
-        final String osVersion = String.format("%06d", verified.osVersion);
-        publishProgress("OS version: " +
-                Integer.parseInt(osVersion.substring(0, 2)) + "." +
-                Integer.parseInt(osVersion.substring(2, 4)) + "." +
-                Integer.parseInt(osVersion.substring(4, 6)) + "\n");
-
-        final String osPatchLevel = Integer.toString(verified.osPatchLevel);
-        publishProgress("OS patch level: " +
-                osPatchLevel.toString().substring(0, 4) + "-" +
-                osPatchLevel.substring(4, 6) + "\n");
+        publishProgress("Successfully verified CopperheadOS attestation.\n");
 
         if (hasPersistentKey) {
             if (!verified.device.equals(preferences.getString(KEY_PINNED_DEVICE, null))) {
@@ -344,8 +349,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
                     .getInstance("X.509").generateCertificate(
                             new ByteArrayInputStream(
                                     persistentCertificateEncoded));
-            final String realFingerprint = getFingerprint(persistentCertificate);
-            if (!fingerprint.equals(realFingerprint)) {
+            if (!fingerprint.equals(getFingerprint(persistentCertificate))) {
                 throw new GeneralSecurityException("received invalid fingerprint");
             }
             final Signature sig = Signature.getInstance(SIGNATURE_ALGORITHM);
@@ -355,7 +359,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
                 throw new GeneralSecurityException("signature verification failed");
             }
 
-            publishProgress("\nIdentity: " + realFingerprint + ".\n");
+            publishVerifiedInformation(verified, fingerprint);
             publishProgress("First verified at " + new Date(preferences.getLong(KEY_VERIFIED_TIME_FIRST, 0)) + ".\n");
             publishProgress("Last verified at " + new Date(preferences.getLong(KEY_VERIFIED_TIME_LAST, 0)) + ".\n");
 
@@ -369,7 +373,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
             if (!fingerprint.equals(realFingerprint)) {
                 throw new GeneralSecurityException("received invalid fingerprint");
             }
-            publishProgress("\nIdentity: " + realFingerprint + ".\n");
+            publishVerifiedInformation(verified, fingerprint);
 
             final SharedPreferences.Editor editor = preferences.edit();
 
