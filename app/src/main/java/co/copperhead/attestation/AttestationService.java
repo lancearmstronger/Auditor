@@ -73,6 +73,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
     private static final int OS_VERSION_MINIMUM = 80100;
     private static final int OS_PATCH_LEVEL_MINIMUM = 201801;
 
+    // Root for Google certified devices.
     private static final String GOOGLE_ROOT_CERTIFICATE =
             "-----BEGIN CERTIFICATE-----\n"
                     + "MIIFYDCCA0igAwIBAgIJAOj6GWMU0voYMA0GCSqGSIb3DQEBCwUAMBsxGTAXBgNV"
@@ -104,6 +105,37 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
                     + "qwLqRBYkA3I75qppLGG9rp7UCdRjxMl8ZDBld+7yvHVgt1cVzJx9xnyGCC23Uaic"
                     + "MDSXYrB4I4WHXPGjxhZuCuPBLTdOLU8YRvMYdEvYebWHMpvwGCF6bAx3JBpIeOQ1"
                     + "wDB5y0USicV3YgYGmi+NZfhA4URSh77Yd6uuJOJENRaNVTzk\n"
+                    + "-----END CERTIFICATE-----";
+
+    // Intermediate for Pixel 2 and Pixel 2 XL devices.
+    //
+    // Google doesn't provide any kind of guarantee that this intermediate is
+    // used on the Pixel 2 and Pixel 2 XL but it appears universal in practice.
+    //
+    // 'wahoo' is the shared codename for walleye (Pixel 2) and taimen (Pixel 2 XL)
+    private static final String WAHOO_INTERMEDIATE_CERTIFICATE =
+            "-----BEGIN CERTIFICATE-----\n"
+                    + "MIIDwzCCAaugAwIBAgIKA4gmZ2BliZaFdTANBgkqhkiG9w0BAQsFADAbMRkwFwYD"
+                    + "VQQFExBmOTIwMDllODUzYjZiMDQ1MB4XDTE2MDUyNjE3MDE1MVoXDTI2MDUyNDE3"
+                    + "MDE1MVowGzEZMBcGA1UEBRMQODdmNDUxNDQ3NWJhMGEyYjB2MBAGByqGSM49AgEG"
+                    + "BSuBBAAiA2IABGQ7VmgdJ/rEgs9sIE3rzvApXDUMAaqMMn8+1fRJrvQpZkJfOT2E"
+                    + "djtdrVaxDQRZxixqT5MlVqiSk8PRTqLx3+8OPLoicqMiOeGytH2sVQurvFynVeKq"
+                    + "SGKK1jx2/2fccqOBtjCBszAdBgNVHQ4EFgQUMEQj5aL2BuFQq3dfFha7kcxjxlkw"
+                    + "HwYDVR0jBBgwFoAUNmHhAHyIBQlRi0RsR/8aTMnqTxIwDwYDVR0TAQH/BAUwAwEB"
+                    + "/zAOBgNVHQ8BAf8EBAMCAYYwUAYDVR0fBEkwRzBFoEOgQYY/aHR0cHM6Ly9hbmRy"
+                    + "b2lkLmdvb2dsZWFwaXMuY29tL2F0dGVzdGF0aW9uL2NybC9FOEZBMTk2MzE0RDJG"
+                    + "QTE4MA0GCSqGSIb3DQEBCwUAA4ICAQBAOYqLNryTmbOlnrjnIvDoXxzaLOgCXu29"
+                    + "l7KpbFHacVLxgYuGRiIEQqzZBqUYSt9Pgx+P2KvoHtz99sEZr2xTe0Dw6CTHTAmx"
+                    + "WXUFdrlvEMm2GySfvJRfMNCuX1oIS/M5PfREY2YZHyLq/sn1sJr3FjbKMdUMBo5A"
+                    + "camcD3H8wl9O/6qfhX+57iXzoK6yMzJRG/Mlkm58/sFk0pjayUBchmUJL0FQ6IhK"
+                    + "Ygy8RKE2UDyXKOE7+ZMSMUUkAdzyn2PFv7TvQtDk0ge2mkVrNrfPSglMzBNvrSDH"
+                    + "PBmTktXzwseVagIRT5WI91OrUOYPFgostsfH42hs5wJtAFGPwDg/1mNa8UyH9k1b"
+                    + "MrRq3Srez1XG0Ju7SGN/uNX5dkcwvfAmadtmM7Pp+l2VHRYRR600jAcM2+7bl8eg"
+                    + "qfM/A7vyDLZqPIxDwkLXj2eN99nJZJVaGfB9dHyFOqBqBM6SdyV6MSIr3AHoo6u+"
+                    + "BWIX9+q8n1qg5I6JWeEe+K58SbRDVoNQgsKP9/iPruXMU5rm2ywPxICVGysl1GgA"
+                    + "P+FJ3X6oP0tXFWQlYoWdSloSVHNZQqj2ev/69sMnGsTeJw1V7I0gR+eZNEfxe+vZ"
+                    + "D4KP88KxuiPCe94rp+Aqs5/YwuCo6rQ+HGi5OZNBsQXYIufClSBje+OpjQb7HJgi"
+                    + "hJdzo2/IBw==\n"
                     + "-----END CERTIFICATE-----";
 
     private static final String COPPERHEADOS_FINGERPRINT_TAIMEN =
@@ -165,6 +197,11 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
 
         verifyCertificateSignatures(certificates);
 
+        // Pixel 2 (XL) is expected to use a 4 certificate chain (likely to always be the case)
+        if (certificates.length != 4) {
+            throw new GeneralSecurityException("certificate chain does not match expected length for a supported device");
+        }
+
         // check that the root certificate is the Google key attestation root
         final X509Certificate secureRoot = (X509Certificate) CertificateFactory
                 .getInstance("X.509").generateCertificate(
@@ -172,6 +209,15 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         final X509Certificate rootCert = (X509Certificate) certificates[certificates.length - 1];
         if (!Arrays.equals(secureRoot.getEncoded(), rootCert.getEncoded())) {
             throw new GeneralSecurityException("root certificate is not the Google key attestation root");
+        }
+
+        // check that 2nd last certificate is the expected intermediate (may prove to be too strict)
+        final X509Certificate pixelIntermediate = (X509Certificate) CertificateFactory
+                .getInstance("X.509").generateCertificate(
+                        new ByteArrayInputStream(WAHOO_INTERMEDIATE_CERTIFICATE.getBytes()));
+        final X509Certificate intermediateCert = (X509Certificate) certificates[certificates.length - 2];
+        if (!Arrays.equals(pixelIntermediate.getEncoded(), intermediateCert.getEncoded())) {
+            throw new GeneralSecurityException("2nd last certificate is not the Pixel 2 (XL) intermediate");
         }
 
         final Attestation attestation = new Attestation((X509Certificate) certificates[0]);
@@ -318,7 +364,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
 
         final Verified verified = verifyAttestation(attestationCertificates, challenge);
 
-        publishProgress("Verified attestation with trusted root.\n");
+        publishProgress("Verified attestation with trusted root and trusted intermediate.\n");
 
         if (hasPersistentKey) {
             if (!verified.device.equals(preferences.getString(KEY_PINNED_DEVICE, null))) {
