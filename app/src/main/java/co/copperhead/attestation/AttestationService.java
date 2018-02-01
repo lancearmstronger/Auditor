@@ -6,6 +6,7 @@ import co.copperhead.attestation.attestation.AttestationApplicationId;
 import co.copperhead.attestation.attestation.AttestationPackageInfo;
 import co.copperhead.attestation.attestation.RootOfTrust;
 
+import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
 
 import android.content.Context;
@@ -37,6 +38,7 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateFactory;
 import java.security.spec.ECGenParameterSpec;
 import java.util.Arrays;
@@ -137,6 +139,11 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         final byte[] challenge = new byte[32];
         random.nextBytes(challenge);
         return challenge;
+    }
+
+    private static String getFingerprint(final X509Certificate certificate)
+            throws CertificateEncodingException {
+        return Hashing.sha256().hashBytes(certificate.getEncoded()).toString();
     }
 
     private static class Verified {
@@ -336,7 +343,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
                 throw new GeneralSecurityException("signature verification failed");
             }
 
-            publishProgress("\nSuccessfully verified signature.");
+            publishProgress("\nIdentity: " + getFingerprint(persistentCertificate) + ".\n");
         } else {
             final SharedPreferences.Editor editor = preferences.edit();
 
@@ -350,6 +357,8 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
             }
 
             editor.apply();
+
+            publishProgress("\nIdentity: " + getFingerprint((X509Certificate) attestationCertificates[0]) + ".\n");
         }
 
         preferences.edit()
@@ -391,13 +400,10 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         }
         generateKeyPair(KEY_ALGORITHM_EC, builder.build());
 
-        byte[] signature = null;
-        if (hasPersistentKey) {
-            final Signature sig = Signature.getInstance(SIGNATURE_ALGORITHM);
-            sig.initSign((PrivateKey) keyStore.getKey(persistentKeystoreAlias, null));
-            sig.update(challenge);
-            signature = sig.sign();
-        }
+        final Signature sig = Signature.getInstance(SIGNATURE_ALGORITHM);
+        sig.initSign((PrivateKey) keyStore.getKey(persistentKeystoreAlias, null));
+        sig.update(challenge);
+        final byte[] signature = sig.sign();
 
         final Certificate attestationCertificates[] = keyStore.getCertificateChain(attestationKeystoreAlias);
         verify(context, challenge, signature, attestationCertificates, hasPersistentKey);
