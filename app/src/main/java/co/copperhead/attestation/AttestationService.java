@@ -11,7 +11,6 @@ import com.google.common.io.BaseEncoding;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
 import android.os.AsyncTask;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
@@ -283,9 +282,17 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
     }
 
     // all of this verification will be done by a separate device
-    private void verify(final Context context, final byte[] challenge, final byte[] signature,
-            final Certificate attestationCertificates[], final boolean hasPersistentKey)
+    private void verify(final Context context, final String fingerprint, final byte[] challenge,
+            final byte[] signature, final Certificate attestationCertificates[],
+            final boolean hasPersistentKey)
             throws GeneralSecurityException {
+
+        final SharedPreferences preferences = context.getSharedPreferences(fingerprint, Context.MODE_PRIVATE);
+        if (hasPersistentKey && !preferences.contains(KEY_PINNED_DEVICE)) {
+            publishProgress("Device being verified is already paired with another verifier.\n");
+            publishProgress("\nClear attestation app data on the device being verified to pair with this device.\n");
+            return;
+        }
 
         final Verified verified = verifyAttestation(attestationCertificates, challenge);
 
@@ -302,8 +309,6 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         publishProgress("OS patch level: " +
                 osPatchLevel.toString().substring(0, 4) + "-" +
                 osPatchLevel.substring(4, 6) + "\n");
-
-        final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
 
         if (hasPersistentKey) {
             if (!verified.device.equals(preferences.getString(KEY_PINNED_DEVICE, null))) {
@@ -336,6 +341,10 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
                     .getInstance("X.509").generateCertificate(
                             new ByteArrayInputStream(
                                     persistentCertificateEncoded));
+            final String realFingerprint = getFingerprint(persistentCertificate);
+            if (!fingerprint.equals(realFingerprint)) {
+                throw new GeneralSecurityException("received invalid fingerprint");
+            }
             final Signature sig = Signature.getInstance(SIGNATURE_ALGORITHM);
             sig.initVerify(persistentCertificate.getPublicKey());
             sig.update(challenge);
@@ -343,8 +352,14 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
                 throw new GeneralSecurityException("signature verification failed");
             }
 
-            publishProgress("\nIdentity: " + getFingerprint(persistentCertificate) + ".\n");
+            publishProgress("\nIdentity: " + realFingerprint + ".\n");
         } else {
+            final String realFingerprint = getFingerprint((X509Certificate) attestationCertificates[0]);
+            if (!fingerprint.equals(realFingerprint)) {
+                throw new GeneralSecurityException("received invalid fingerprint");
+            }
+            publishProgress("\nIdentity: " + realFingerprint + ".\n");
+
             final SharedPreferences.Editor editor = preferences.edit();
 
             editor.putString(KEY_PINNED_DEVICE, verified.device);
@@ -357,8 +372,6 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
             }
 
             editor.apply();
-
-            publishProgress("\nIdentity: " + getFingerprint((X509Certificate) attestationCertificates[0]) + ".\n");
         }
 
         preferences.edit()
@@ -405,8 +418,11 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         sig.update(challenge);
         final byte[] signature = sig.sign();
 
+        final String fingerprint =
+                getFingerprint((X509Certificate) keyStore.getCertificate(persistentKeystoreAlias));
+
         final Certificate attestationCertificates[] = keyStore.getCertificateChain(attestationKeystoreAlias);
-        verify(context, challenge, signature, attestationCertificates, hasPersistentKey);
+        verify(context, fingerprint, challenge, signature, attestationCertificates, hasPersistentKey);
     }
 
     private static void generateKeyPair(final String algorithm, final KeyGenParameterSpec spec)
