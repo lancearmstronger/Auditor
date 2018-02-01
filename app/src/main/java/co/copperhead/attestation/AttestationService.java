@@ -284,7 +284,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         }
     }
 
-    // all of this verification will be done by a separate device
+    // TODO: all of this verification will be done by a separate device
     private void verify(final Context context, final String fingerprint, final byte[] challenge,
             final byte[] signature, final Certificate attestationCertificates[],
             final boolean hasPersistentKey)
@@ -410,7 +410,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
             attestationKeystoreAlias = persistentKeystoreAlias;
         }
 
-        // this will be provided by another device running the app to verify this one
+        // TODO: this will be provided by another device running the app to verify this one
         final byte[] challenge = getChallenge();
 
         final Date startTime = new Date(new Date().getTime() - 10 * 1000);
