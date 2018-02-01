@@ -58,6 +58,8 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
     private static final String KEY_PINNED_DEVICE = "pinned_device";
     private static final String KEY_PINNED_OS_VERSION = "pinned_os_version";
     private static final String KEY_PINNED_OS_PATCH_LEVEL = "pinned_os_patch_level";
+    private static final String KEY_VERIFIED_TIME_FIRST = "verified_time_first";
+    private static final String KEY_VERIFIED_TIME_LAST = "verified_time_last";
 
     private static final String EC_CURVE = "secp256r1";
     private static final String SIGNATURE_ALGORITHM = "SHA256WithECDSA";
@@ -353,10 +355,13 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
             }
 
             publishProgress("\nIdentity: " + realFingerprint + ".\n");
+            publishProgress("First verified at " + new Date(preferences.getLong(KEY_VERIFIED_TIME_FIRST, 0)) + ".\n");
+            publishProgress("Last verified at " + new Date(preferences.getLong(KEY_VERIFIED_TIME_LAST, 0)) + ".\n");
 
             preferences.edit()
                     .putInt(KEY_PINNED_OS_VERSION, verified.osVersion)
                     .putInt(KEY_PINNED_OS_PATCH_LEVEL, verified.osPatchLevel)
+                    .putLong(KEY_VERIFIED_TIME_LAST, new Date().getTime())
                     .apply();
         } else {
             final String realFingerprint = getFingerprint((X509Certificate) attestationCertificates[0]);
@@ -367,8 +372,6 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
 
             final SharedPreferences.Editor editor = preferences.edit();
 
-            editor.putString(KEY_PINNED_DEVICE, verified.device);
-
             editor.putInt(KEY_PINNED_CERTIFICATE_LENGTH, attestationCertificates.length);
             for (int i = 0; i < attestationCertificates.length; i++) {
                 final X509Certificate cert = (X509Certificate) attestationCertificates[i];
@@ -376,8 +379,14 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
                 editor.putString(KEY_PINNED_CERTIFICATE + "_" + i, encoded);
             }
 
+            editor.putString(KEY_PINNED_DEVICE, verified.device);
             editor.putInt(KEY_PINNED_OS_VERSION, verified.osVersion);
             editor.putInt(KEY_PINNED_OS_PATCH_LEVEL, verified.osPatchLevel);
+
+            final long now = new Date().getTime();
+            editor.putLong(KEY_VERIFIED_TIME_FIRST, now);
+            editor.putLong(KEY_VERIFIED_TIME_LAST, now);
+
             editor.apply();
         }
     }
