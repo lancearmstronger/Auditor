@@ -1,0 +1,5 @@
+<lint>
+  <issue id="InvalidPackage">
+    <ignore regexp="org.bouncycastle.cert.dane.fetcher.JndiDANEFetcherFactory"/>
+  </issue>
+</lint>
