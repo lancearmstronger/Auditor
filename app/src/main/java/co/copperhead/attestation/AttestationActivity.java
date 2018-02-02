@@ -16,7 +16,11 @@ import java.io.IOException;
 import java.io.Writer;
 
 public class AttestationActivity extends AppCompatActivity {
+    static final String STATE_OUTPUT = "output";
+
     AsyncTask<Object, String, Void> task = null;
+
+    TextView textView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,7 +37,18 @@ public class AttestationActivity extends AppCompatActivity {
             }
         });
 
-        ((TextView) findViewById(R.id.textview)).setMovementMethod(new ScrollingMovementMethod());
+        textView = (TextView) findViewById(R.id.textview);
+        textView.setMovementMethod(new ScrollingMovementMethod());
+
+        if (savedInstanceState != null) {
+            textView.setText(savedInstanceState.getString(STATE_OUTPUT));
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(final Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
+        savedInstanceState.putString(STATE_OUTPUT, textView.getText().toString());
     }
 
     private void doIt() {
