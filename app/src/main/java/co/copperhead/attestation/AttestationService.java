@@ -173,7 +173,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         }
     }
 
-    private static byte[] getChallenge() {
+    static byte[] getChallenge() {
         final SecureRandom random = new SecureRandom();
         final byte[] challenge = new byte[CHALLENGE_LENGTH];
         random.nextBytes(challenge);

@@ -104,10 +104,10 @@ public class AttestationActivity extends AppCompatActivity {
     private void doItAuditor() {
         Log.d(TAG, "doItAuditor");
         // generate qr
-        String fingerprint = repeatString(Build.FINGERPRINT, 26);
-        String fingerprint64 = Base64.encodeToString(fingerprint.getBytes(), Base64.DEFAULT);
-        Log.d(TAG, "doItAuditor " + fingerprint64.length());
-        Bitmap bitmap = createQrCode(fingerprint64);
+        byte[] challenge = AttestationService.getChallenge();
+        String challenge64 = Base64.encodeToString(challenge, Base64.DEFAULT);
+        Log.d(TAG, "sending random challenge: " + challenge64);
+        Bitmap bitmap = createQrCode(challenge64);
 
         mView.setImageBitmap(bitmap);
 
@@ -136,6 +136,8 @@ public class AttestationActivity extends AppCompatActivity {
     }
 
     private void continueAuditee(String result) {
+        Log.d(TAG, "received random challenge: " + result);
+
         // generate key based on challenge from qr
         Bitmap bitmap = createQrCode(result + Build.FINGERPRINT);
 
