@@ -67,9 +67,10 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
 
     private static final String ATTESTATION_APP_PACKAGE_NAME = "co.copperhead.attestation";
     private static final int ATTESTATION_APP_MINIMUM_VERSION = 1;
-    // TODO: switch to release signing key
     private static final String ATTESTATION_APP_SIGNATURE_DIGEST =
-            "17727D8B61D55A864936B1A7B4A2554A15151F32EBCF44CDAA6E6C3258231890";
+            BuildConfig.DEBUG ?
+                    "17727D8B61D55A864936B1A7B4A2554A15151F32EBCF44CDAA6E6C3258231890" :
+                    "16F4339EE4D6C4419DEF08FF4949F72A1B9091ED89B1FE9447F31A8E3BCCBC6F";
     private static final int OS_VERSION_MINIMUM = 80100;
     private static final int OS_PATCH_LEVEL_MINIMUM = 201801;
 
