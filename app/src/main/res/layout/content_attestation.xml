@@ -20,6 +20,9 @@
         android:layout_alignParentStart="true"
         android:layout_below="@+id/textview"
         android:layout_marginTop="140dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
+        android:layout_marginBottom="16dp"
         android:text="Auditee"
         tools:layout_editor_absoluteY="55dp" />
 
@@ -29,6 +32,9 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_alignParentStart="true"
+        android:layout_marginTop="16dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
         android:layout_marginBottom="152dp"
         android:text="Auditor" />
 
@@ -36,6 +42,10 @@
         android:id="@+id/textview"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
+        android:layout_marginBottom="16dp"
         android:maxLines="10000"
         android:scrollbars="vertical"
         android:text=""
