@@ -96,14 +96,6 @@ public class AttestationActivity extends AppCompatActivity {
         savedInstanceState.putString(STATE_OUTPUT, textView.getText().toString());
     }
 
-    private String repeatString(String s, int count){
-        StringBuilder r = new StringBuilder();
-        for (int i = 0; i < count; i++) {
-            r.append(s);
-        }
-        return r.toString();
-    }
-
     private String logFormatBytes(final byte[] bytes) {
         return String.format("%d binary bytes logged here as base64 (%s)", bytes.length,
                 Base64.encodeToString(bytes, Base64.NO_WRAP));
