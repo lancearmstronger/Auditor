@@ -530,7 +530,10 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         for (int i = 0; i < certificateCount; i++) {
             final X509Certificate certificate = (X509Certificate) attestationCertificates[i];
             final byte[] encoded = certificate.getEncoded();
-            serializer.putInt(encoded.length);
+            if (encoded.length > Short.MAX_VALUE) {
+                throw new RuntimeException("encoded certificate too long");
+            }
+            serializer.putShort((short)encoded.length);
             serializer.put(encoded);
         }
 
@@ -562,7 +565,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
     //
     // signed message {
     // int certificateCount
-    // [int certificateLength, byte[] certificate] x certificateCount
+    // [short certificateLength, byte[] certificate] x certificateCount
     // byte[] fingerprint (length: FINGERPRINT_LENGTH)
     // byte hasPersistentKey
     // }
@@ -573,7 +576,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         final int certificateCount = deserializer.getInt();
         final Certificate[] certificates = new Certificate[certificateCount + 2];
         for (int i = 0; i < certificateCount; i++) {
-            final int encodedLength = deserializer.getInt();
+            final int encodedLength = deserializer.getShort();
             final byte[] encoded = new byte[encodedLength];
             deserializer.get(encoded);
             certificates[i] = CertificateFactory
