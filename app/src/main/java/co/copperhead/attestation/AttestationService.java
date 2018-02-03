@@ -19,8 +19,10 @@ import android.util.Log;
 import android.widget.TextView;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -49,7 +51,7 @@ import java.security.cert.X509Certificate;
 import static android.security.keystore.KeyProperties.DIGEST_SHA256;
 import static android.security.keystore.KeyProperties.KEY_ALGORITHM_EC;
 
-public class AttestationService extends AsyncTask<Object, String, Void> {
+public class AttestationService extends AsyncTask<Object, String, byte[]> {
     private static final String TAG = "AttestationService";
 
     private static final String KEY_PINNED_CERTIFICATE = "pinned_certificate";
@@ -154,9 +156,9 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
     }
 
     @Override
-    protected Void doInBackground(Object... params) {
+    protected byte[] doInBackground(Object... params) {
         try {
-            testAttestation((Context) params[0], (byte[]) params[1]);
+            return generateAttestation((Context) params[0], (byte[]) params[1]);
         } catch (Exception e) {
             final StringWriter s = new StringWriter();
             e.printStackTrace(new PrintWriter(s));
@@ -181,7 +183,12 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
 
     private static String getFingerprint(final X509Certificate certificate)
             throws CertificateEncodingException {
-        return Hashing.sha256().hashBytes(certificate.getEncoded()).toString();
+        return Hashing.sha256().hashBytes(certificate.getEncoded()).toString().toUpperCase();
+    }
+
+    private static byte[] getFingerprintBytes(final X509Certificate certificate)
+            throws CertificateEncodingException {
+        return Hashing.sha256().hashBytes(certificate.getEncoded()).asBytes();
     }
 
     private static class Verified {
@@ -369,7 +376,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
 
     // TODO: all of this verification will be done by a separate device
     private void verify(final Context context, final String fingerprint, final byte[] challenge,
-            final byte[] signature, final Certificate attestationCertificates[],
+            final ByteBuffer signedMessage, final byte[] signature, final Certificate attestationCertificates[],
             final boolean hasPersistentKey)
             throws GeneralSecurityException {
 
@@ -420,7 +427,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
             }
             final Signature sig = Signature.getInstance(SIGNATURE_ALGORITHM);
             sig.initVerify(persistentCertificate.getPublicKey());
-            sig.update(challenge);
+            sig.update(signedMessage);
             if (!sig.verify(signature)) {
                 throw new GeneralSecurityException("signature verification failed");
             }
@@ -463,7 +470,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         }
     }
 
-    private void testAttestation(final Context context, final byte[] challenge) throws Exception {
+    private byte[] generateAttestation(final Context context, final byte[] challenge) throws Exception {
         final KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
         keyStore.load(null);
 
@@ -493,16 +500,101 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         }
         generateKeyPair(KEY_ALGORITHM_EC, builder.build());
 
-        final Signature sig = Signature.getInstance(SIGNATURE_ALGORITHM);
-        sig.initSign((PrivateKey) keyStore.getKey(persistentKeystoreAlias, null));
-        sig.update(challenge);
-        final byte[] signature = sig.sign();
-
-        final String fingerprint =
-                getFingerprint((X509Certificate) keyStore.getCertificate(persistentKeystoreAlias));
+        final byte[] fingerprint =
+                getFingerprintBytes((X509Certificate) keyStore.getCertificate(persistentKeystoreAlias));
 
         final Certificate attestationCertificates[] = keyStore.getCertificateChain(attestationKeystoreAlias);
-        verify(context, fingerprint, challenge, signature, attestationCertificates, hasPersistentKey);
+
+        // sanity check on the device being verified before sending it off to the verifying device
+        verifyAttestation(attestationCertificates, challenge);
+
+        final ByteBuffer serializer = ByteBuffer.allocate(3000);
+
+        final int certificateCount = attestationCertificates.length - 2;
+        serializer.putInt(certificateCount);
+        for (int i = 0; i < certificateCount; i++) {
+            final X509Certificate certificate = (X509Certificate) attestationCertificates[i];
+            final byte[] encoded = certificate.getEncoded();
+            serializer.putInt(encoded.length);
+            serializer.put(encoded);
+        }
+
+        serializer.putInt(fingerprint.length);
+        serializer.put(fingerprint);
+        serializer.put(hasPersistentKey ? (byte)1 : (byte)0);
+
+        final ByteBuffer message = serializer.duplicate();
+        message.flip();
+
+        final Signature sig = Signature.getInstance(SIGNATURE_ALGORITHM);
+        sig.initSign((PrivateKey) keyStore.getKey(persistentKeystoreAlias, null));
+        sig.update(message);
+        final byte[] signature = sig.sign();
+
+        serializer.putInt(signature.length);
+        serializer.put(signature);
+
+        serializer.flip();
+
+        final byte[] serialized = new byte[serializer.remaining()];
+        serializer.get(serialized);
+
+        verifyAttestation(context, serialized, challenge);
+
+        return serialized;
+    }
+
+    // Attestation message:
+    //
+    // signed message {
+    // int certificateCount
+    // [int certificateLength, byte[] certificate] x certificateCount
+    // int fingerprintLength
+    // byte[] fingerprint
+    // byte hasPersistentKey
+    // }
+    // int signatureLength
+    // byte[] signature
+
+    private void verifyAttestation(final Context context, final byte[] attestationResult, final byte[] challenge) throws Exception {
+        final ByteBuffer deserializer = ByteBuffer.wrap(attestationResult);
+        final int certificateCount = deserializer.getInt();
+        final Certificate[] certificates = new Certificate[certificateCount + 2];
+        for (int i = 0; i < certificateCount; i++) {
+            final int encodedLength = deserializer.getInt();
+            final byte[] encoded = new byte[encodedLength];
+            deserializer.get(encoded);
+            certificates[i] = CertificateFactory
+                    .getInstance("X.509").generateCertificate(
+                            new ByteArrayInputStream(
+                                    encoded));
+        }
+        final int fingerprintLength = deserializer.getInt();
+        final byte[] fingerprint = new byte[fingerprintLength];
+        deserializer.get(fingerprint);
+        final byte hasPersistentKeyByte = deserializer.get();
+        if (hasPersistentKeyByte != 0 && hasPersistentKeyByte != 1) {
+            throw new GeneralSecurityException("invalid attestation");
+        }
+        final boolean hasPersistentKey = hasPersistentKeyByte == 1;
+        final int signatureLength = deserializer.getInt();
+        final byte[] signature = new byte[signatureLength];
+        deserializer.get(signature);
+
+        certificates[certificates.length - 2] = CertificateFactory
+                .getInstance("X.509").generateCertificate(
+                        new ByteArrayInputStream(WAHOO_INTERMEDIATE_CERTIFICATE.getBytes()));
+        certificates[certificates.length - 1] = CertificateFactory
+                .getInstance("X.509").generateCertificate(
+                        new ByteArrayInputStream(GOOGLE_ROOT_CERTIFICATE.getBytes()));
+
+        Log.d(TAG, "successfully decoded");
+
+        deserializer.rewind();
+        deserializer.limit(deserializer.capacity() - signature.length - 4);
+
+        final String fingerprintHex = BaseEncoding.base16().encode(fingerprint);
+        verify(context, fingerprintHex, challenge, deserializer.asReadOnlyBuffer(), signature, certificates, hasPersistentKey);
     }
 
     private static void generateKeyPair(final String algorithm, final KeyGenParameterSpec spec)

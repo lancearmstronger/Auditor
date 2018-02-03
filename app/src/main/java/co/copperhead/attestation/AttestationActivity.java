@@ -35,7 +35,7 @@ public class AttestationActivity extends AppCompatActivity {
     public static final String TAG = "CopperheadAttestation";
     static final String STATE_OUTPUT = "output";
 
-    AsyncTask<Object, String, Void> task = null;
+    AsyncTask<Object, String, byte[]> task = null;
 
     TextView textView;
     ImageView mView;
