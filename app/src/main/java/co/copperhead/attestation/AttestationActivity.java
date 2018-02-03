@@ -43,6 +43,8 @@ public class AttestationActivity extends AppCompatActivity {
     Boolean mIsAuditor = false;
     Boolean mIsAuditee = false;
 
+    byte auditorChallenge[];
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -104,8 +106,8 @@ public class AttestationActivity extends AppCompatActivity {
     private void doItAuditor() {
         Log.d(TAG, "doItAuditor");
         // generate qr
-        byte[] challenge = AttestationService.getChallenge();
-        String challenge64 = Base64.encodeToString(challenge, Base64.DEFAULT);
+        auditorChallenge = AttestationService.getChallenge();
+        String challenge64 = Base64.encodeToString(auditorChallenge, Base64.DEFAULT);
         Log.d(TAG, "sending random challenge: " + challenge64);
         Bitmap bitmap = createQrCode(challenge64);
 
@@ -123,10 +125,20 @@ public class AttestationActivity extends AppCompatActivity {
         // show results
     }
 
-    private void showAuditorResults(String result) {
-        Log.d(TAG, "showAuditorResults " + result);
+    private void showAuditorResults(final String serialized64) {
+        Log.d(TAG, "received attestation: " + serialized64);
+
         TextView textView = (TextView) findViewById(R.id.textview);
-        textView.setText(result);
+        if (task != null && task.getStatus() == AsyncTask.Status.RUNNING) {
+            return;
+        }
+        textView.setText("");
+        try {
+            final byte[] serialized = Base64.decode(serialized64, Base64.DEFAULT);
+            task = new AttestationService(this, textView).execute(true, serialized, auditorChallenge);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void doItAuditee() {
@@ -145,17 +157,16 @@ public class AttestationActivity extends AppCompatActivity {
         }
         textView.setText("");
         try {
-            task = new AttestationService(textView).execute(this, challenge);
+            task = new AttestationService(this, textView).execute(false, challenge);
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
 
-        mView.setVisibility(View.GONE);
-
-        // generate key based on challenge from qr
-        Bitmap bitmap = createQrCode(challenge + Build.FINGERPRINT);
-
-        // show qr containing key
+    void continueAuditeeShowAttestation(final byte[] serialized) {
+        String serialized64 = Base64.encodeToString(serialized, Base64.DEFAULT);
+        Log.d(TAG, "sending attestation: " + serialized64);
+        Bitmap bitmap = createQrCode(serialized64);
         mView.setImageBitmap(bitmap);
     }
 

@@ -149,16 +149,24 @@ public class AttestationService extends AsyncTask<Object, String, byte[]> {
     private static final String FINGERPRINT_STOCK_WALLEYE =
             "1962B0538579FFCE9AC9F507C46AFE3B92055BAC7146462283C85C500BE78D82";
 
+    private final AttestationActivity activity;
     private final TextView view;
 
-    AttestationService(TextView view) {
+    AttestationService(AttestationActivity activity, TextView view) {
+        this.activity = activity;
         this.view = view;
     }
 
     @Override
     protected byte[] doInBackground(Object... params) {
+        boolean verify = (Boolean) params[0];
         try {
-            return generateAttestation((Context) params[0], (byte[]) params[1]);
+            if (verify) {
+                verifyAttestation(activity, (byte[]) params[1], (byte[]) params[2]);
+                return null;
+            } else {
+                return generateAttestation((byte[]) params[1]);
+            }
         } catch (Exception e) {
             final StringWriter s = new StringWriter();
             e.printStackTrace(new PrintWriter(s));
@@ -171,6 +179,13 @@ public class AttestationService extends AsyncTask<Object, String, byte[]> {
     protected void onProgressUpdate(String... values) {
         for (String value : values) {
             view.append(value);
+        }
+    }
+
+    @Override
+    protected void onPostExecute(final byte[] serialized) {
+        if (serialized != null) {
+            activity.continueAuditeeShowAttestation(serialized);
         }
     }
 
@@ -470,7 +485,7 @@ public class AttestationService extends AsyncTask<Object, String, byte[]> {
         }
     }
 
-    private byte[] generateAttestation(final Context context, final byte[] challenge) throws Exception {
+    private byte[] generateAttestation(final byte[] challenge) throws Exception {
         final KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
         keyStore.load(null);
 
@@ -538,8 +553,6 @@ public class AttestationService extends AsyncTask<Object, String, byte[]> {
 
         final byte[] serialized = new byte[serializer.remaining()];
         serializer.get(serialized);
-
-        verifyAttestation(context, serialized, challenge);
 
         return serialized;
     }
