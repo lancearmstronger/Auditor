@@ -165,7 +165,6 @@ public class AttestationActivity extends AppCompatActivity {
             QRCodeWriter writer = new QRCodeWriter();
             Map<EncodeHintType,Object> hints = new EnumMap<>(EncodeHintType.class);
             //hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.L);
-            //hints.put(EncodeHintType.QR_VERSION, 40);
             result = writer.encode(contents, BarcodeFormat.QR_CODE, mView.getWidth(),
                     mView.getWidth(), null);
         } catch (WriterException e) {
