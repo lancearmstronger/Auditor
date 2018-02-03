@@ -221,7 +221,7 @@ public class AttestationService extends AsyncTask<Object, String, byte[]> {
         }
     }
 
-    private static Verified verifyAttestation(final Certificate certificates[], final byte[] challenge)
+    private static Verified verifyAttestation(final Certificate[] certificates, final byte[] challenge)
             throws GeneralSecurityException {
 
         verifyCertificateSignatures(certificates);
@@ -392,7 +392,7 @@ public class AttestationService extends AsyncTask<Object, String, byte[]> {
 
     // TODO: all of this verification will be done by a separate device
     private void verify(final Context context, final String fingerprint, final byte[] challenge,
-            final ByteBuffer signedMessage, final byte[] signature, final Certificate attestationCertificates[],
+            final ByteBuffer signedMessage, final byte[] signature, final Certificate[] attestationCertificates,
             final boolean hasPersistentKey)
             throws GeneralSecurityException {
 
@@ -519,7 +519,7 @@ public class AttestationService extends AsyncTask<Object, String, byte[]> {
         final byte[] fingerprint =
                 getFingerprintBytes((X509Certificate) keyStore.getCertificate(persistentKeystoreAlias));
 
-        final Certificate attestationCertificates[] = keyStore.getCertificateChain(attestationKeystoreAlias);
+        final Certificate[] attestationCertificates = keyStore.getCertificateChain(attestationKeystoreAlias);
 
         // sanity check on the device being verified before sending it off to the verifying device
         verifyAttestation(attestationCertificates, challenge);

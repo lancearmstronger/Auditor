@@ -45,7 +45,7 @@ public class AttestationActivity extends AppCompatActivity {
     private Boolean mIsAuditor = false;
     private Boolean mIsAuditee = false;
 
-    private byte auditorChallenge[];
+    private byte[] auditorChallenge;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
