@@ -104,11 +104,16 @@ public class AttestationActivity extends AppCompatActivity {
         return r.toString();
     }
 
+    private String logFormatBytes(final byte[] bytes) {
+        return String.format("%d binary bytes logged here as base64 (%s)", bytes.length,
+                Base64.encodeToString(bytes, Base64.NO_WRAP));
+    }
+
     private void doItAuditor() {
         Log.d(TAG, "doItAuditor");
         // generate qr
         auditorChallenge = AttestationService.getChallenge();
-        Log.d(TAG, "sending random challenge: " + Base64.encodeToString(auditorChallenge, Base64.DEFAULT));
+        Log.d(TAG, "sending random challenge: " + logFormatBytes(auditorChallenge));
         Bitmap bitmap = createQrCode(auditorChallenge);
 
         mView.setImageBitmap(bitmap);
@@ -126,7 +131,7 @@ public class AttestationActivity extends AppCompatActivity {
     }
 
     private void showAuditorResults(final byte[] serialized) {
-        Log.d(TAG, "received attestation: " + Base64.encodeToString(serialized, Base64.DEFAULT));
+        Log.d(TAG, "received attestation: " + logFormatBytes(serialized));
 
         TextView textView = (TextView) findViewById(R.id.textview);
         if (task != null && task.getStatus() == AsyncTask.Status.RUNNING) {
@@ -147,7 +152,7 @@ public class AttestationActivity extends AppCompatActivity {
     }
 
     private void continueAuditee(final byte[] challenge) {
-        Log.d(TAG, "received random challenge: " + Base64.encodeToString(challenge, Base64.DEFAULT));
+        Log.d(TAG, "received random challenge: " + logFormatBytes(challenge));
 
         TextView textView = (TextView) findViewById(R.id.textview);
         if (task != null && task.getStatus() == AsyncTask.Status.RUNNING) {
@@ -162,7 +167,7 @@ public class AttestationActivity extends AppCompatActivity {
     }
 
     void continueAuditeeShowAttestation(final byte[] serialized) {
-        Log.d(TAG, "sending attestation: " + Base64.encodeToString(serialized, Base64.DEFAULT));
+        Log.d(TAG, "sending attestation: " + logFormatBytes(serialized));
         Bitmap bitmap = createQrCode(serialized);
         mView.setImageBitmap(bitmap);
     }
