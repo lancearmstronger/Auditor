@@ -390,7 +390,6 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         publishProgress("Identity: " + fingerprint + "\n");
     }
 
-    // TODO: all of this verification will be done by a separate device
     private void verify(final Context context, final String fingerprint, final byte[] challenge,
             final ByteBuffer signedMessage, final byte[] signature, final Certificate[] attestationCertificates,
             final boolean hasPersistentKey)
