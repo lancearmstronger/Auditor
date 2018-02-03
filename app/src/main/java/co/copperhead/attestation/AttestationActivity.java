@@ -35,6 +35,7 @@ public class AttestationActivity extends AppCompatActivity {
     private static final String TAG = "CopperheadAttestation";
 
     private static final String STATE_AUDITOR_CHALLENGE = "auditor_challenge";
+    private static final String STATE_STAGE = "stage";
     private static final String STATE_OUTPUT = "output";
 
     private AsyncTask<Object, String, byte[]> task = null;
@@ -42,9 +43,13 @@ public class AttestationActivity extends AppCompatActivity {
     private TextView textView;
     private ImageView mView;
 
-    private Boolean mIsAuditor = false;
-    private Boolean mIsAuditee = false;
+    private enum Stage {
+        None,
+        Auditee,
+        Auditor
+    }
 
+    private Stage mStage = Stage.None;
     private byte[] auditorChallenge;
 
     @Override
@@ -61,8 +66,7 @@ public class AttestationActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Log.d(TAG, "Auditee");
-                mIsAuditor = false;
-                mIsAuditee = true;
+                mStage = Stage.Auditee;
                 auditee.setVisibility(View.GONE);
                 auditor.setVisibility(View.GONE);
                 runAuditee();
@@ -73,8 +77,7 @@ public class AttestationActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Log.d(TAG, "Auditor");
-                mIsAuditor = true;
-                mIsAuditee = false;
+                mStage = Stage.Auditor;
                 auditee.setVisibility(View.GONE);
                 auditor.setVisibility(View.GONE);
                 runAuditor();
@@ -88,7 +91,13 @@ public class AttestationActivity extends AppCompatActivity {
 
         if (savedInstanceState != null) {
             auditorChallenge = savedInstanceState.getByteArray(STATE_AUDITOR_CHALLENGE);
+            mStage = Stage.valueOf(savedInstanceState.getString(STATE_STAGE));
             textView.setText(savedInstanceState.getString(STATE_OUTPUT));
+        }
+
+        if (mStage != Stage.None) {
+            auditee.setVisibility(View.GONE);
+            auditor.setVisibility(View.GONE);
         }
     }
 
@@ -96,6 +105,7 @@ public class AttestationActivity extends AppCompatActivity {
     public void onSaveInstanceState(final Bundle savedInstanceState) {
         super.onSaveInstanceState(savedInstanceState);
         savedInstanceState.putByteArray(STATE_AUDITOR_CHALLENGE, auditorChallenge);
+        savedInstanceState.putString(STATE_STAGE, mStage.name());
         savedInstanceState.putString(STATE_OUTPUT, textView.getText().toString());
     }
 
@@ -215,9 +225,9 @@ public class AttestationActivity extends AppCompatActivity {
                 throw new RuntimeException("ISO-8859-1 not supported", e);
             }
             Log.d(TAG, "key");
-            if (mIsAuditee) {
+            if (mStage == Stage.Auditee) {
                 continueAuditee(contents);
-            } else if (mIsAuditor) {
+            } else if (mStage == Stage.Auditor) {
                 showAuditorResults(contents);
             }
         }
