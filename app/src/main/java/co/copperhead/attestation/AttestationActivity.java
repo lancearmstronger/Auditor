@@ -242,18 +242,22 @@ public class AttestationActivity extends AppCompatActivity {
         IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, intent);
         if (scanResult != null) {
             // handle scan result
-            final byte[] contents;
+            final String contents = scanResult.getContents();
+            if (contents == null) {
+                return;
+            }
+            final byte[] contentsBytes;
             try {
-                contents = scanResult.getContents().getBytes("ISO-8859-1");
+                contentsBytes = contents.getBytes("ISO-8859-1");
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException("ISO-8859-1 not supported", e);
             }
             Log.d(TAG, "key");
             if (mStage == Stage.Auditee) {
-                continueAuditee(contents);
+                continueAuditee(contentsBytes);
             } else if (mStage == Stage.Auditor) {
                 mStage = Stage.AuditorResults;
-                showAuditorResults(contents);
+                showAuditorResults(contentsBytes);
             }
         }
     }
