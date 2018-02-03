@@ -23,7 +23,6 @@ import com.google.zxing.common.BitMatrix;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 import com.google.zxing.qrcode.QRCodeWriter;
-import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 
 import java.io.UnsupportedEncodingException;
 import java.util.EnumMap;
@@ -33,7 +32,8 @@ import static android.graphics.Color.BLACK;
 import static android.graphics.Color.WHITE;
 
 public class AttestationActivity extends AppCompatActivity {
-    public static final String TAG = "CopperheadAttestation";
+    private static final String TAG = "CopperheadAttestation";
+
     private static final String STATE_AUDITOR_CHALLENGE = "auditor_challenge";
     private static final String STATE_OUTPUT = "output";
 
@@ -65,7 +65,7 @@ public class AttestationActivity extends AppCompatActivity {
                 mIsAuditee = true;
                 auditee.setVisibility(View.GONE);
                 auditor.setVisibility(View.GONE);
-                doItAuditee();
+                runAuditee();
             }
         });
 
@@ -77,19 +77,19 @@ public class AttestationActivity extends AppCompatActivity {
                 mIsAuditee = false;
                 auditee.setVisibility(View.GONE);
                 auditor.setVisibility(View.GONE);
-                doItAuditor();
+                runAuditor();
             }
         });
 
         textView = (TextView) findViewById(R.id.textview);
         textView.setMovementMethod(new ScrollingMovementMethod());
 
+        mView = (ImageView) findViewById(R.id.imageview);
+
         if (savedInstanceState != null) {
             auditorChallenge = savedInstanceState.getByteArray(STATE_AUDITOR_CHALLENGE);
             textView.setText(savedInstanceState.getString(STATE_OUTPUT));
         }
-
-        mView = (ImageView) findViewById(R.id.imageview);
     }
 
     @Override
@@ -104,8 +104,8 @@ public class AttestationActivity extends AppCompatActivity {
                 Base64.encodeToString(bytes, Base64.NO_WRAP));
     }
 
-    private void doItAuditor() {
-        Log.d(TAG, "doItAuditor");
+    private void runAuditor() {
+        Log.d(TAG, "runAuditor");
         // generate qr
         auditorChallenge = AttestationService.getChallenge();
         Log.d(TAG, "sending random challenge: " + logFormatBytes(auditorChallenge));
@@ -128,7 +128,6 @@ public class AttestationActivity extends AppCompatActivity {
     private void showAuditorResults(final byte[] serialized) {
         Log.d(TAG, "received attestation: " + logFormatBytes(serialized));
 
-        TextView textView = (TextView) findViewById(R.id.textview);
         if (task != null && task.getStatus() == AsyncTask.Status.RUNNING) {
             return;
         }
@@ -140,8 +139,8 @@ public class AttestationActivity extends AppCompatActivity {
         }
     }
 
-    private void doItAuditee() {
-        Log.d(TAG, "do it auditee");
+    private void runAuditee() {
+        Log.d(TAG, "runAuditee");
         // scan qr
         showQrScanner("auditee");
     }
@@ -149,7 +148,6 @@ public class AttestationActivity extends AppCompatActivity {
     private void continueAuditee(final byte[] challenge) {
         Log.d(TAG, "received random challenge: " + logFormatBytes(challenge));
 
-        TextView textView = (TextView) findViewById(R.id.textview);
         if (task != null && task.getStatus() == AsyncTask.Status.RUNNING) {
             return;
         }

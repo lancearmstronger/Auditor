@@ -51,7 +51,7 @@ import java.security.cert.X509Certificate;
 import static android.security.keystore.KeyProperties.DIGEST_SHA256;
 import static android.security.keystore.KeyProperties.KEY_ALGORITHM_EC;
 
-public class AttestationService extends AsyncTask<Object, String, byte[]> {
+class AttestationService extends AsyncTask<Object, String, byte[]> {
     private static final String TAG = "AttestationService";
 
     private static final String KEY_PINNED_CERTIFICATE = "pinned_certificate";
