@@ -135,11 +135,25 @@ public class AttestationActivity extends AppCompatActivity {
         showQrScanner("auditee");
     }
 
-    private void continueAuditee(String result) {
-        Log.d(TAG, "received random challenge: " + result);
+    private void continueAuditee(final String challenge64) {
+        Log.d(TAG, "received random challenge: " + challenge64);
+        final byte[] challenge = Base64.decode(challenge64, Base64.DEFAULT);
+
+        TextView textView = (TextView) findViewById(R.id.textview);
+        if (task != null && task.getStatus() == AsyncTask.Status.RUNNING) {
+            return;
+        }
+        textView.setText("");
+        try {
+            task = new AttestationService(textView).execute(this, challenge);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        mView.setVisibility(View.GONE);
 
         // generate key based on challenge from qr
-        Bitmap bitmap = createQrCode(result + Build.FINGERPRINT);
+        Bitmap bitmap = createQrCode(challenge + Build.FINGERPRINT);
 
         // show qr containing key
         mView.setImageBitmap(bitmap);
@@ -191,19 +205,6 @@ public class AttestationActivity extends AppCompatActivity {
             } else if (mIsAuditor) {
                 showAuditorResults(contents);
             }
-        }
-    }
-
-    private void doIt() {
-        TextView textView = (TextView) findViewById(R.id.textview);
-        if (task != null && task.getStatus() == AsyncTask.Status.RUNNING) {
-            return;
-        }
-        textView.setText("");
-        try {
-            task = new AttestationService(textView).execute(this);
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 

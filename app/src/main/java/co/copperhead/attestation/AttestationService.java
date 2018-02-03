@@ -157,7 +157,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
     @Override
     protected Void doInBackground(Object... params) {
         try {
-            testAttestation((Context) params[0]);
+            testAttestation((Context) params[0], (byte[]) params[1]);
         } catch (Exception e) {
             final StringWriter s = new StringWriter();
             e.printStackTrace(new PrintWriter(s));
@@ -464,7 +464,7 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         }
     }
 
-    private void testAttestation(final Context context) throws Exception {
+    private void testAttestation(final Context context, final byte[] challenge) throws Exception {
         final KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
         keyStore.load(null);
 
@@ -481,9 +481,6 @@ public class AttestationService extends AsyncTask<Object, String, Void> {
         } else {
             attestationKeystoreAlias = persistentKeystoreAlias;
         }
-
-        // TODO: this will be provided by another device running the app to verify this one
-        final byte[] challenge = getChallenge();
 
         final Date startTime = new Date(new Date().getTime() - 10 * 1000);
         final KeyGenParameterSpec.Builder builder = new KeyGenParameterSpec.Builder(attestationKeystoreAlias,
