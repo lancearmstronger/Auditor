@@ -12,6 +12,7 @@ import android.util.Base64;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -95,10 +96,23 @@ public class AttestationActivity extends AppCompatActivity {
             textView.setText(savedInstanceState.getString(STATE_OUTPUT));
         }
 
-        if (mStage != Stage.None) {
-            auditee.setVisibility(View.GONE);
-            auditor.setVisibility(View.GONE);
-        }
+        final ViewTreeObserver vto = mView.getViewTreeObserver();
+        vto.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            @Override
+            public boolean onPreDraw() {
+                mView.getViewTreeObserver().removeOnPreDrawListener(this);
+                if (mStage != Stage.None) {
+                    auditee.setVisibility(View.GONE);
+                    auditor.setVisibility(View.GONE);
+                    if (mStage == Stage.Auditee) {
+                        runAuditee();
+                    } else if (mStage == Stage.Auditor) {
+                        runAuditor();
+                    }
+                }
+                return true;
+            }
+        });
     }
 
     @Override
@@ -117,7 +131,9 @@ public class AttestationActivity extends AppCompatActivity {
     private void runAuditor() {
         Log.d(TAG, "runAuditor");
         // generate qr
-        auditorChallenge = AttestationService.getChallenge();
+        if (auditorChallenge == null) {
+            auditorChallenge = AttestationService.getChallenge();
+        }
         Log.d(TAG, "sending random challenge: " + logFormatBytes(auditorChallenge));
         Bitmap bitmap = createQrCode(auditorChallenge);
 
