@@ -16,6 +16,7 @@ import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
@@ -69,15 +70,17 @@ public class AttestationActivity extends AppCompatActivity {
         auditee = (Button) findViewById(R.id.auditee);
         auditor = (Button) findViewById(R.id.auditor);
 
-        auditee.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Log.d(TAG, "Auditee");
-                mStage = Stage.Auditee;
-                auditee.setVisibility(View.GONE);
-                auditor.setVisibility(View.GONE);
-                runAuditee();
+        auditee.setOnClickListener((final View view) -> {
+            Log.d(TAG, "Auditee");
+            if (!Build.DEVICE.equals("taimen") && !Build.DEVICE.equals("walleye")) {
+                Toast.makeText(this, getString(R.string.unsupported_auditee),
+                        Toast.LENGTH_LONG).show();
+                return;
             }
+            mStage = Stage.Auditee;
+            auditee.setVisibility(View.GONE);
+            auditor.setVisibility(View.GONE);
+            runAuditee();
         });
 
         auditor.setOnClickListener(new View.OnClickListener() {
