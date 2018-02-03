@@ -588,8 +588,6 @@ public class AttestationService extends AsyncTask<Object, String, byte[]> {
                 .getInstance("X.509").generateCertificate(
                         new ByteArrayInputStream(GOOGLE_ROOT_CERTIFICATE.getBytes()));
 
-        Log.d(TAG, "successfully decoded");
-
         deserializer.rewind();
         deserializer.limit(deserializer.capacity() - signature.length - 4);
 
