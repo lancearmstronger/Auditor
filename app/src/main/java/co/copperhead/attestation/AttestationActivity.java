@@ -47,7 +47,8 @@ public class AttestationActivity extends AppCompatActivity {
     private enum Stage {
         None,
         Auditee,
-        Auditor
+        Auditor,
+        AuditorResults
     }
 
     private Stage mStage = Stage.None;
@@ -244,6 +245,7 @@ public class AttestationActivity extends AppCompatActivity {
             if (mStage == Stage.Auditee) {
                 continueAuditee(contents);
             } else if (mStage == Stage.Auditor) {
+                mStage = Stage.AuditorResults;
                 showAuditorResults(contents);
             }
         }
