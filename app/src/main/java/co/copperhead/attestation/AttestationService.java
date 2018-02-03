@@ -65,6 +65,7 @@ public class AttestationService extends AsyncTask<Object, String, byte[]> {
     private static final int CHALLENGE_LENGTH = 32;
     private static final String EC_CURVE = "secp256r1";
     private static final String SIGNATURE_ALGORITHM = "SHA256WithECDSA";
+    private static final int FINGERPRINT_LENGTH = 32;
 
     private static final String ATTESTATION_APP_PACKAGE_NAME = "co.copperhead.attestation";
     private static final int ATTESTATION_APP_MINIMUM_VERSION = 1;
@@ -534,7 +535,9 @@ public class AttestationService extends AsyncTask<Object, String, byte[]> {
             serializer.put(encoded);
         }
 
-        serializer.putInt(fingerprint.length);
+        if (fingerprint.length != FINGERPRINT_LENGTH) {
+            throw new RuntimeException("fingerprint length mismatch");
+        }
         serializer.put(fingerprint);
         serializer.put(hasPersistentKey ? (byte)1 : (byte)0);
 
@@ -561,9 +564,8 @@ public class AttestationService extends AsyncTask<Object, String, byte[]> {
     //
     // signed message {
     // int certificateCount
-    // [int certificateLength, byte[] certificate] x certificateCount
-    // int fingerprintLength
-    // byte[] fingerprint
+    // [int certificateLength, byte[] certificate] x 2
+    // byte[] fingerprint (length: FINGERPRINT_LENGTH)
     // byte hasPersistentKey
     // }
     // int signatureLength
@@ -582,8 +584,7 @@ public class AttestationService extends AsyncTask<Object, String, byte[]> {
                             new ByteArrayInputStream(
                                     encoded));
         }
-        final int fingerprintLength = deserializer.getInt();
-        final byte[] fingerprint = new byte[fingerprintLength];
+        final byte[] fingerprint = new byte[FINGERPRINT_LENGTH];
         deserializer.get(fingerprint);
         final byte hasPersistentKeyByte = deserializer.get();
         if (hasPersistentKeyByte != 0 && hasPersistentKeyByte != 1) {
