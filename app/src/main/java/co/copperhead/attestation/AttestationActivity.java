@@ -25,6 +25,7 @@ import com.google.zxing.integration.android.IntentResult;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 
+import java.io.UnsupportedEncodingException;
 import java.util.EnumMap;
 import java.util.Map;
 
@@ -107,9 +108,8 @@ public class AttestationActivity extends AppCompatActivity {
         Log.d(TAG, "doItAuditor");
         // generate qr
         auditorChallenge = AttestationService.getChallenge();
-        String challenge64 = Base64.encodeToString(auditorChallenge, Base64.DEFAULT);
-        Log.d(TAG, "sending random challenge: " + challenge64);
-        Bitmap bitmap = createQrCode(challenge64);
+        Log.d(TAG, "sending random challenge: " + Base64.encodeToString(auditorChallenge, Base64.DEFAULT));
+        Bitmap bitmap = createQrCode(auditorChallenge);
 
         mView.setImageBitmap(bitmap);
 
@@ -125,8 +125,8 @@ public class AttestationActivity extends AppCompatActivity {
         // show results
     }
 
-    private void showAuditorResults(final String serialized64) {
-        Log.d(TAG, "received attestation: " + serialized64);
+    private void showAuditorResults(final byte[] serialized) {
+        Log.d(TAG, "received attestation: " + Base64.encodeToString(serialized, Base64.DEFAULT));
 
         TextView textView = (TextView) findViewById(R.id.textview);
         if (task != null && task.getStatus() == AsyncTask.Status.RUNNING) {
@@ -134,7 +134,6 @@ public class AttestationActivity extends AppCompatActivity {
         }
         textView.setText("");
         try {
-            final byte[] serialized = Base64.decode(serialized64, Base64.DEFAULT);
             task = new AttestationService(this, textView).execute(true, serialized, auditorChallenge);
         } catch (Exception e) {
             e.printStackTrace();
@@ -147,9 +146,8 @@ public class AttestationActivity extends AppCompatActivity {
         showQrScanner("auditee");
     }
 
-    private void continueAuditee(final String challenge64) {
-        Log.d(TAG, "received random challenge: " + challenge64);
-        final byte[] challenge = Base64.decode(challenge64, Base64.DEFAULT);
+    private void continueAuditee(final byte[] challenge) {
+        Log.d(TAG, "received random challenge: " + Base64.encodeToString(challenge, Base64.DEFAULT));
 
         TextView textView = (TextView) findViewById(R.id.textview);
         if (task != null && task.getStatus() == AsyncTask.Status.RUNNING) {
@@ -164,20 +162,24 @@ public class AttestationActivity extends AppCompatActivity {
     }
 
     void continueAuditeeShowAttestation(final byte[] serialized) {
-        String serialized64 = Base64.encodeToString(serialized, Base64.DEFAULT);
-        Log.d(TAG, "sending attestation: " + serialized64);
-        Bitmap bitmap = createQrCode(serialized64);
+        Log.d(TAG, "sending attestation: " + Base64.encodeToString(serialized, Base64.DEFAULT));
+        Bitmap bitmap = createQrCode(serialized);
         mView.setImageBitmap(bitmap);
     }
 
-    private Bitmap createQrCode(String contents) {
+    private Bitmap createQrCode(final byte[] contents) {
         BitMatrix result;
         try {
             QRCodeWriter writer = new QRCodeWriter();
             Map<EncodeHintType,Object> hints = new EnumMap<>(EncodeHintType.class);
+            hints.put(EncodeHintType.CHARACTER_SET, "ISO-8859-1");
             //hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.L);
-            result = writer.encode(contents, BarcodeFormat.QR_CODE, mView.getWidth(),
-                    mView.getWidth(), null);
+            try {
+                result = writer.encode(new String(contents, "ISO-8859-1"), BarcodeFormat.QR_CODE, mView.getWidth(),
+                        mView.getWidth(), hints);
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException("ISO-8859-1 not supported", e);
+            }
         } catch (WriterException e) {
             return null;
         }
@@ -209,7 +211,12 @@ public class AttestationActivity extends AppCompatActivity {
         IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, intent);
         if (scanResult != null) {
             // handle scan result
-            String contents = scanResult.getContents();
+            final byte[] contents;
+            try {
+                contents = scanResult.getContents().getBytes("ISO-8859-1");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException("ISO-8859-1 not supported", e);
+            }
             Log.d(TAG, "key");
             if (mIsAuditee) {
                 continueAuditee(contents);
