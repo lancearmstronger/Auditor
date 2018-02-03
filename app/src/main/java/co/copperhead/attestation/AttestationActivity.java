@@ -35,6 +35,7 @@ import static android.graphics.Color.WHITE;
 public class AttestationActivity extends AppCompatActivity {
     private static final String TAG = "CopperheadAttestation";
 
+    private static final String STATE_AUDITEE_SERIALIZED_ATTESTATION = "auditee_serialized_attestation";
     private static final String STATE_AUDITOR_CHALLENGE = "auditor_challenge";
     private static final String STATE_STAGE = "stage";
     private static final String STATE_OUTPUT = "output";
@@ -47,11 +48,13 @@ public class AttestationActivity extends AppCompatActivity {
     private enum Stage {
         None,
         Auditee,
+        AuditeeResults,
         Auditor,
         AuditorResults
     }
 
     private Stage mStage = Stage.None;
+    private byte[] auditeeSerializedAttestation;
     private byte[] auditorChallenge;
 
     @Override
@@ -92,6 +95,7 @@ public class AttestationActivity extends AppCompatActivity {
         mView = (ImageView) findViewById(R.id.imageview);
 
         if (savedInstanceState != null) {
+            auditeeSerializedAttestation = savedInstanceState.getByteArray(STATE_AUDITEE_SERIALIZED_ATTESTATION);
             auditorChallenge = savedInstanceState.getByteArray(STATE_AUDITOR_CHALLENGE);
             mStage = Stage.valueOf(savedInstanceState.getString(STATE_STAGE));
             textView.setText(savedInstanceState.getString(STATE_OUTPUT));
@@ -107,6 +111,8 @@ public class AttestationActivity extends AppCompatActivity {
                     auditor.setVisibility(View.GONE);
                     if (mStage == Stage.Auditee) {
                         runAuditee();
+                    } else if (mStage == Stage.AuditeeResults) {
+                        continueAuditeeShowAttestation(auditeeSerializedAttestation);
                     } else if (mStage == Stage.Auditor) {
                         runAuditor();
                     }
@@ -119,6 +125,7 @@ public class AttestationActivity extends AppCompatActivity {
     @Override
     public void onSaveInstanceState(final Bundle savedInstanceState) {
         super.onSaveInstanceState(savedInstanceState);
+        savedInstanceState.putByteArray(STATE_AUDITEE_SERIALIZED_ATTESTATION, auditeeSerializedAttestation);
         savedInstanceState.putByteArray(STATE_AUDITOR_CHALLENGE, auditorChallenge);
         savedInstanceState.putString(STATE_STAGE, mStage.name());
         savedInstanceState.putString(STATE_OUTPUT, textView.getText().toString());
@@ -188,6 +195,8 @@ public class AttestationActivity extends AppCompatActivity {
 
     void continueAuditeeShowAttestation(final byte[] serialized) {
         Log.d(TAG, "sending attestation: " + logFormatBytes(serialized));
+        auditeeSerializedAttestation = serialized;
+        mStage = Stage.AuditeeResults;
         Bitmap bitmap = createQrCode(serialized);
         mView.setImageBitmap(bitmap);
     }
