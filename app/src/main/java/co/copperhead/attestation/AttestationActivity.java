@@ -170,7 +170,6 @@ public class AttestationActivity extends AppCompatActivity {
             QRCodeWriter writer = new QRCodeWriter();
             Map<EncodeHintType,Object> hints = new EnumMap<>(EncodeHintType.class);
             hints.put(EncodeHintType.CHARACTER_SET, "ISO-8859-1");
-            //hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.L);
             try {
                 result = writer.encode(new String(contents, "ISO-8859-1"), BarcodeFormat.QR_CODE, mView.getWidth(),
                         mView.getWidth(), hints);
