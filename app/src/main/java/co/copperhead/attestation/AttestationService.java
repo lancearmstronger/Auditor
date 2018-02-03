@@ -563,7 +563,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
     //
     // signed message {
     // int certificateCount
-    // [int certificateLength, byte[] certificate] x 2
+    // [int certificateLength, byte[] certificate] x certificateCount
     // byte[] fingerprint (length: FINGERPRINT_LENGTH)
     // byte hasPersistentKey
     // }
