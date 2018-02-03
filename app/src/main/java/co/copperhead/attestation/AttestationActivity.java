@@ -44,6 +44,8 @@ public class AttestationActivity extends AppCompatActivity {
 
     private TextView textView;
     private ImageView mView;
+    private Button auditee;
+    private Button auditor;
 
     private enum Stage {
         None,
@@ -64,8 +66,8 @@ public class AttestationActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        Button auditee = (Button) findViewById(R.id.auditee);
-        Button auditor = (Button) findViewById(R.id.auditor);
+        auditee = (Button) findViewById(R.id.auditee);
+        auditor = (Button) findViewById(R.id.auditor);
 
         auditee.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -151,7 +153,6 @@ public class AttestationActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Log.d(TAG, "Auditor qr view");
-                view.setVisibility(View.GONE);
                 showQrScanner("auditor");
             }
         });
@@ -244,6 +245,11 @@ public class AttestationActivity extends AppCompatActivity {
             // handle scan result
             final String contents = scanResult.getContents();
             if (contents == null) {
+                if (mStage == Stage.Auditee) {
+                    mStage = Stage.None;
+                    auditee.setVisibility(View.VISIBLE);
+                    auditor.setVisibility(View.VISIBLE);
+                }
                 return;
             }
             final byte[] contentsBytes;
@@ -252,14 +258,15 @@ public class AttestationActivity extends AppCompatActivity {
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException("ISO-8859-1 not supported", e);
             }
-            Log.d(TAG, "key");
             if (mStage == Stage.Auditee) {
                 continueAuditee(contentsBytes);
             } else if (mStage == Stage.Auditor) {
                 mStage = Stage.AuditorResults;
+                mView.setVisibility(View.GONE);
                 showAuditorResults(contentsBytes);
             }
         }
+        Log.w(TAG, "scanResult null");
     }
 
     @Override
