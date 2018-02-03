@@ -192,6 +192,7 @@ public class AttestationActivity extends AppCompatActivity {
         integrator.initiateScan(IntentIntegrator.QR_CODE_TYPES);
     }
 
+    @Override
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
         Log.d(TAG, "on scan");
         IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, intent);
