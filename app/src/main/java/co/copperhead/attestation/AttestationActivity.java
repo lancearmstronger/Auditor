@@ -34,17 +34,18 @@ import static android.graphics.Color.WHITE;
 
 public class AttestationActivity extends AppCompatActivity {
     public static final String TAG = "CopperheadAttestation";
-    static final String STATE_OUTPUT = "output";
+    private static final String STATE_AUDITOR_CHALLENGE = "auditor_challenge";
+    private static final String STATE_OUTPUT = "output";
 
-    AsyncTask<Object, String, byte[]> task = null;
+    private AsyncTask<Object, String, byte[]> task = null;
 
-    TextView textView;
-    ImageView mView;
+    private TextView textView;
+    private ImageView mView;
 
-    Boolean mIsAuditor = false;
-    Boolean mIsAuditee = false;
+    private Boolean mIsAuditor = false;
+    private Boolean mIsAuditee = false;
 
-    byte auditorChallenge[];
+    private byte auditorChallenge[];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,6 +85,7 @@ public class AttestationActivity extends AppCompatActivity {
         textView.setMovementMethod(new ScrollingMovementMethod());
 
         if (savedInstanceState != null) {
+            auditorChallenge = savedInstanceState.getByteArray(STATE_AUDITOR_CHALLENGE);
             textView.setText(savedInstanceState.getString(STATE_OUTPUT));
         }
 
@@ -93,6 +95,7 @@ public class AttestationActivity extends AppCompatActivity {
     @Override
     public void onSaveInstanceState(final Bundle savedInstanceState) {
         super.onSaveInstanceState(savedInstanceState);
+        savedInstanceState.putByteArray(STATE_AUDITOR_CHALLENGE, auditorChallenge);
         savedInstanceState.putString(STATE_OUTPUT, textView.getText().toString());
     }
 
