@@ -549,7 +549,6 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         sig.update(message);
         final byte[] signature = sig.sign();
 
-        serializer.putInt(signature.length);
         serializer.put(signature);
 
         serializer.flip();
@@ -568,8 +567,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
     // byte[] fingerprint (length: FINGERPRINT_LENGTH)
     // byte hasPersistentKey
     // }
-    // int signatureLength
-    // byte[] signature
+    // byte[] signature (rest of message)
 
     private void verifyAttestation(final Context context, final byte[] attestationResult, final byte[] challenge) throws Exception {
         final ByteBuffer deserializer = ByteBuffer.wrap(attestationResult);
@@ -591,7 +589,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
             throw new GeneralSecurityException("invalid attestation");
         }
         final boolean hasPersistentKey = hasPersistentKeyByte == 1;
-        final int signatureLength = deserializer.getInt();
+        final int signatureLength = deserializer.remaining();
         final byte[] signature = new byte[signatureLength];
         deserializer.get(signature);
 
@@ -603,7 +601,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
                         new ByteArrayInputStream(GOOGLE_ROOT_CERTIFICATE.getBytes()));
 
         deserializer.rewind();
-        deserializer.limit(deserializer.capacity() - signature.length - 4);
+        deserializer.limit(deserializer.capacity() - signature.length);
 
         final String fingerprintHex = BaseEncoding.base16().encode(fingerprint);
         verify(context, fingerprintHex, challenge, deserializer.asReadOnlyBuffer(), signature, certificates, hasPersistentKey);
