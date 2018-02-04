@@ -165,16 +165,8 @@ public class AttestationActivity extends AppCompatActivity {
 
     private void showAuditorResults(final byte[] serialized) {
         Log.d(TAG, "received attestation: " + logFormatBytes(serialized));
-
-        if (task != null && task.getStatus() == AsyncTask.Status.RUNNING) {
-            return;
-        }
         textView.setText("");
-        try {
-            task = new AttestationService(this, textView).execute(true, serialized, auditorChallenge);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        task = new AttestationService(this, textView).execute(true, serialized, auditorChallenge);
     }
 
     private void runAuditee() {
@@ -185,16 +177,8 @@ public class AttestationActivity extends AppCompatActivity {
 
     private void continueAuditee(final byte[] challenge) {
         Log.d(TAG, "received random challenge: " + logFormatBytes(challenge));
-
-        if (task != null && task.getStatus() == AsyncTask.Status.RUNNING) {
-            return;
-        }
         textView.setText("");
-        try {
-            task = new AttestationService(this, textView).execute(false, challenge);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        task = new AttestationService(this, textView).execute(false, challenge);
     }
 
     void continueAuditeeShowAttestation(final byte[] serialized) {
