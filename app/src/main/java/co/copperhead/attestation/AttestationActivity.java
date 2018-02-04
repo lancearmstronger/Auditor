@@ -51,6 +51,7 @@ public class AttestationActivity extends AppCompatActivity {
     private enum Stage {
         None,
         Auditee,
+        AuditeeGenerate,
         AuditeeResults,
         Auditor,
         AuditorResults
@@ -262,6 +263,7 @@ public class AttestationActivity extends AppCompatActivity {
                 throw new RuntimeException("ISO-8859-1 not supported", e);
             }
             if (mStage == Stage.Auditee) {
+                mStage = Stage.AuditeeGenerate;
                 continueAuditee(contentsBytes);
             } else if (mStage == Stage.Auditor) {
                 mStage = Stage.AuditorResults;
