@@ -4,4 +4,5 @@
     <string name="unsupported_auditee">Only Pixel 2 and Pixel 2 XL devices can be audited.</string>
     <string name="auditor_button">Auditor</string>
     <string name="auditee_button">Auditee</string>
+    <string name="qrcode_content_description">QR code</string>
 </resources>
