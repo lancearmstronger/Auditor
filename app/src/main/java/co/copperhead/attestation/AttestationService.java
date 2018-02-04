@@ -6,6 +6,7 @@ import co.copperhead.attestation.attestation.AttestationApplicationId;
 import co.copperhead.attestation.attestation.AttestationPackageInfo;
 import co.copperhead.attestation.attestation.RootOfTrust;
 
+import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
 
@@ -67,6 +68,8 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
     private static final int CHALLENGE_LENGTH = 32;
     private static final String EC_CURVE = "secp256r1";
     private static final String SIGNATURE_ALGORITHM = "SHA256WithECDSA";
+    private static final String KEY_DIGEST = DIGEST_SHA256;
+    private static final HashFunction FINGERPRINT_HASH_FUNCTION = Hashing.sha256();
     private static final int FINGERPRINT_LENGTH = 32;
 
     private static final String ATTESTATION_APP_PACKAGE_NAME = "co.copperhead.attestation";
@@ -201,12 +204,12 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
 
     private static String getFingerprint(final X509Certificate certificate)
             throws CertificateEncodingException {
-        return Hashing.sha256().hashBytes(certificate.getEncoded()).toString().toUpperCase();
+        return FINGERPRINT_HASH_FUNCTION.hashBytes(certificate.getEncoded()).toString().toUpperCase();
     }
 
     private static byte[] getFingerprintBytes(final X509Certificate certificate)
             throws CertificateEncodingException {
-        return Hashing.sha256().hashBytes(certificate.getEncoded()).asBytes();
+        return FINGERPRINT_HASH_FUNCTION.hashBytes(certificate.getEncoded()).asBytes();
     }
 
     private static class Verified {
@@ -509,7 +512,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         final KeyGenParameterSpec.Builder builder = new KeyGenParameterSpec.Builder(attestationKeystoreAlias,
                 KeyProperties.PURPOSE_SIGN | KeyProperties.PURPOSE_VERIFY)
                 .setAlgorithmParameterSpec(new ECGenParameterSpec(EC_CURVE))
-                .setDigests(DIGEST_SHA256)
+                .setDigests(KEY_DIGEST)
                 .setAttestationChallenge(challenge)
                 .setKeyValidityStart(startTime);
         if (hasPersistentKey) {
