@@ -62,6 +62,8 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
     private static final String KEY_VERIFIED_TIME_FIRST = "verified_time_first";
     private static final String KEY_VERIFIED_TIME_LAST = "verified_time_last";
 
+    private static final byte PROTOCOL_VERSION = 1;
+
     private static final int CHALLENGE_LENGTH = 32;
     private static final String EC_CURVE = "secp256r1";
     private static final String SIGNATURE_ALGORITHM = "SHA256WithECDSA";
@@ -525,8 +527,8 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
 
         final ByteBuffer serializer = ByteBuffer.allocate(3000);
 
+        serializer.put(PROTOCOL_VERSION);
         final int certificateCount = attestationCertificates.length - 2;
-        serializer.putInt(certificateCount);
         for (int i = 0; i < certificateCount; i++) {
             final X509Certificate certificate = (X509Certificate) attestationCertificates[i];
             final byte[] encoded = certificate.getEncoded();
@@ -563,8 +565,10 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
 
     // Attestation message:
     //
+    // PROTOCOL_VERSION == 1 implies certificateCount == 2
+    //
     // signed message {
-    // int certificateCount
+    // byte version = PROTOCOL_VERSION
     // [short certificateLength, byte[] certificate] x certificateCount
     // byte[] fingerprint (length: FINGERPRINT_LENGTH)
     // byte hasPersistentKey
@@ -573,7 +577,11 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
 
     private void verifyAttestation(final Context context, final byte[] attestationResult, final byte[] challenge) throws Exception {
         final ByteBuffer deserializer = ByteBuffer.wrap(attestationResult);
-        final int certificateCount = deserializer.getInt();
+        final byte version = deserializer.get();
+        if (version != PROTOCOL_VERSION) {
+            throw new GeneralSecurityException("unsupported protocol version: " + version);
+        }
+        final int certificateCount = 2;
         final Certificate[] certificates = new Certificate[certificateCount + 2];
         for (int i = 0; i < certificateCount; i++) {
             final int encodedLength = deserializer.getShort();
