@@ -9,6 +9,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Base64;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
@@ -220,8 +221,13 @@ public class AttestationActivity extends AppCompatActivity {
     }
 
     private void showQrScanner(String initiator) {
-        IntentIntegrator integrator = new IntentIntegrator(this);
+        final DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getRealMetrics(displayMetrics);
+        final int size = Math.min(displayMetrics.heightPixels, displayMetrics.widthPixels) * 3 / 4;
 
+        final IntentIntegrator integrator = new IntentIntegrator(this);
+        integrator.addExtra("SCAN_HEIGHT", size);
+        integrator.addExtra("SCAN_WIDTH", size);
         integrator.initiateScan(IntentIntegrator.QR_CODE_TYPES);
     }
 
