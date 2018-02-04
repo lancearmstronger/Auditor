@@ -267,6 +267,8 @@ public class AttestationActivity extends AppCompatActivity {
                 mStage = Stage.AuditorResults;
                 mView.setVisibility(View.GONE);
                 showAuditorResults(contentsBytes);
+            } else {
+                Log.w(TAG, "received unexpected scan result");
             }
         } else {
             Log.w(TAG, "scanResult null");
