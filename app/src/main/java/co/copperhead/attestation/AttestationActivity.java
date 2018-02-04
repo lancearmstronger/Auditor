@@ -138,7 +138,7 @@ public class AttestationActivity extends AppCompatActivity {
         savedInstanceState.putString(STATE_OUTPUT, textView.getText().toString());
     }
 
-    private String logFormatBytes(final byte[] bytes) {
+    private static String logFormatBytes(final byte[] bytes) {
         return String.format("%d binary bytes logged here as base64 (%s)", bytes.length,
                 Base64.encodeToString(bytes, Base64.NO_WRAP));
     }
@@ -157,8 +157,7 @@ public class AttestationActivity extends AppCompatActivity {
         mView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.d(TAG, "Auditor qr view");
-                showQrScanner("auditor");
+                showQrScanner("Auditor");
             }
         });
         // show results
@@ -171,9 +170,7 @@ public class AttestationActivity extends AppCompatActivity {
     }
 
     private void runAuditee() {
-        Log.d(TAG, "runAuditee");
-        // scan qr
-        showQrScanner("auditee");
+        showQrScanner("Auditee");
     }
 
     private void continueAuditee(final byte[] challenge) {
@@ -220,7 +217,9 @@ public class AttestationActivity extends AppCompatActivity {
         return bitmap;
     }
 
-    private void showQrScanner(String initiator) {
+    private void showQrScanner(final String initiator) {
+        Log.d(TAG, "showQrScanner: " + initiator);
+
         final DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getRealMetrics(displayMetrics);
         final int size = Math.min(displayMetrics.heightPixels, displayMetrics.widthPixels) * 3 / 4;
