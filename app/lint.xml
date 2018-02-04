@@ -1,11 +1,17 @@
 <lint>
-  <issue id="InvalidPackage">
-    <ignore regexp="org.bouncycastle.cert.dane.fetcher.JndiDANEFetcherFactory"/>
-  </issue>
-  <issue id="TrustAllX509TrustManager">
-    <ignore regexp="JcaJceUtils"/>
-  </issue>
-  <issue id="PackageManagerGetSignatures">
-    <ignore path="src/main/java/co/copperhead/attestation/attestation/AttestationApplicationId.java"/>
-  </issue>
+    <!-- ignore false positive lints for dependencies -->
+    <issue id="InvalidPackage">
+        <ignore regexp="org.bouncycastle.cert.dane.fetcher.JndiDANEFetcherFactory"/>
+    </issue>
+    <issue id="TrustAllX509TrustManager">
+        <ignore regexp="JcaJceUtils"/>
+    </issue>
+    <issue id="PackageManagerGetSignatures">
+        <ignore path="src/main/java/co/copperhead/attestation/attestation/AttestationApplicationId.java"/>
+    </issue>
+
+    <!-- full backups are desired -->
+    <issue id="AllowBackup">
+        <ignore path="src/main/AndroidManifest.xml"/>
+    </issue>
 </lint>
