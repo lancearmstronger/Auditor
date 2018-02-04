@@ -268,8 +268,9 @@ public class AttestationActivity extends AppCompatActivity {
                 mView.setVisibility(View.GONE);
                 showAuditorResults(contentsBytes);
             }
+        } else {
+            Log.w(TAG, "scanResult null");
         }
-        Log.w(TAG, "scanResult null");
     }
 
     @Override
