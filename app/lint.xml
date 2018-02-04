@@ -14,4 +14,9 @@
     <issue id="AllowBackup">
         <ignore path="src/main/AndroidManifest.xml"/>
     </issue>
+
+    <!-- Google app indexing doesn't make any sense for this app -->
+    <issue id="GoogleAppIndexingWarning">
+        <ignore path="src/main/AndroidManifest.xml"/>
+    </issue>
 </lint>
