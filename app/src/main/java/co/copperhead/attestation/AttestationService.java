@@ -68,6 +68,29 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
 
     private static final byte PROTOCOL_VERSION = 1;
     private static final int MAX_CERTIFICATE_LENGTH = 2000;
+    // cat samples/taimen_attestation.der.x509 samples/taimen_intermediate.der.x509 | base64
+    private static final byte[] DEFLATE_DICTIONARY = BaseEncoding.base64().decode(
+            "MIICZjCCAg2gAwIBAgIBATAKBggqhkjOPQQDAjAbMRkwFwYDVQQFExBkNzc1MjM0ODY2ZjM3ZjUz" +
+            "MCAXDTE4MDIwNTAxNDM1OVoYDzIxMDYwMjA3MDYyODE1WjAfMR0wGwYDVQQDDBRBbmRyb2lkIEtl" +
+            "eXN0b3JlIEtleTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABODxAGPDQUKeGN90LJ30XS5voSvK" +
+            "VvEj2a0UP7R6fOy+pob45fFAH1qvqqLv9J6Ajb7PZX7HTpanJ7uaIQ5wpRmjggE6MIIBNjAOBgNV" +
+            "HQ8BAf8EBAMCB4AwggEiBgorBgEEAdZ5AgERBIIBEjCCAQ4CAQIKAQECAQMKAQEEIHpMSeMQFv3g" +
+            "4qCffZTszv/WNaIc3ePgFDtbvAM/uwLvBAAwZr+DEAgCBgFhY6JZLr+FPQgCBgFhY6Meu7+FRUoE" +
+            "SDBGMSAwHgQZY28uY29wcGVyaGVhZC5hdHRlc3RhdGlvbgIBATEiBCAW9DOe5NbEQZ3vCP9JSfcq" +
+            "G5CR7Ymx/pRH8xqOO8y8bzB0oQgxBgIBAgIBA6IDAgEDowQCAgEApQUxAwIBBKoDAgEBv4N3AgUA" +
+            "v4U+AwIBAL+FPwIFAL+FQCowKAQgFxYW6u8mAJ/EbcbYnz0kIX6SbIGmfOZdLjqdwnBAx6sBAf8K" +
+            "AQC/hUEFAgMBOOS/hUIFAgMDFEkwCgYIKoZIzj0EAwIDRwAwRAIgRQm5K1AAPmPc5lcJm3sICuav" +
+            "Zfaf3RBuEZHHpmc17YoCIAroE4eLaP5edIVWDGYCR5dTgEY3TOkACdQsQvfZCOKaMIICKTCCAa+g" +
+            "AwIBAgIJaDkSRnQoRzlhMAoGCCqGSM49BAMCMBsxGTAXBgNVBAUTEDg3ZjQ1MTQ0NzViYTBhMmIw" +
+            "HhcNMTYwNTI2MTcwNzMzWhcNMjYwNTI0MTcwNzMzWjAbMRkwFwYDVQQFExBkNzc1MjM0ODY2ZjM3" +
+            "ZjUzMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEqrXOysRNrb+GjpMdrmsXrqq+jyLaahkcgCo6" +
+            "rAROyYWOKaERvaFowtGsxkSfMSbqopj3qp//JBOW5iRrHRcp4KOB2zCB2DAdBgNVHQ4EFgQUL78c" +
+            "0llO0rDTlgtwnhdE3BoQUEswHwYDVR0jBBgwFoAUMEQj5aL2BuFQq3dfFha7kcxjxlkwDAYDVR0T" +
+            "AQH/BAIwADAOBgNVHQ8BAf8EBAMCB4AwJAYDVR0eBB0wG6AZMBeCFWludmFsaWQ7ZW1haWw6aW52" +
+            "YWxpZDBSBgNVHR8ESzBJMEegRaBDhkFodHRwczovL2FuZHJvaWQuZ29vZ2xlYXBpcy5jb20vYXR0" +
+            "ZXN0YXRpb24vY3JsLzY4MzkxMjQ2NzQyODQ3Mzk2MTAKBggqhkjOPQQDAgNoADBlAjA9rA4BW4Nt" +
+            "HoD3nXysHziKlLoAhCup8V4dNmWu6htIt43I3ANmVm7CzetNqgEjNPACMQCBuDKKwLOHBA9a/dHb" +
+            "9y8ApGZ+AU6StdxH/rHPYRFq84/5WOmUV7vPeFuRoMPe080=");
 
     private static final int CHALLENGE_LENGTH = 32;
     private static final String EC_CURVE = "secp256r1";
@@ -149,15 +172,6 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
             "D4KP88KxuiPCe94rp+Aqs5/YwuCo6rQ+HGi5OZNBsQXYIufClSBje+OpjQb7HJgi" +
             "hJdzo2/IBw==\n" +
             "-----END CERTIFICATE-----";
-
-    private static final byte[] CXF_DICTIONARY = BaseEncoding.base64().decode(
-            "MIIBOTCCASOgAwIBAgIBATANBgkqhkiG9w0BAQUFADAZMRcwFQYDVQQDEw5odHRw" +
-            "Oi8vd3d3LmNvbTAeFw0xMDA1MTExOTEzMDNaFw0xMTA1MTExOTEzMDNaMF8xEDAO" +
-            "BgkqhkiG9w0BCQEWAUAxCjAIBgNVBAMTASAxCzAJBgNVBAYTAlVTMQswCQYDVQQI" +
-            "EwJXSTELMAkGA1UEChMCb24xDDAKBgNVBAsTA291bjEKMAgGA1UEBRMBIDAfMA0G" +
-            "CSqGSIb3DQEBAQUAAw4AMAsCBG6G5ZUCAwEAAaNNMEswCQYDVR0TBAIwADAdBgNV" +
-            "HQ4EFgQUHSkK6busCxxK6PKpBlL9q8K1mcQwHwYDVR0jBBgwFoAUn7r/DVMuEpK9" +
-            "Rxq3nyiLml10+nQwDQYJKoZIhvcNAQEFBQADAQA=");
 
     private static final String FINGERPRINT_COPPERHEADOS_TAIMEN =
             "815DCBA82BAC1B1758211FF53CAA0B6883CB6C901BE285E1B291C8BDAA12DF75";
@@ -554,7 +568,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
 
             final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
             final Deflater deflater = new Deflater();
-            deflater.setDictionary(CXF_DICTIONARY);
+            deflater.setDictionary(DEFLATE_DICTIONARY);
             final DeflaterOutputStream deflaterStream = new DeflaterOutputStream(byteStream, deflater);
             deflaterStream.write(encoded);
             deflaterStream.finish();
@@ -626,7 +640,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
             if (!inflater.needsDictionary()) {
                 throw new GeneralSecurityException("decompression does not require dictionary");
             }
-            inflater.setDictionary(CXF_DICTIONARY);
+            inflater.setDictionary(DEFLATE_DICTIONARY);
             int encodedLength = inflater.inflate(encoded);
             if (!inflater.finished()) {
                 throw new GeneralSecurityException("certificate is too large");
