@@ -97,7 +97,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
     private static final String SIGNATURE_ALGORITHM = "SHA256WithECDSA";
     private static final String KEY_DIGEST = DIGEST_SHA256;
     private static final HashFunction FINGERPRINT_HASH_FUNCTION = Hashing.sha256();
-    private static final int FINGERPRINT_LENGTH = 32;
+    private static final int FINGERPRINT_LENGTH = FINGERPRINT_HASH_FUNCTION.bits() / 8;
 
     private static final String ATTESTATION_APP_PACKAGE_NAME = "co.copperhead.attestation";
     private static final int ATTESTATION_APP_MINIMUM_VERSION = 1;
