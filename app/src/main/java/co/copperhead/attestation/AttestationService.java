@@ -46,6 +46,9 @@ import java.security.spec.ECGenParameterSpec;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.Inflater;
 
 import java.security.cert.X509Certificate;
 
@@ -64,6 +67,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
     private static final String KEY_VERIFIED_TIME_LAST = "verified_time_last";
 
     private static final byte PROTOCOL_VERSION = 1;
+    private static final int MAX_CERTIFICATE_LENGTH = 2000;
 
     private static final int CHALLENGE_LENGTH = 32;
     private static final String EC_CURVE = "secp256r1";
@@ -535,11 +539,24 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         for (int i = 0; i < certificateCount; i++) {
             final X509Certificate certificate = (X509Certificate) attestationCertificates[i];
             final byte[] encoded = certificate.getEncoded();
-            if (encoded.length > Short.MAX_VALUE) {
-                throw new RuntimeException("encoded certificate too long");
+            if (encoded.length > MAX_CERTIFICATE_LENGTH) {
+                throw new GeneralSecurityException("certificate is too large");
             }
-            serializer.putShort((short)encoded.length);
-            serializer.put(encoded);
+
+            final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+            final Deflater deflater = new Deflater();
+            final DeflaterOutputStream deflaterStream = new DeflaterOutputStream(byteStream, deflater);
+            deflaterStream.write(encoded);
+            deflaterStream.finish();
+            final byte[] compressed = byteStream.toByteArray();
+
+            Log.d(TAG, "encoded length: " + encoded.length + ", compressed length: " + compressed.length);
+
+            if (compressed.length > Short.MAX_VALUE) {
+                throw new RuntimeException("compressed encoded certificate too long");
+            }
+            serializer.putShort((short)compressed.length);
+            serializer.put(compressed);
         }
 
         if (fingerprint.length != FINGERPRINT_LENGTH) {
@@ -572,7 +589,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
     //
     // signed message {
     // byte version = PROTOCOL_VERSION
-    // [short certificateLength, byte[] certificate] x certificateCount
+    // [short compressedCertificateLength, byte[] compressedCertificate] x certificateCount
     // byte[] fingerprint (length: FINGERPRINT_LENGTH)
     // byte hasPersistentKey
     // }
@@ -587,13 +604,25 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         final int certificateCount = 2;
         final Certificate[] certificates = new Certificate[certificateCount + 2];
         for (int i = 0; i < certificateCount; i++) {
-            final int encodedLength = deserializer.getShort();
-            final byte[] encoded = new byte[encodedLength];
-            deserializer.get(encoded);
+            final int compressedLength = deserializer.getShort();
+            final byte[] compressed = new byte[compressedLength];
+            deserializer.get(compressed);
+
+            final byte[] encoded = new byte[MAX_CERTIFICATE_LENGTH];
+
+            final Inflater inflater = new Inflater();
+            inflater.setInput(compressed);
+            int encodedLength = inflater.inflate(encoded);
+            if (!inflater.finished()) {
+                throw new GeneralSecurityException("certificate is too large");
+            }
+            inflater.end();
+
+            Log.d(TAG, "encoded length: " + encodedLength + ", compressed length: " + compressed.length);
+
             certificates[i] = CertificateFactory
                     .getInstance("X.509").generateCertificate(
-                            new ByteArrayInputStream(
-                                    encoded));
+                            new ByteArrayInputStream(encoded, 0, encodedLength));
         }
         final byte[] fingerprint = new byte[FINGERPRINT_LENGTH];
         deserializer.get(fingerprint);
