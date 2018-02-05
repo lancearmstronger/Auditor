@@ -150,6 +150,15 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
                     + "hJdzo2/IBw==\n"
                     + "-----END CERTIFICATE-----";
 
+    private static final byte[] CXF_DICTIONARY = BaseEncoding.base64().decode(
+            "MIIBOTCCASOgAwIBAgIBATANBgkqhkiG9w0BAQUFADAZMRcwFQYDVQQDEw5odHRw" +
+            "Oi8vd3d3LmNvbTAeFw0xMDA1MTExOTEzMDNaFw0xMTA1MTExOTEzMDNaMF8xEDAO" +
+            "BgkqhkiG9w0BCQEWAUAxCjAIBgNVBAMTASAxCzAJBgNVBAYTAlVTMQswCQYDVQQI" +
+            "EwJXSTELMAkGA1UEChMCb24xDDAKBgNVBAsTA291bjEKMAgGA1UEBRMBIDAfMA0G" +
+            "CSqGSIb3DQEBAQUAAw4AMAsCBG6G5ZUCAwEAAaNNMEswCQYDVR0TBAIwADAdBgNV" +
+            "HQ4EFgQUHSkK6busCxxK6PKpBlL9q8K1mcQwHwYDVR0jBBgwFoAUn7r/DVMuEpK9" +
+            "Rxq3nyiLml10+nQwDQYJKoZIhvcNAQEFBQADAQA=");
+
     private static final String FINGERPRINT_COPPERHEADOS_TAIMEN =
             "815DCBA82BAC1B1758211FF53CAA0B6883CB6C901BE285E1B291C8BDAA12DF75";
     private static final String FINGERPRINT_COPPERHEADOS_WALLEYE =
@@ -545,6 +554,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
 
             final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
             final Deflater deflater = new Deflater();
+            deflater.setDictionary(CXF_DICTIONARY);
             final DeflaterOutputStream deflaterStream = new DeflaterOutputStream(byteStream, deflater);
             deflaterStream.write(encoded);
             deflaterStream.finish();
@@ -612,6 +622,11 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
 
             final Inflater inflater = new Inflater();
             inflater.setInput(compressed);
+            inflater.inflate(encoded);
+            if (!inflater.needsDictionary()) {
+                throw new GeneralSecurityException("decompression does not require dictionary");
+            }
+            inflater.setDictionary(CXF_DICTIONARY);
             int encodedLength = inflater.inflate(encoded);
             if (!inflater.finished()) {
                 throw new GeneralSecurityException("certificate is too large");
