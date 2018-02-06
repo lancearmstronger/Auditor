@@ -229,12 +229,12 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         return challenge;
     }
 
-    private static String getFingerprint(final X509Certificate certificate)
+    private static String getFingerprint(final Certificate certificate)
             throws CertificateEncodingException {
         return FINGERPRINT_HASH_FUNCTION.hashBytes(certificate.getEncoded()).toString().toUpperCase();
     }
 
-    private static byte[] getFingerprintBytes(final X509Certificate certificate)
+    private static byte[] getFingerprintBytes(final Certificate certificate)
             throws CertificateEncodingException {
         return FINGERPRINT_HASH_FUNCTION.hashBytes(certificate.getEncoded()).asBytes();
     }
@@ -423,9 +423,11 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
     }
 
     private void verify(final Context context, final String fingerprint, final byte[] challenge,
-            final ByteBuffer signedMessage, final byte[] signature, final Certificate[] attestationCertificates,
-            final boolean hasPersistentKey)
+            final ByteBuffer signedMessage, final byte[] signature, final Certificate[] attestationCertificates)
             throws GeneralSecurityException {
+
+        final String currentFingerprint = getFingerprint(attestationCertificates[0]);
+        final boolean hasPersistentKey = !currentFingerprint.equals(fingerprint);
 
         final SharedPreferences preferences = context.getSharedPreferences(fingerprint, Context.MODE_PRIVATE);
         if (hasPersistentKey && !preferences.contains(KEY_PINNED_DEVICE)) {
@@ -490,10 +492,6 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
                     .putLong(KEY_VERIFIED_TIME_LAST, new Date().getTime())
                     .apply();
         } else {
-            final String realFingerprint = getFingerprint((X509Certificate) attestationCertificates[0]);
-            if (!fingerprint.equals(realFingerprint)) {
-                throw new GeneralSecurityException("received invalid fingerprint");
-            }
             publishVerifiedInformation(verified, fingerprint);
 
             final SharedPreferences.Editor editor = preferences.edit();
@@ -587,7 +585,6 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
             throw new RuntimeException("fingerprint length mismatch");
         }
         serializer.put(fingerprint);
-        serializer.put(hasPersistentKey ? (byte)1 : (byte)0);
 
         final ByteBuffer message = serializer.duplicate();
         message.flip();
@@ -616,7 +613,6 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
     // byte version = PROTOCOL_VERSION
     // [short compressedCertificateLength, byte[] compressedCertificate] x certificateCount
     // byte[] fingerprint (length: FINGERPRINT_LENGTH)
-    // byte hasPersistentKey
     // }
     // byte[] signature (rest of message)
 
@@ -652,11 +648,6 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         }
         final byte[] fingerprint = new byte[FINGERPRINT_LENGTH];
         deserializer.get(fingerprint);
-        final byte hasPersistentKeyByte = deserializer.get();
-        if (hasPersistentKeyByte != 0 && hasPersistentKeyByte != 1) {
-            throw new GeneralSecurityException("invalid attestation");
-        }
-        final boolean hasPersistentKey = hasPersistentKeyByte == 1;
         final int signatureLength = deserializer.remaining();
         final byte[] signature = new byte[signatureLength];
         deserializer.get(signature);
@@ -672,7 +663,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         deserializer.limit(deserializer.capacity() - signature.length);
 
         final String fingerprintHex = BaseEncoding.base16().encode(fingerprint);
-        verify(context, fingerprintHex, challenge, deserializer.asReadOnlyBuffer(), signature, certificates, hasPersistentKey);
+        verify(context, fingerprintHex, challenge, deserializer.asReadOnlyBuffer(), signature, certificates);
     }
 
     private static void generateKeyPair(final String algorithm, final KeyGenParameterSpec spec)
