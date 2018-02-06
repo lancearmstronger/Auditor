@@ -90,12 +90,13 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
     //
     // signed message {
     // byte version = PROTOCOL_VERSION
-    // [short compressedCertificateLength, byte[] compressedCertificate] x certificateCount
+    // short compressedChainLength
+    // byte[] compressedChain { [short encodedCertificateLength, byte[] encodedCertificate] x certificateCount }
     // byte[] fingerprint (length: FINGERPRINT_LENGTH)
     // }
     // byte[] signature (rest of message)
     private static final byte PROTOCOL_VERSION = 1;
-    private static final int MAX_CERTIFICATE_LENGTH = 2000;
+    private static final int MAX_ENCODED_CHAIN_LENGTH = 3000;
     private static final int MAX_MESSAGE_SIZE = 2953;
     // cat samples/taimen_attestation.der.x509 samples/taimen_intermediate.der.x509 | base64
     private static final byte[] DEFLATE_DICTIONARY = BaseEncoding.base64().decode(
@@ -611,30 +612,39 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         final ByteBuffer serializer = ByteBuffer.allocate(MAX_MESSAGE_SIZE);
         serializer.put(PROTOCOL_VERSION);
 
+        final ByteBuffer chainSerializer = ByteBuffer.allocate(MAX_ENCODED_CHAIN_LENGTH);
         final int certificateCount = attestationCertificates.length - 2;
         for (int i = 0; i < certificateCount; i++) {
             final X509Certificate certificate = (X509Certificate) attestationCertificates[i];
             final byte[] encoded = certificate.getEncoded();
-            if (encoded.length > MAX_CERTIFICATE_LENGTH) {
-                throw new GeneralSecurityException("certificate is too large");
+            if (encoded.length > Short.MAX_VALUE) {
+                throw new RuntimeException("encoded certificate too long");
             }
-
-            final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-            final Deflater deflater = new Deflater(Deflater.DEFAULT_COMPRESSION, true);
-            deflater.setDictionary(DEFLATE_DICTIONARY);
-            final DeflaterOutputStream deflaterStream = new DeflaterOutputStream(byteStream, deflater);
-            deflaterStream.write(encoded);
-            deflaterStream.finish();
-            final byte[] compressed = byteStream.toByteArray();
-
-            Log.d(TAG, "encoded length: " + encoded.length + ", compressed length: " + compressed.length);
-
-            if (compressed.length > Short.MAX_VALUE) {
-                throw new RuntimeException("compressed encoded certificate too long");
-            }
-            serializer.putShort((short)compressed.length);
-            serializer.put(compressed);
+            chainSerializer.putShort((short)encoded.length);
+            chainSerializer.put(encoded);
         }
+        chainSerializer.flip();
+        final byte[] chain = new byte[chainSerializer.remaining()];
+        chainSerializer.get(chain);
+
+        if (chain.length > MAX_ENCODED_CHAIN_LENGTH) {
+            throw new RuntimeException("encoded certificate chain too long");
+        }
+
+        final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+        final Deflater deflater = new Deflater(Deflater.DEFAULT_COMPRESSION, true);
+        deflater.setDictionary(DEFLATE_DICTIONARY);
+        final DeflaterOutputStream deflaterStream = new DeflaterOutputStream(byteStream, deflater);
+        deflaterStream.write(chain);
+        deflaterStream.finish();
+        final byte[] compressed = byteStream.toByteArray();
+        Log.d(TAG, "encoded length: " + chain.length + ", compressed length: " + compressed.length);
+
+        if (compressed.length > Short.MAX_VALUE) {
+            throw new RuntimeException("compressed chain too long");
+        }
+        serializer.putShort((short)compressed.length);
+        serializer.put(compressed);
 
         if (fingerprint.length != FINGERPRINT_LENGTH) {
             throw new RuntimeException("fingerprint length mismatch");
@@ -664,28 +674,30 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         if (version != PROTOCOL_VERSION) {
             throw new GeneralSecurityException("unsupported protocol version: " + version);
         }
+
+        final short compressedChainLength = deserializer.getShort();
+        final byte[] compressedChain = new byte[compressedChainLength];
+        deserializer.get(compressedChain);
+
+        final byte[] chain = new byte[MAX_ENCODED_CHAIN_LENGTH];
+        final Inflater inflater = new Inflater(true);
+        inflater.setInput(compressedChain);
+        inflater.setDictionary(DEFLATE_DICTIONARY);
+        int chainLength = inflater.inflate(chain);
+        if (!inflater.finished()) {
+            throw new GeneralSecurityException("certificate chain is too large");
+        }
+        inflater.end();
+        Log.d(TAG, "encoded length: " + chainLength + ", compressed length: " + compressedChain.length);
+
+        final ByteBuffer chainDeserializer = ByteBuffer.wrap(chain, 0, chainLength);
         final int certificateCount = 2;
         final Certificate[] certificates = new Certificate[certificateCount + 2];
         for (int i = 0; i < certificateCount; i++) {
-            final int compressedLength = deserializer.getShort();
-            final byte[] compressed = new byte[compressedLength];
-            deserializer.get(compressed);
-
-            final byte[] encoded = new byte[MAX_CERTIFICATE_LENGTH];
-
-            final Inflater inflater = new Inflater(true);
-            inflater.setInput(compressed);
-            inflater.setDictionary(DEFLATE_DICTIONARY);
-            final int encodedLength = inflater.inflate(encoded);
-            if (!inflater.finished()) {
-                throw new GeneralSecurityException("certificate is too large");
-            }
-            inflater.end();
-
-            Log.d(TAG, "encoded length: " + encodedLength + ", compressed length: " + compressed.length);
-
-            certificates[i] = generateCertificate(
-                    new ByteArrayInputStream(encoded, 0, encodedLength));
+            final short encodedLength = chainDeserializer.getShort();
+            final byte[] encoded = new byte[encodedLength];
+            chainDeserializer.get(encoded);
+            certificates[i] = generateCertificate(new ByteArrayInputStream(encoded));
         }
         final byte[] fingerprint = new byte[FINGERPRINT_LENGTH];
         deserializer.get(fingerprint);
