@@ -21,6 +21,7 @@ import android.widget.TextView;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.ByteBuffer;
@@ -266,6 +267,11 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         }
     }
 
+    private static X509Certificate generateCertificate(final InputStream in)
+            throws CertificateException {
+        return (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(in);
+    }
+
     private static Verified verifyAttestation(final Certificate[] certificates, final byte[] challenge)
             throws GeneralSecurityException {
 
@@ -277,18 +283,16 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         }
 
         // check that the root certificate is the Google key attestation root
-        final X509Certificate secureRoot = (X509Certificate) CertificateFactory
-                .getInstance("X.509").generateCertificate(
-                        new ByteArrayInputStream(GOOGLE_ROOT_CERTIFICATE.getBytes()));
+        final X509Certificate secureRoot = generateCertificate(
+                new ByteArrayInputStream(GOOGLE_ROOT_CERTIFICATE.getBytes()));
         final X509Certificate rootCert = (X509Certificate) certificates[certificates.length - 1];
         if (!Arrays.equals(secureRoot.getEncoded(), rootCert.getEncoded())) {
             throw new GeneralSecurityException("root certificate is not the Google key attestation root");
         }
 
         // check that 2nd last certificate is the expected intermediate (may prove to be too strict)
-        final X509Certificate pixelIntermediate = (X509Certificate) CertificateFactory
-                .getInstance("X.509").generateCertificate(
-                        new ByteArrayInputStream(WAHOO_INTERMEDIATE_CERTIFICATE.getBytes()));
+        final X509Certificate pixelIntermediate = generateCertificate(
+                new ByteArrayInputStream(WAHOO_INTERMEDIATE_CERTIFICATE.getBytes()));
         final X509Certificate intermediateCert = (X509Certificate) certificates[certificates.length - 2];
         if (!Arrays.equals(pixelIntermediate.getEncoded(), intermediateCert.getEncoded())) {
             throw new GeneralSecurityException("2nd last certificate is not the Pixel 2 (XL) intermediate");
@@ -482,10 +486,8 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
             publishProgress("\nCertificate chain matches pinned certificate chain.\n");
 
             final byte[] persistentCertificateEncoded = BaseEncoding.base64().decode(preferences.getString(KEY_PINNED_CERTIFICATE + "_0", null));
-            final X509Certificate persistentCertificate = (X509Certificate) CertificateFactory
-                    .getInstance("X.509").generateCertificate(
-                            new ByteArrayInputStream(
-                                    persistentCertificateEncoded));
+            final X509Certificate persistentCertificate = generateCertificate(
+                    new ByteArrayInputStream(persistentCertificateEncoded));
             if (!fingerprint.equals(getFingerprint(persistentCertificate))) {
                 throw new GeneralSecurityException("received invalid fingerprint");
             }
@@ -644,9 +646,8 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
 
             Log.d(TAG, "encoded length: " + encodedLength + ", compressed length: " + compressed.length);
 
-            certificates[i] = CertificateFactory
-                    .getInstance("X.509").generateCertificate(
-                            new ByteArrayInputStream(encoded, 0, encodedLength));
+            certificates[i] = generateCertificate(
+                    new ByteArrayInputStream(encoded, 0, encodedLength));
         }
         final byte[] fingerprint = new byte[FINGERPRINT_LENGTH];
         deserializer.get(fingerprint);
@@ -654,12 +655,10 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         final byte[] signature = new byte[signatureLength];
         deserializer.get(signature);
 
-        certificates[certificates.length - 2] = CertificateFactory
-                .getInstance("X.509").generateCertificate(
-                        new ByteArrayInputStream(WAHOO_INTERMEDIATE_CERTIFICATE.getBytes()));
-        certificates[certificates.length - 1] = CertificateFactory
-                .getInstance("X.509").generateCertificate(
-                        new ByteArrayInputStream(GOOGLE_ROOT_CERTIFICATE.getBytes()));
+        certificates[certificates.length - 2] = generateCertificate(
+                new ByteArrayInputStream(WAHOO_INTERMEDIATE_CERTIFICATE.getBytes()));
+        certificates[certificates.length - 1] = generateCertificate(
+                new ByteArrayInputStream(GOOGLE_ROOT_CERTIFICATE.getBytes()));
 
         deserializer.rewind();
         deserializer.limit(deserializer.capacity() - signature.length);
