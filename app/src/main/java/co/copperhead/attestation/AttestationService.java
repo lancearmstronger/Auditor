@@ -567,7 +567,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
             }
 
             final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-            final Deflater deflater = new Deflater();
+            final Deflater deflater = new Deflater(Deflater.DEFAULT_COMPRESSION, true);
             deflater.setDictionary(DEFLATE_DICTIONARY);
             final DeflaterOutputStream deflaterStream = new DeflaterOutputStream(byteStream, deflater);
             deflaterStream.write(encoded);
@@ -600,7 +600,6 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         serializer.put(signature);
 
         serializer.flip();
-
         final byte[] serialized = new byte[serializer.remaining()];
         serializer.get(serialized);
 
@@ -610,6 +609,8 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
     // Attestation message:
     //
     // PROTOCOL_VERSION == 1 implies certificateCount == 2
+    //
+    // Compression is done with raw DEFLATE (no zlib wrapper).
     //
     // signed message {
     // byte version = PROTOCOL_VERSION
@@ -634,14 +635,10 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
 
             final byte[] encoded = new byte[MAX_CERTIFICATE_LENGTH];
 
-            final Inflater inflater = new Inflater();
+            final Inflater inflater = new Inflater(true);
             inflater.setInput(compressed);
-            inflater.inflate(encoded);
-            if (!inflater.needsDictionary()) {
-                throw new GeneralSecurityException("decompression does not require dictionary");
-            }
             inflater.setDictionary(DEFLATE_DICTIONARY);
-            int encodedLength = inflater.inflate(encoded);
+            final int encodedLength = inflater.inflate(encoded);
             if (!inflater.finished()) {
                 throw new GeneralSecurityException("certificate is too large");
             }
