@@ -66,6 +66,18 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
     private static final String KEY_VERIFIED_TIME_FIRST = "verified_time_first";
     private static final String KEY_VERIFIED_TIME_LAST = "verified_time_last";
 
+    // Attestation message:
+    //
+    // PROTOCOL_VERSION == 1 implies certificateCount == 2
+    //
+    // Compression is done with raw DEFLATE (no zlib wrapper) with a preset dictionary.
+    //
+    // signed message {
+    // byte version = PROTOCOL_VERSION
+    // [short compressedCertificateLength, byte[] compressedCertificate] x certificateCount
+    // byte[] fingerprint (length: FINGERPRINT_LENGTH)
+    // }
+    // byte[] signature (rest of message)
     private static final byte PROTOCOL_VERSION = 1;
     private static final int MAX_CERTIFICATE_LENGTH = 2000;
     // cat samples/taimen_attestation.der.x509 samples/taimen_intermediate.der.x509 | base64
@@ -556,8 +568,8 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         verifyAttestation(attestationCertificates, challenge);
 
         final ByteBuffer serializer = ByteBuffer.allocate(3000);
-
         serializer.put(PROTOCOL_VERSION);
+
         final int certificateCount = attestationCertificates.length - 2;
         for (int i = 0; i < certificateCount; i++) {
             final X509Certificate certificate = (X509Certificate) attestationCertificates[i];
@@ -604,19 +616,6 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
 
         return serialized;
     }
-
-    // Attestation message:
-    //
-    // PROTOCOL_VERSION == 1 implies certificateCount == 2
-    //
-    // Compression is done with raw DEFLATE (no zlib wrapper) with a preset dictionary.
-    //
-    // signed message {
-    // byte version = PROTOCOL_VERSION
-    // [short compressedCertificateLength, byte[] compressedCertificate] x certificateCount
-    // byte[] fingerprint (length: FINGERPRINT_LENGTH)
-    // }
-    // byte[] signature (rest of message)
 
     private void verifyAttestation(final Context context, final byte[] attestationResult, final byte[] challenge) throws Exception {
         final ByteBuffer deserializer = ByteBuffer.wrap(attestationResult);
