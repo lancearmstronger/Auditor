@@ -80,6 +80,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
     // byte[] signature (rest of message)
     private static final byte PROTOCOL_VERSION = 1;
     private static final int MAX_CERTIFICATE_LENGTH = 2000;
+    private static final int MAX_MESSAGE_SIZE = 2953;
     // cat samples/taimen_attestation.der.x509 samples/taimen_intermediate.der.x509 | base64
     private static final byte[] DEFLATE_DICTIONARY = BaseEncoding.base64().decode(
             "MIICZjCCAg2gAwIBAgIBATAKBggqhkjOPQQDAjAbMRkwFwYDVQQFExBkNzc1MjM0ODY2ZjM3ZjUz" +
@@ -567,7 +568,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         // sanity check on the device being verified before sending it off to the verifying device
         verifyAttestation(attestationCertificates, challenge);
 
-        final ByteBuffer serializer = ByteBuffer.allocate(3000);
+        final ByteBuffer serializer = ByteBuffer.allocate(MAX_MESSAGE_SIZE);
         serializer.put(PROTOCOL_VERSION);
 
         final int certificateCount = attestationCertificates.length - 2;
