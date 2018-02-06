@@ -607,7 +607,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
     //
     // PROTOCOL_VERSION == 1 implies certificateCount == 2
     //
-    // Compression is done with raw DEFLATE (no zlib wrapper).
+    // Compression is done with raw DEFLATE (no zlib wrapper) with a preset dictionary.
     //
     // signed message {
     // byte version = PROTOCOL_VERSION
