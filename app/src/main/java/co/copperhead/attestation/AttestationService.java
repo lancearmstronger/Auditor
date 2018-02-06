@@ -59,6 +59,9 @@ import static android.security.keystore.KeyProperties.KEY_ALGORITHM_EC;
 class AttestationService extends AsyncTask<Object, String, byte[]> {
     private static final String TAG = "AttestationService";
 
+    private static final String KEYSTORE_ALIAS_FRESH = "fresh_attestation_key";
+    private static final String KEYSTORE_ALIAS_PERSISTENT = "persistent_attestation_key";
+
     private static final String KEY_PINNED_CERTIFICATE = "pinned_certificate";
     private static final String KEY_PINNED_CERTIFICATE_LENGTH = "pinned_certificate_length";
     private static final String KEY_PINNED_DEVICE = "pinned_device";
@@ -536,18 +539,14 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         final KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
         keyStore.load(null);
 
-        final String freshKeystoreAlias = "fresh_attestation_key";
-        keyStore.deleteEntry(freshKeystoreAlias);
-
-        final String persistentKeystoreAlias = "persistent_attestation_key";
-        final boolean hasPersistentKey = keyStore.containsAlias(persistentKeystoreAlias);
-
         // generate a new key for fresh attestation results unless the persistent key is not yet created
+        keyStore.deleteEntry(KEYSTORE_ALIAS_FRESH);
+        final boolean hasPersistentKey = keyStore.containsAlias(KEYSTORE_ALIAS_PERSISTENT);
         final String attestationKeystoreAlias;
         if (hasPersistentKey) {
-            attestationKeystoreAlias = freshKeystoreAlias;
+            attestationKeystoreAlias = KEYSTORE_ALIAS_FRESH;
         } else {
-            attestationKeystoreAlias = persistentKeystoreAlias;
+            attestationKeystoreAlias = KEYSTORE_ALIAS_PERSISTENT;
         }
 
         final Date startTime = new Date(new Date().getTime() - 10 * 1000);
@@ -563,7 +562,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         generateKeyPair(KEY_ALGORITHM_EC, builder.build());
 
         final byte[] fingerprint =
-                getFingerprintBytes((X509Certificate) keyStore.getCertificate(persistentKeystoreAlias));
+                getFingerprintBytes((X509Certificate) keyStore.getCertificate(KEYSTORE_ALIAS_PERSISTENT));
 
         final Certificate[] attestationCertificates = keyStore.getCertificateChain(attestationKeystoreAlias);
 
@@ -607,7 +606,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         message.flip();
 
         final Signature sig = Signature.getInstance(SIGNATURE_ALGORITHM);
-        sig.initSign((PrivateKey) keyStore.getKey(persistentKeystoreAlias, null));
+        sig.initSign((PrivateKey) keyStore.getKey(KEYSTORE_ALIAS_PERSISTENT, null));
         sig.update(message);
         final byte[] signature = sig.sign();
 
