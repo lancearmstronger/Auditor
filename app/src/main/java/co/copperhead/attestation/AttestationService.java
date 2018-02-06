@@ -9,10 +9,12 @@ import co.copperhead.attestation.attestation.RootOfTrust;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
+import com.google.common.primitives.Bytes;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
+import android.preference.PreferenceManager;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 import android.util.Base64;
@@ -60,8 +62,12 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
     private static final String TAG = "AttestationService";
 
     private static final String KEYSTORE_ALIAS_FRESH = "fresh_attestation_key";
-    private static final String KEYSTORE_ALIAS_PERSISTENT = "persistent_attestation_key";
+    private static final String KEYSTORE_ALIAS_PERSISTENT_PREFIX = "persistent_attestation_key_";
 
+    // Global preferences
+    private static final String KEY_CHALLENGE_INDEX = "challenge_index";
+
+    // Per-Auditee preferences
     private static final String KEY_PINNED_CERTIFICATE = "pinned_certificate";
     private static final String KEY_PINNED_CERTIFICATE_LENGTH = "pinned_certificate_length";
     private static final String KEY_PINNED_DEVICE = "pinned_device";
@@ -239,11 +245,29 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         }
     }
 
-    static byte[] getChallenge() {
+    private static byte[] getChallengeIndex(final Context context) {
+        final SharedPreferences global = PreferenceManager.getDefaultSharedPreferences(context);
+        final String challengeIndexSerialized = global.getString(KEY_CHALLENGE_INDEX, null);
+        if (challengeIndexSerialized != null) {
+            return BaseEncoding.base64().decode(challengeIndexSerialized);
+        } else {
+            final byte[] challengeIndex = getChallenge();
+            global.edit()
+                    .putString(KEY_CHALLENGE_INDEX, BaseEncoding.base64().encode(challengeIndex))
+                    .apply();
+            return challengeIndex;
+        }
+    }
+
+    private static byte[] getChallenge() {
         final SecureRandom random = new SecureRandom();
         final byte[] challenge = new byte[CHALLENGE_LENGTH];
         random.nextBytes(challenge);
         return challenge;
+    }
+
+    static byte[] getChallengeMessage(final Context context) {
+        return Bytes.concat(getChallengeIndex(context), getChallenge());
     }
 
     private static String getFingerprint(final Certificate certificate)
@@ -453,8 +477,9 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
 
         final SharedPreferences preferences = context.getSharedPreferences(fingerprint, Context.MODE_PRIVATE);
         if (hasPersistentKey && !preferences.contains(KEY_PINNED_DEVICE)) {
-            publishProgress("Device being verified is already paired with another verifier.\n");
-            publishProgress("\nClear attestation app data on the device being verified to pair with this device.\n");
+            publishProgress("Pairing data for this Auditee is missing. Cannot perform paired attestation.\n");
+            publishProgress("\nEither the initial pairing was incomplete or the device is compromised.\n");
+            publishProgress("\nIf the initial pairing was simply not completed, clear the app data on either the Auditee or the Auditor and try again.\n");
             return;
         }
 
@@ -535,18 +560,28 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         }
     }
 
-    private byte[] generateAttestation(final byte[] challenge) throws Exception {
+    private byte[] generateAttestation(final byte[] challengeMessage) throws Exception {
+        if (challengeMessage.length != CHALLENGE_LENGTH * 2) {
+            throw new GeneralSecurityException("challenge is not " + CHALLENGE_LENGTH * 2 + " bytes");
+        }
+
+        final byte[] challengeIndex = Arrays.copyOfRange(challengeMessage, 0, CHALLENGE_LENGTH);
+        final byte[] challenge = Arrays.copyOfRange(challengeMessage, CHALLENGE_LENGTH, CHALLENGE_LENGTH * 2);
+
         final KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
         keyStore.load(null);
 
+        final String persistentKeystoreAlias =
+                KEYSTORE_ALIAS_PERSISTENT_PREFIX + BaseEncoding.base16().encode(challengeIndex);
+
         // generate a new key for fresh attestation results unless the persistent key is not yet created
         keyStore.deleteEntry(KEYSTORE_ALIAS_FRESH);
-        final boolean hasPersistentKey = keyStore.containsAlias(KEYSTORE_ALIAS_PERSISTENT);
+        final boolean hasPersistentKey = keyStore.containsAlias(persistentKeystoreAlias);
         final String attestationKeystoreAlias;
         if (hasPersistentKey) {
             attestationKeystoreAlias = KEYSTORE_ALIAS_FRESH;
         } else {
-            attestationKeystoreAlias = KEYSTORE_ALIAS_PERSISTENT;
+            attestationKeystoreAlias = persistentKeystoreAlias;
         }
 
         final Date startTime = new Date(new Date().getTime() - 10 * 1000);
@@ -562,7 +597,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         generateKeyPair(KEY_ALGORITHM_EC, builder.build());
 
         final byte[] fingerprint =
-                getFingerprintBytes((X509Certificate) keyStore.getCertificate(KEYSTORE_ALIAS_PERSISTENT));
+                getFingerprintBytes((X509Certificate) keyStore.getCertificate(persistentKeystoreAlias));
 
         final Certificate[] attestationCertificates = keyStore.getCertificateChain(attestationKeystoreAlias);
 
@@ -606,7 +641,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         message.flip();
 
         final Signature sig = Signature.getInstance(SIGNATURE_ALGORITHM);
-        sig.initSign((PrivateKey) keyStore.getKey(KEYSTORE_ALIAS_PERSISTENT, null));
+        sig.initSign((PrivateKey) keyStore.getKey(persistentKeystoreAlias, null));
         sig.update(message);
         final byte[] signature = sig.sign();
 
@@ -619,7 +654,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         return serialized;
     }
 
-    private void verifyAttestation(final Context context, final byte[] attestationResult, final byte[] challenge) throws Exception {
+    private void verifyAttestation(final Context context, final byte[] attestationResult, final byte[] challengeMessage) throws Exception {
         final ByteBuffer deserializer = ByteBuffer.wrap(attestationResult);
         final byte version = deserializer.get();
         if (version != PROTOCOL_VERSION) {
@@ -663,6 +698,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         deserializer.limit(deserializer.capacity() - signature.length);
 
         final String fingerprintHex = BaseEncoding.base16().encode(fingerprint);
+        final byte[] challenge = Arrays.copyOfRange(challengeMessage, CHALLENGE_LENGTH, CHALLENGE_LENGTH * 2);
         verify(context, fingerprintHex, challenge, deserializer.asReadOnlyBuffer(), signature, certificates);
     }
 
