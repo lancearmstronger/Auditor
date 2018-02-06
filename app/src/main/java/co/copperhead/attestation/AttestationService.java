@@ -381,6 +381,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         for (int i = 1; i < certChain.length; ++i) {
             final PublicKey pubKey = certChain[i].getPublicKey();
             try {
+                ((X509Certificate) certChain[i - 1]).checkValidity();
                 certChain[i - 1].verify(pubKey);
             } catch (InvalidKeyException | CertificateException | NoSuchAlgorithmException
                     | NoSuchProviderException | SignatureException e) {
@@ -390,6 +391,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
             if (i == certChain.length - 1) {
                 // Last cert is self-signed.
                 try {
+                    ((X509Certificate) certChain[i]).checkValidity();
                     certChain[i].verify(pubKey);
                 } catch (CertificateException e) {
                     throw new GeneralSecurityException(
