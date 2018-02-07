@@ -129,10 +129,10 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
 
     private static final String ATTESTATION_APP_PACKAGE_NAME = "co.copperhead.attestation";
     private static final int ATTESTATION_APP_MINIMUM_VERSION = 3;
-    private static final String ATTESTATION_APP_SIGNATURE_DIGEST =
-            BuildConfig.DEBUG ?
-                    "17727D8B61D55A864936B1A7B4A2554A15151F32EBCF44CDAA6E6C3258231890" :
-                    "16F4339EE4D6C4419DEF08FF4949F72A1B9091ED89B1FE9447F31A8E3BCCBC6F";
+    private static final String ATTESTATION_APP_SIGNATURE_DIGEST_DEBUG =
+            "17727D8B61D55A864936B1A7B4A2554A15151F32EBCF44CDAA6E6C3258231890";
+    private static final String ATTESTATION_APP_SIGNATURE_DIGEST_RELEASE =
+            "16F4339EE4D6C4419DEF08FF4949F72A1B9091ED89B1FE9447F31A8E3BCCBC6F";
     private static final int OS_VERSION_MINIMUM = 80100;
     private static final int OS_PATCH_LEVEL_MINIMUM = 201801;
 
@@ -370,8 +370,10 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
             throw new GeneralSecurityException("wrong number of attestation app signature digests");
         }
         final String signatureDigest = BaseEncoding.base16().encode(signatureDigests.get(0));
-        if (!ATTESTATION_APP_SIGNATURE_DIGEST.equals(signatureDigest)) {
-            throw new GeneralSecurityException("wrong attestation app signature digest");
+        if (!ATTESTATION_APP_SIGNATURE_DIGEST_RELEASE.equals(signatureDigest)) {
+            if (!BuildConfig.DEBUG || !ATTESTATION_APP_SIGNATURE_DIGEST_DEBUG.equals(signatureDigest)) {
+                throw new GeneralSecurityException("wrong attestation app signature digest");
+            }
         }
 
         final AuthorizationList teeEnforced = attestation.getTeeEnforced();
