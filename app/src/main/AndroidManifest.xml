@@ -18,6 +18,7 @@
             </intent-filter>
         </activity>
         <service android:name=".GenerateAttestationService" />
+        <service android:name=".VerifyAttestationService" />
     </application>
 
 </manifest>

@@ -436,32 +436,34 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         }
     }
 
-    private void publishVerifiedInformation(final Verified verified, final String fingerprint) {
-        publishProgress("\nVerified device information:\n");
-        publishProgress("\nDevice: " + verified.device + "\n");
+    private static void appendVerifiedInformation(final StringBuilder builder, final Verified verified, final String fingerprint) {
+        builder.append("\nVerified device information:\n");
+        builder.append("\nDevice: " + verified.device + "\n");
         if (verified.isStock) {
-            publishProgress("OS: Google Android (unmodified official release)\n");
+            builder.append("OS: Google Android (unmodified official release)\n");
         } else {
-            publishProgress("OS: CopperheadOS (unmodified official release)\n");
+            builder.append("OS: CopperheadOS (unmodified official release)\n");
         }
 
         final String osVersion = String.format(Locale.US, "%06d", verified.osVersion);
-        publishProgress("OS version: " +
+        builder.append("OS version: " +
                 Integer.parseInt(osVersion.substring(0, 2)) + "." +
                 Integer.parseInt(osVersion.substring(2, 4)) + "." +
                 Integer.parseInt(osVersion.substring(4, 6)) + "\n");
 
         final String osPatchLevel = Integer.toString(verified.osPatchLevel);
-        publishProgress("OS patch level: " +
+        builder.append("OS patch level: " +
                 osPatchLevel.toString().substring(0, 4) + "-" +
                 osPatchLevel.substring(4, 6) + "\n");
 
-        publishProgress("Identity: " + fingerprint + "\n");
+        builder.append("Identity: " + fingerprint + "\n");
     }
 
-    private void verify(final Context context, final byte[] fingerprint, final byte[] challenge,
+    private static String verify(final Context context, final byte[] fingerprint, final byte[] challenge,
             final ByteBuffer signedMessage, final byte[] signature, final Certificate[] attestationCertificates)
             throws GeneralSecurityException {
+
+        final StringBuilder builder = new StringBuilder();
 
         final String fingerprintHex = BaseEncoding.base16().encode(fingerprint);
         final byte[] currentFingerprint = getFingerprint(attestationCertificates[0]);
@@ -469,21 +471,21 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
 
         final SharedPreferences preferences = context.getSharedPreferences(fingerprintHex, Context.MODE_PRIVATE);
         if (hasPersistentKey && !preferences.contains(KEY_PINNED_DEVICE)) {
-            publishProgress("Pairing data for this Auditee is missing. Cannot perform paired attestation.\n");
-            publishProgress("\nEither the initial pairing was incomplete or the device is compromised.\n");
-            publishProgress("\nIf the initial pairing was simply not completed, clear the app data on either the Auditee or the Auditor and try again.\n");
-            return;
+            builder.append("Pairing data for this Auditee is missing. Cannot perform paired attestation.\n");
+            builder.append("\nEither the initial pairing was incomplete or the device is compromised.\n");
+            builder.append("\nIf the initial pairing was simply not completed, clear the app data on either the Auditee or the Auditor and try again.\n");
+            return builder.toString();
         }
 
         final Verified verified = verifyAttestation(attestationCertificates, challenge);
 
-        publishProgress("Verified attestation with trusted root and trusted intermediate.\n");
+        builder.append("Verified attestation with trusted root and trusted intermediate.\n");
 
         if (hasPersistentKey) {
             if (!verified.device.equals(preferences.getString(KEY_PINNED_DEVICE, null))) {
                 throw new GeneralSecurityException("pinned device mismatch");
             }
-            publishProgress("\nPinned device variant matches verified device variant.\n");
+            builder.append("\nPinned device variant matches verified device variant.\n");
 
             if (verified.osVersion < preferences.getInt(KEY_PINNED_OS_VERSION, Integer.MAX_VALUE)) {
                 throw new GeneralSecurityException("OS version downgrade detected");
@@ -491,7 +493,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
             if (verified.osPatchLevel < preferences.getInt(KEY_PINNED_OS_PATCH_LEVEL, Integer.MAX_VALUE)) {
                 throw new GeneralSecurityException("OS patch level downgrade detected");
             }
-            publishProgress("\nNo downgrade detected from pinned OS version and OS patch level.\n");
+            builder.append("\nNo downgrade detected from pinned OS version and OS patch level.\n");
 
             if (attestationCertificates.length != preferences.getInt(KEY_PINNED_CERTIFICATE_LENGTH, 0)) {
                 throw new GeneralSecurityException("certificate chain mismatch");
@@ -503,7 +505,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
                     throw new GeneralSecurityException("certificate chain mismatch");
                 }
             }
-            publishProgress("\nCertificate chain matches pinned certificate chain.\n");
+            builder.append("\nCertificate chain matches pinned certificate chain.\n");
 
             final byte[] persistentCertificateEncoded = BaseEncoding.base64().decode(preferences.getString(KEY_PINNED_CERTIFICATE + "_0", null));
             final X509Certificate persistentCertificate = generateCertificate(
@@ -517,11 +519,11 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
             if (!sig.verify(signature)) {
                 throw new GeneralSecurityException("signature verification failed");
             }
-            publishProgress("\nDevice identity confirmed with signed challenge.\n");
+            builder.append("\nDevice identity confirmed with signed challenge.\n");
 
-            publishVerifiedInformation(verified, fingerprintHex);
-            publishProgress("First verified: " + new Date(preferences.getLong(KEY_VERIFIED_TIME_FIRST, 0)) + "\n");
-            publishProgress("Last verified: " + new Date(preferences.getLong(KEY_VERIFIED_TIME_LAST, 0)) + "\n");
+            appendVerifiedInformation(builder, verified, fingerprintHex);
+            builder.append("First verified: " + new Date(preferences.getLong(KEY_VERIFIED_TIME_FIRST, 0)) + "\n");
+            builder.append("Last verified: " + new Date(preferences.getLong(KEY_VERIFIED_TIME_LAST, 0)) + "\n");
 
             preferences.edit()
                     .putInt(KEY_PINNED_OS_VERSION, verified.osVersion)
@@ -529,7 +531,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
                     .putLong(KEY_VERIFIED_TIME_LAST, new Date().getTime())
                     .apply();
         } else {
-            publishVerifiedInformation(verified, fingerprintHex);
+            appendVerifiedInformation(builder, verified, fingerprintHex);
 
             final SharedPreferences.Editor editor = preferences.edit();
 
@@ -550,6 +552,8 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
 
             editor.apply();
         }
+
+        return builder.toString();
     }
 
     static byte[] generateAttestation(final byte[] challengeMessage) throws Exception {
@@ -655,7 +659,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         return serialized;
     }
 
-    private void verifyAttestation(final Context context, final byte[] attestationResult, final byte[] challengeMessage) throws Exception {
+    static String verifyAttestation(final Context context, final byte[] attestationResult, final byte[] challengeMessage) throws Exception {
         final ByteBuffer deserializer = ByteBuffer.wrap(attestationResult);
         final byte version = deserializer.get();
         if (version != PROTOCOL_VERSION) {
@@ -701,7 +705,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         deserializer.limit(deserializer.capacity() - signature.length);
 
         final byte[] challenge = Arrays.copyOfRange(challengeMessage, CHALLENGE_LENGTH, CHALLENGE_LENGTH * 2);
-        verify(context, fingerprint, challenge, deserializer.asReadOnlyBuffer(), signature, certificates);
+        return verify(context, fingerprint, challenge, deserializer.asReadOnlyBuffer(), signature, certificates);
     }
 
     private static void generateKeyPair(final String algorithm, final KeyGenParameterSpec spec)

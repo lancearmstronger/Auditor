@@ -3,7 +3,6 @@ package co.copperhead.attestation;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -44,9 +43,8 @@ public class AttestationActivity extends AppCompatActivity {
     private static final String STATE_STAGE = "stage";
     private static final String STATE_OUTPUT = "output";
 
-    private static final int ATTESTATION_REQUEST_CODE = 0;
-
-    private AsyncTask<Object, String, byte[]> task = null;
+    private static final int GENERATE_REQUEST_CODE = 0;
+    private static final int VERIFY_REQUEST_CODE = 1;
 
     private TextView textView;
     private ImageView mView;
@@ -169,7 +167,13 @@ public class AttestationActivity extends AppCompatActivity {
 
     private void showAuditorResults(final byte[] serialized) {
         Log.d(TAG, "received attestation: " + logFormatBytes(serialized));
-        task = new AttestationService(this, textView).execute(serialized, auditorChallenge);
+
+        final PendingIntent pending = createPendingResult(VERIFY_REQUEST_CODE, new Intent(), 0);
+        final Intent intent = new Intent(this, VerifyAttestationService.class);
+        intent.putExtra(VerifyAttestationService.EXTRA_CHALLENGE_MESSAGE, auditorChallenge);
+        intent.putExtra(VerifyAttestationService.EXTRA_SERIALIZED, serialized);
+        intent.putExtra(VerifyAttestationService.EXTRA_PENDING_RESULT, pending);
+        startService(intent);
     }
 
     private void runAuditee() {
@@ -179,7 +183,7 @@ public class AttestationActivity extends AppCompatActivity {
     private void continueAuditee(final byte[] challenge) {
         Log.d(TAG, "received random challenge: " + logFormatBytes(challenge));
 
-        final PendingIntent pending = createPendingResult(ATTESTATION_REQUEST_CODE, new Intent(), 0);
+        final PendingIntent pending = createPendingResult(GENERATE_REQUEST_CODE, new Intent(), 0);
         final Intent intent = new Intent(this, GenerateAttestationService.class);
         intent.putExtra(GenerateAttestationService.EXTRA_CHALLENGE_MESSAGE, challenge);
         intent.putExtra(GenerateAttestationService.EXTRA_PENDING_RESULT, pending);
@@ -241,7 +245,7 @@ public class AttestationActivity extends AppCompatActivity {
     public void onActivityResult(final int requestCode, final int resultCode, final Intent intent) {
         Log.d(TAG, "onActivityResult " + requestCode + " " + resultCode);
 
-        if (requestCode == ATTESTATION_REQUEST_CODE) {
+        if (requestCode == GENERATE_REQUEST_CODE) {
             if (resultCode != GenerateAttestationService.RESULT_CODE) {
                 throw new RuntimeException("unexpected result code");
             }
@@ -251,6 +255,16 @@ public class AttestationActivity extends AppCompatActivity {
             }
             auditeeShowAttestation(intent.getByteArrayExtra(GenerateAttestationService.EXTRA_ATTESTATION));
             return;
+        } else if (requestCode == VERIFY_REQUEST_CODE) {
+            if (resultCode != VerifyAttestationService.RESULT_CODE) {
+                throw new RuntimeException("unexpected result code");
+            }
+            if (intent.hasExtra(VerifyAttestationService.EXTRA_ERROR)) {
+                textView.setText("Error: " + intent.getStringExtra(VerifyAttestationService.EXTRA_ERROR));
+                return;
+            }
+            textView.setText(intent.getStringExtra(VerifyAttestationService.EXTRA_OUTPUT));
+            Log.w(TAG, "verify request code");
         }
 
         IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, intent);
