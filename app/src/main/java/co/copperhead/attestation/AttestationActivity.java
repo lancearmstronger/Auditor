@@ -255,7 +255,6 @@ public class AttestationActivity extends AppCompatActivity {
                 return;
             }
             auditeeShowAttestation(intent.getByteArrayExtra(GenerateAttestationService.EXTRA_ATTESTATION));
-            return;
         } else if (requestCode == VERIFY_REQUEST_CODE) {
             if (resultCode != VerifyAttestationService.RESULT_CODE) {
                 throw new RuntimeException("unexpected result code");
@@ -266,39 +265,39 @@ public class AttestationActivity extends AppCompatActivity {
                 return;
             }
             textView.setText(intent.getStringExtra(VerifyAttestationService.EXTRA_OUTPUT));
-            Log.w(TAG, "verify request code");
-        }
-
-        IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, intent);
-        if (scanResult != null) {
-            // handle scan result
-            final String contents = scanResult.getContents();
-            if (contents == null) {
-                if (mStage == Stage.Auditee) {
-                    mStage = Stage.None;
-                    auditee.setVisibility(View.VISIBLE);
-                    auditor.setVisibility(View.VISIBLE);
-                }
-                return;
-            }
-            final byte[] contentsBytes;
-            try {
-                contentsBytes = contents.getBytes("ISO-8859-1");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException("ISO-8859-1 not supported", e);
-            }
-            if (mStage == Stage.Auditee) {
-                mStage = Stage.AuditeeGenerate;
-                continueAuditee(contentsBytes);
-            } else if (mStage == Stage.Auditor) {
-                mStage = Stage.AuditorResults;
-                mView.setVisibility(View.GONE);
-                showAuditorResults(contentsBytes);
-            } else {
-                Log.w(TAG, "received unexpected scan result");
-            }
         } else {
-            Log.w(TAG, "scanResult null");
+            final IntentResult scanResult =
+                    IntentIntegrator.parseActivityResult(requestCode, resultCode, intent);
+            if (scanResult != null) {
+                // handle scan result
+                final String contents = scanResult.getContents();
+                if (contents == null) {
+                    if (mStage == Stage.Auditee) {
+                        mStage = Stage.None;
+                        auditee.setVisibility(View.VISIBLE);
+                        auditor.setVisibility(View.VISIBLE);
+                    }
+                    return;
+                }
+                final byte[] contentsBytes;
+                try {
+                    contentsBytes = contents.getBytes("ISO-8859-1");
+                } catch (UnsupportedEncodingException e) {
+                    throw new RuntimeException("ISO-8859-1 not supported", e);
+                }
+                if (mStage == Stage.Auditee) {
+                    mStage = Stage.AuditeeGenerate;
+                    continueAuditee(contentsBytes);
+                } else if (mStage == Stage.Auditor) {
+                    mStage = Stage.AuditorResults;
+                    mView.setVisibility(View.GONE);
+                    showAuditorResults(contentsBytes);
+                } else {
+                    Log.w(TAG, "received unexpected scan result");
+                }
+            } else {
+                Log.w(TAG, "scanResult null");
+            }
         }
     }
 
