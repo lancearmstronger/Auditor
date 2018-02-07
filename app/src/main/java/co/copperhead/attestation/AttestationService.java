@@ -13,19 +13,15 @@ import com.google.common.primitives.Bytes;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 import android.util.Base64;
 import android.util.Log;
-import android.widget.TextView;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
@@ -59,7 +55,7 @@ import java.security.cert.X509Certificate;
 import static android.security.keystore.KeyProperties.DIGEST_SHA256;
 import static android.security.keystore.KeyProperties.KEY_ALGORITHM_EC;
 
-class AttestationService extends AsyncTask<Object, String, byte[]> {
+class AttestationService {
     private static final String TAG = "AttestationService";
 
     private static final String KEYSTORE_ALIAS_FRESH = "fresh_attestation_key";
@@ -211,33 +207,6 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
             "171616EAEF26009FC46DC6D89F3D24217E926C81A67CE65D2E3A9DC27040C7AB";
     private static final String FINGERPRINT_STOCK_WALLEYE =
             "1962B0538579FFCE9AC9F507C46AFE3B92055BAC7146462283C85C500BE78D82";
-
-    private final AttestationActivity activity;
-    private final TextView view;
-
-    AttestationService(AttestationActivity activity, TextView view) {
-        this.activity = activity;
-        this.view = view;
-    }
-
-    @Override
-    protected byte[] doInBackground(Object... params) {
-        try {
-            verifyAttestation(activity, (byte[]) params[0], (byte[]) params[1]);
-        } catch (Exception e) {
-            final StringWriter s = new StringWriter();
-            e.printStackTrace(new PrintWriter(s));
-            publishProgress(s.toString());
-        }
-        return null;
-    }
-
-    @Override
-    protected void onProgressUpdate(String... values) {
-        for (String value : values) {
-            view.append(value);
-        }
-    }
 
     private static byte[] getChallengeIndex(final Context context) {
         final SharedPreferences global = PreferenceManager.getDefaultSharedPreferences(context);
