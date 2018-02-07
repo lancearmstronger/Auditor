@@ -29,6 +29,7 @@ import com.google.zxing.qrcode.QRCodeWriter;
 
 import java.io.UnsupportedEncodingException;
 import java.util.EnumMap;
+import java.util.Locale;
 import java.util.Map;
 
 import static android.graphics.Color.BLACK;
@@ -139,7 +140,7 @@ public class AttestationActivity extends AppCompatActivity {
     }
 
     private static String logFormatBytes(final byte[] bytes) {
-        return String.format("%d binary bytes logged here as base64 (%s)", bytes.length,
+        return String.format(Locale.US, "%d binary bytes logged here as base64 (%s)", bytes.length,
                 Base64.encodeToString(bytes, Base64.NO_WRAP));
     }
 

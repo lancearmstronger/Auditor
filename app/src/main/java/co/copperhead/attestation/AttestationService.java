@@ -49,6 +49,7 @@ import java.security.spec.ECGenParameterSpec;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
@@ -456,7 +457,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
             publishProgress("OS: CopperheadOS (unmodified official release)\n");
         }
 
-        final String osVersion = String.format("%06d", verified.osVersion);
+        final String osVersion = String.format(Locale.US, "%06d", verified.osVersion);
         publishProgress("OS version: " +
                 Integer.parseInt(osVersion.substring(0, 2)) + "." +
                 Integer.parseInt(osVersion.substring(2, 4)) + "." +
