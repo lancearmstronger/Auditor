@@ -250,7 +250,8 @@ public class AttestationActivity extends AppCompatActivity {
                 throw new RuntimeException("unexpected result code");
             }
             if (intent.hasExtra(GenerateAttestationService.EXTRA_ATTESTATION_ERROR)) {
-                textView.setText("Error: " + intent.getStringExtra(GenerateAttestationService.EXTRA_ATTESTATION_ERROR));
+                textView.setText(R.string.generate_error);
+                textView.append(intent.getStringExtra(GenerateAttestationService.EXTRA_ATTESTATION_ERROR));
                 return;
             }
             auditeeShowAttestation(intent.getByteArrayExtra(GenerateAttestationService.EXTRA_ATTESTATION));
@@ -260,7 +261,8 @@ public class AttestationActivity extends AppCompatActivity {
                 throw new RuntimeException("unexpected result code");
             }
             if (intent.hasExtra(VerifyAttestationService.EXTRA_ERROR)) {
-                textView.setText("Error: " + intent.getStringExtra(VerifyAttestationService.EXTRA_ERROR));
+                textView.setText(getString(R.string.verify_error));
+                textView.append(intent.getStringExtra(VerifyAttestationService.EXTRA_ERROR));
                 return;
             }
             textView.setText(intent.getStringExtra(VerifyAttestationService.EXTRA_OUTPUT));

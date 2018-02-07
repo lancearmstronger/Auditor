@@ -5,4 +5,6 @@
     <string name="auditor_button">Auditor</string>
     <string name="auditee_button">Auditee</string>
     <string name="qrcode_content_description">QR code</string>
+    <string name="generate_error">Error encountered generating attestation:\n\n</string>
+    <string name="verify_error">Error encountered verifying attestation:\n\n</string>
 </resources>
