@@ -275,12 +275,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         return Bytes.concat(getChallengeIndex(context), getChallenge());
     }
 
-    private static String getFingerprint(final Certificate certificate)
-            throws CertificateEncodingException {
-        return FINGERPRINT_HASH_FUNCTION.hashBytes(certificate.getEncoded()).toString().toUpperCase();
-    }
-
-    private static byte[] getFingerprintBytes(final Certificate certificate)
+    private static byte[] getFingerprint(final Certificate certificate)
             throws CertificateEncodingException {
         return FINGERPRINT_HASH_FUNCTION.hashBytes(certificate.getEncoded()).asBytes();
     }
@@ -475,14 +470,15 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         publishProgress("Identity: " + fingerprint + "\n");
     }
 
-    private void verify(final Context context, final String fingerprint, final byte[] challenge,
+    private void verify(final Context context, final byte[] fingerprint, final byte[] challenge,
             final ByteBuffer signedMessage, final byte[] signature, final Certificate[] attestationCertificates)
             throws GeneralSecurityException {
 
-        final String currentFingerprint = getFingerprint(attestationCertificates[0]);
-        final boolean hasPersistentKey = !currentFingerprint.equals(fingerprint);
+        final String fingerprintHex = BaseEncoding.base16().encode(fingerprint);
+        final byte[] currentFingerprint = getFingerprint(attestationCertificates[0]);
+        final boolean hasPersistentKey = !Arrays.equals(currentFingerprint, fingerprint);
 
-        final SharedPreferences preferences = context.getSharedPreferences(fingerprint, Context.MODE_PRIVATE);
+        final SharedPreferences preferences = context.getSharedPreferences(fingerprintHex, Context.MODE_PRIVATE);
         if (hasPersistentKey && !preferences.contains(KEY_PINNED_DEVICE)) {
             publishProgress("Pairing data for this Auditee is missing. Cannot perform paired attestation.\n");
             publishProgress("\nEither the initial pairing was incomplete or the device is compromised.\n");
@@ -523,8 +519,8 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
             final byte[] persistentCertificateEncoded = BaseEncoding.base64().decode(preferences.getString(KEY_PINNED_CERTIFICATE + "_0", null));
             final X509Certificate persistentCertificate = generateCertificate(
                     new ByteArrayInputStream(persistentCertificateEncoded));
-            if (!fingerprint.equals(getFingerprint(persistentCertificate))) {
-                throw new GeneralSecurityException("received invalid fingerprint");
+            if (!Arrays.equals(fingerprint, getFingerprint(persistentCertificate))) {
+                throw new GeneralSecurityException("corrupt Auditor pinning data");
             }
             final Signature sig = Signature.getInstance(SIGNATURE_ALGORITHM);
             sig.initVerify(persistentCertificate.getPublicKey());
@@ -534,7 +530,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
             }
             publishProgress("\nDevice identity confirmed with signed challenge.\n");
 
-            publishVerifiedInformation(verified, fingerprint);
+            publishVerifiedInformation(verified, fingerprintHex);
             publishProgress("First verified: " + new Date(preferences.getLong(KEY_VERIFIED_TIME_FIRST, 0)) + "\n");
             publishProgress("Last verified: " + new Date(preferences.getLong(KEY_VERIFIED_TIME_LAST, 0)) + "\n");
 
@@ -544,7 +540,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
                     .putLong(KEY_VERIFIED_TIME_LAST, new Date().getTime())
                     .apply();
         } else {
-            publishVerifiedInformation(verified, fingerprint);
+            publishVerifiedInformation(verified, fingerprintHex);
 
             final SharedPreferences.Editor editor = preferences.edit();
 
@@ -604,7 +600,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         generateKeyPair(KEY_ALGORITHM_EC, builder.build());
 
         final byte[] fingerprint =
-                getFingerprintBytes((X509Certificate) keyStore.getCertificate(persistentKeystoreAlias));
+                getFingerprint((X509Certificate) keyStore.getCertificate(persistentKeystoreAlias));
 
         final Certificate[] attestationCertificates = keyStore.getCertificateChain(attestationKeystoreAlias);
 
@@ -704,9 +700,8 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         deserializer.rewind();
         deserializer.limit(deserializer.capacity() - signature.length);
 
-        final String fingerprintHex = BaseEncoding.base16().encode(fingerprint);
         final byte[] challenge = Arrays.copyOfRange(challengeMessage, CHALLENGE_LENGTH, CHALLENGE_LENGTH * 2);
-        verify(context, fingerprintHex, challenge, deserializer.asReadOnlyBuffer(), signature, certificates);
+        verify(context, fingerprint, challenge, deserializer.asReadOnlyBuffer(), signature, certificates);
     }
 
     private static void generateKeyPair(final String algorithm, final KeyGenParameterSpec spec)
