@@ -149,7 +149,7 @@ public class AttestationActivity extends AppCompatActivity {
         Log.d(TAG, "runAuditor");
         // generate qr
         if (auditorChallenge == null) {
-            auditorChallenge = AttestationService.getChallengeMessage(this);
+            auditorChallenge = AttestationProtocol.getChallengeMessage(this);
         }
         Log.d(TAG, "sending random challenge: " + logFormatBytes(auditorChallenge));
 

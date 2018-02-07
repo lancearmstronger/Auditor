@@ -55,8 +55,8 @@ import java.security.cert.X509Certificate;
 import static android.security.keystore.KeyProperties.DIGEST_SHA256;
 import static android.security.keystore.KeyProperties.KEY_ALGORITHM_EC;
 
-class AttestationService {
-    private static final String TAG = "AttestationService";
+class AttestationProtocol {
+    private static final String TAG = "AttestationProtocol";
 
     private static final String KEYSTORE_ALIAS_FRESH = "fresh_attestation_key";
     private static final String KEYSTORE_ALIAS_PERSISTENT_PREFIX = "persistent_attestation_key_";

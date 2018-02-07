@@ -43,7 +43,7 @@ public class VerifyAttestationService extends IntentService {
         final Intent resultIntent = new Intent(ACTION_ATTESTATION);
 
         try {
-            final String output = AttestationService.verifyAttestation(this, serialized, challengeMessage);
+            final String output = AttestationProtocol.verifyAttestation(this, serialized, challengeMessage);
             resultIntent.putExtra(EXTRA_OUTPUT, output);
         } catch (Exception e) {
             Log.e(TAG, "attestation generation error", e);
