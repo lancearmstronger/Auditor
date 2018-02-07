@@ -222,14 +222,8 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
 
     @Override
     protected byte[] doInBackground(Object... params) {
-        boolean verify = (Boolean) params[0];
         try {
-            if (verify) {
-                verifyAttestation(activity, (byte[]) params[1], (byte[]) params[2]);
-                return null;
-            } else {
-                return generateAttestation((byte[]) params[1]);
-            }
+            verifyAttestation(activity, (byte[]) params[0], (byte[]) params[1]);
         } catch (Exception e) {
             final StringWriter s = new StringWriter();
             e.printStackTrace(new PrintWriter(s));
@@ -242,13 +236,6 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
     protected void onProgressUpdate(String... values) {
         for (String value : values) {
             view.append(value);
-        }
-    }
-
-    @Override
-    protected void onPostExecute(final byte[] serialized) {
-        if (serialized != null) {
-            activity.continueAuditeeShowAttestation(serialized);
         }
     }
 
@@ -565,7 +552,7 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
         }
     }
 
-    private byte[] generateAttestation(final byte[] challengeMessage) throws Exception {
+    static byte[] generateAttestation(final byte[] challengeMessage) throws Exception {
         if (challengeMessage.length != CHALLENGE_LENGTH * 2) {
             throw new GeneralSecurityException("challenge is not " + CHALLENGE_LENGTH * 2 + " bytes");
         }

@@ -1,5 +1,6 @@
 package co.copperhead.attestation;
 
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.AsyncTask;
@@ -42,6 +43,8 @@ public class AttestationActivity extends AppCompatActivity {
     private static final String STATE_AUDITOR_CHALLENGE = "auditor_challenge";
     private static final String STATE_STAGE = "stage";
     private static final String STATE_OUTPUT = "output";
+
+    private static final int ATTESTATION_REQUEST_CODE = 0;
 
     private AsyncTask<Object, String, byte[]> task = null;
 
@@ -120,7 +123,7 @@ public class AttestationActivity extends AppCompatActivity {
                     if (mStage == Stage.Auditee) {
                         runAuditee();
                     } else if (mStage == Stage.AuditeeResults) {
-                        continueAuditeeShowAttestation(auditeeSerializedAttestation);
+                        auditeeShowAttestation(auditeeSerializedAttestation);
                     } else if (mStage == Stage.Auditor) {
                         runAuditor();
                     }
@@ -166,8 +169,7 @@ public class AttestationActivity extends AppCompatActivity {
 
     private void showAuditorResults(final byte[] serialized) {
         Log.d(TAG, "received attestation: " + logFormatBytes(serialized));
-        textView.setText("");
-        task = new AttestationService(this, textView).execute(true, serialized, auditorChallenge);
+        task = new AttestationService(this, textView).execute(serialized, auditorChallenge);
     }
 
     private void runAuditee() {
@@ -176,11 +178,15 @@ public class AttestationActivity extends AppCompatActivity {
 
     private void continueAuditee(final byte[] challenge) {
         Log.d(TAG, "received random challenge: " + logFormatBytes(challenge));
-        textView.setText("");
-        task = new AttestationService(this, textView).execute(false, challenge);
+
+        final PendingIntent pending = createPendingResult(ATTESTATION_REQUEST_CODE, new Intent(), 0);
+        final Intent intent = new Intent(this, GenerateAttestationService.class);
+        intent.putExtra(GenerateAttestationService.EXTRA_CHALLENGE_MESSAGE, challenge);
+        intent.putExtra(GenerateAttestationService.EXTRA_PENDING_RESULT, pending);
+        startService(intent);
     }
 
-    void continueAuditeeShowAttestation(final byte[] serialized) {
+    void auditeeShowAttestation(final byte[] serialized) {
         Log.d(TAG, "sending attestation: " + logFormatBytes(serialized));
         auditeeSerializedAttestation = serialized;
         mStage = Stage.AuditeeResults;
@@ -232,8 +238,21 @@ public class AttestationActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent intent) {
-        Log.d(TAG, "on scan");
+    public void onActivityResult(final int requestCode, final int resultCode, final Intent intent) {
+        Log.d(TAG, "onActivityResult " + requestCode + " " + resultCode);
+
+        if (requestCode == ATTESTATION_REQUEST_CODE) {
+            if (resultCode != GenerateAttestationService.RESULT_CODE) {
+                throw new RuntimeException("unexpected result code");
+            }
+            if (intent.hasExtra(GenerateAttestationService.EXTRA_ATTESTATION_ERROR)) {
+                textView.setText("Error: " + intent.getStringExtra(GenerateAttestationService.EXTRA_ATTESTATION_ERROR));
+                return;
+            }
+            auditeeShowAttestation(intent.getByteArrayExtra(GenerateAttestationService.EXTRA_ATTESTATION));
+            return;
+        }
+
         IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, intent);
         if (scanResult != null) {
             // handle scan result
