@@ -5,7 +5,7 @@ android {
     buildToolsVersion "27.0.3"
     defaultConfig {
         applicationId "co.copperhead.attestation"
-        minSdkVersion 25
+        minSdkVersion 24
         targetSdkVersion 27
         versionCode 4
         versionName "0.4-alpha"
