@@ -76,6 +76,11 @@ class AttestationService extends AsyncTask<Object, String, byte[]> {
     private static final String KEY_VERIFIED_TIME_FIRST = "verified_time_first";
     private static final String KEY_VERIFIED_TIME_LAST = "verified_time_last";
 
+    // Challenge message:
+    //
+    // byte[] challenge index (length: CHALLENGE_LENGTH)
+    // byte[] challenge (length: CHALLENGE_LENGTH)
+    //
     // Attestation message:
     //
     // PROTOCOL_VERSION == 1 implies certificateCount == 2
