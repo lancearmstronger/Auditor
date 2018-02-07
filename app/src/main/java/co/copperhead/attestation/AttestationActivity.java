@@ -75,7 +75,6 @@ public class AttestationActivity extends AppCompatActivity {
         auditor = (Button) findViewById(R.id.auditor);
 
         auditee.setOnClickListener((final View view) -> {
-            Log.d(TAG, "Auditee");
             if (!Build.DEVICE.equals("taimen") && !Build.DEVICE.equals("walleye")) {
                 Toast.makeText(this, getString(R.string.unsupported_auditee),
                         Toast.LENGTH_LONG).show();
@@ -90,7 +89,6 @@ public class AttestationActivity extends AppCompatActivity {
         auditor.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.d(TAG, "Auditor");
                 mStage = Stage.Auditor;
                 auditee.setVisibility(View.GONE);
                 auditor.setVisibility(View.GONE);
@@ -146,7 +144,6 @@ public class AttestationActivity extends AppCompatActivity {
     }
 
     private void runAuditor() {
-        Log.d(TAG, "runAuditor");
         // generate qr
         if (auditorChallenge == null) {
             auditorChallenge = AttestationProtocol.getChallengeMessage(this);
