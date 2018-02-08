@@ -151,7 +151,7 @@ public class AttestationActivity extends AppCompatActivity {
         Log.d(TAG, "sending random challenge: " + logFormatBytes(auditorChallenge));
 
         mView.setImageBitmap(createQrCode(auditorChallenge));
-        textView.setText(R.string.qr_code_scan_hint);
+        textView.setText(R.string.qr_code_scan_hint_auditor);
 
         // now tap to scan
         mView.setOnClickListener(new View.OnClickListener() {
@@ -193,7 +193,7 @@ public class AttestationActivity extends AppCompatActivity {
         auditeeSerializedAttestation = serialized;
         mStage = Stage.AuditeeResults;
         mView.setImageBitmap(createQrCode(serialized));
-        textView.setText(R.string.qr_code_scan_hint);
+        textView.setText(R.string.qr_code_scan_hint_auditee);
     }
 
     private Bitmap createQrCode(final byte[] contents) {
