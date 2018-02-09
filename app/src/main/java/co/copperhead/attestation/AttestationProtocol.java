@@ -20,6 +20,7 @@ import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 import android.util.Base64;
 import android.util.Log;
+import android.view.accessibility.AccessibilityManager;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -91,7 +92,7 @@ class AttestationProtocol {
     // short compressedChainLength
     // byte[] compressedChain { [short encodedCertificateLength, byte[] encodedCertificate] x certificateCount }
     // byte[] fingerprint (length: FINGERPRINT_LENGTH)
-    // byte userProfileSecure (OS enforced)
+    // byte osEnforcedFlags
     // }
     // byte[] signature (rest of message)
     private static final byte PROTOCOL_VERSION = 1;
@@ -120,6 +121,12 @@ class AttestationProtocol {
             "ZXN0YXRpb24vY3JsLzY4MzkxMjQ2NzQyODQ3Mzk2MTAKBggqhkjOPQQDAgNoADBlAjA9rA4BW4Nt" +
             "HoD3nXysHziKlLoAhCup8V4dNmWu6htIt43I3ANmVm7CzetNqgEjNPACMQCBuDKKwLOHBA9a/dHb" +
             "9y8ApGZ+AU6StdxH/rHPYRFq84/5WOmUV7vPeFuRoMPe080=");
+    private static final int OS_ENFORCED_FLAGS_NONE = 0;
+    private static final int OS_ENFORCED_FLAGS_USER_PROFILE_SECURE = 1 << 0;
+    private static final int OS_ENFORCED_FLAGS_ACCESSIBILITY = 1 << 1;
+    private static final int OS_ENFORCED_FLAGS_ALL =
+            OS_ENFORCED_FLAGS_USER_PROFILE_SECURE |
+            OS_ENFORCED_FLAGS_ACCESSIBILITY;
 
     private static final int CHALLENGE_LENGTH = 32;
     private static final String EC_CURVE = "secp256r1";
@@ -436,7 +443,7 @@ class AttestationProtocol {
 
     private static String verify(final Context context, final byte[] fingerprint, final byte[] challenge,
             final ByteBuffer signedMessage, final byte[] signature, final Certificate[] attestationCertificates,
-            final boolean userProfileSecure)
+            final boolean userProfileSecure, final boolean accessibility)
             throws GeneralSecurityException {
 
         final StringBuilder builder = new StringBuilder();
@@ -532,7 +539,8 @@ class AttestationProtocol {
 
         builder.append("\nInformation provided by the verified OS:\n\n");
 
-        builder.append("User profile secure: " + userProfileSecure);
+        builder.append("User profile secure: " + userProfileSecure + "\n");
+        builder.append("Accessibility service(s) enabled: " + accessibility + "\n");
 
         return builder.toString();
     }
@@ -570,10 +578,12 @@ class AttestationProtocol {
         }
         final byte[] fingerprint = new byte[FINGERPRINT_LENGTH];
         deserializer.get(fingerprint);
-        final byte userProfileSecure = deserializer.get();
-        if (userProfileSecure != 0 && userProfileSecure != 1) {
-            throw new GeneralSecurityException("invalid attestation");
+        final byte osEnforcedFlags = deserializer.get();
+        if ((osEnforcedFlags & ~OS_ENFORCED_FLAGS_ALL) != 0) {
+            throw new GeneralSecurityException("unknown OS enforced flag set");
         }
+        final boolean userProfileSecure = (osEnforcedFlags & OS_ENFORCED_FLAGS_USER_PROFILE_SECURE) != 0;
+        final boolean accessibility = (osEnforcedFlags & OS_ENFORCED_FLAGS_ACCESSIBILITY) != 0;
         final int signatureLength = deserializer.remaining();
         final byte[] signature = new byte[signatureLength];
         deserializer.get(signature);
@@ -588,7 +598,7 @@ class AttestationProtocol {
 
         final byte[] challenge = Arrays.copyOfRange(challengeMessage, CHALLENGE_LENGTH, CHALLENGE_LENGTH * 2);
         return verify(context, fingerprint, challenge, deserializer.asReadOnlyBuffer(), signature,
-                certificates, userProfileSecure == 1);
+                certificates, userProfileSecure, accessibility);
     }
 
     static byte[] generateSerialized(final Context context, final byte[] challengeMessage) throws Exception {
@@ -646,6 +656,9 @@ class AttestationProtocol {
             throw new GeneralSecurityException("keyguard state inconsistent");
         }
 
+        final AccessibilityManager am = context.getSystemService(AccessibilityManager.class);
+        final boolean accessibility = am.isEnabled();
+
         final ByteBuffer serializer = ByteBuffer.allocate(MAX_MESSAGE_SIZE);
         serializer.put(PROTOCOL_VERSION);
 
@@ -688,7 +701,14 @@ class AttestationProtocol {
         }
         serializer.put(fingerprint);
 
-        serializer.put(userProfileSecure ? (byte)1 : (byte)0);
+        byte osEnforcedFlags = OS_ENFORCED_FLAGS_NONE;
+        if (userProfileSecure) {
+            osEnforcedFlags |= OS_ENFORCED_FLAGS_USER_PROFILE_SECURE;
+        }
+        if (accessibility) {
+            osEnforcedFlags |= OS_ENFORCED_FLAGS_ACCESSIBILITY;
+        }
+        serializer.put(osEnforcedFlags);
 
         final ByteBuffer message = serializer.duplicate();
         message.flip();
