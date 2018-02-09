@@ -649,6 +649,8 @@ class AttestationProtocol {
         // sanity check on the device being verified before sending it off to the verifying device
         verifyStateless(attestationCertificates, challenge);
 
+        // OS-enforced checks and information
+
         final DevicePolicyManager dpm = context.getSystemService(DevicePolicyManager.class);
         final boolean deviceAdmin = dpm.getActiveAdmins() != null;
         final int encryptionStatus = dpm.getStorageEncryptionStatus();
@@ -663,6 +665,8 @@ class AttestationProtocol {
 
         final AccessibilityManager am = context.getSystemService(AccessibilityManager.class);
         final boolean accessibility = am.isEnabled();
+
+        // Serialization
 
         final ByteBuffer serializer = ByteBuffer.allocate(MAX_MESSAGE_SIZE);
         serializer.put(PROTOCOL_VERSION);
