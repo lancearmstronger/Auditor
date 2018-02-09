@@ -529,6 +529,55 @@ class AttestationProtocol {
         return builder.toString();
     }
 
+    static String verifySerialized(final Context context, final byte[] attestationResult, final byte[] challengeMessage) throws Exception {
+        final ByteBuffer deserializer = ByteBuffer.wrap(attestationResult);
+        final byte version = deserializer.get();
+        if (version != PROTOCOL_VERSION) {
+            throw new GeneralSecurityException("unsupported protocol version: " + version);
+        }
+
+        final short compressedChainLength = deserializer.getShort();
+        final byte[] compressedChain = new byte[compressedChainLength];
+        deserializer.get(compressedChain);
+
+        final byte[] chain = new byte[MAX_ENCODED_CHAIN_LENGTH];
+        final Inflater inflater = new Inflater(true);
+        inflater.setInput(compressedChain);
+        inflater.setDictionary(DEFLATE_DICTIONARY);
+        int chainLength = inflater.inflate(chain);
+        if (!inflater.finished()) {
+            throw new GeneralSecurityException("certificate chain is too large");
+        }
+        inflater.end();
+        Log.d(TAG, "encoded length: " + chainLength + ", compressed length: " + compressedChain.length);
+
+        final ByteBuffer chainDeserializer = ByteBuffer.wrap(chain, 0, chainLength);
+        final int certificateCount = 2;
+        final Certificate[] certificates = new Certificate[certificateCount + 2];
+        for (int i = 0; i < certificateCount; i++) {
+            final short encodedLength = chainDeserializer.getShort();
+            final byte[] encoded = new byte[encodedLength];
+            chainDeserializer.get(encoded);
+            certificates[i] = generateCertificate(new ByteArrayInputStream(encoded));
+        }
+        final byte[] fingerprint = new byte[FINGERPRINT_LENGTH];
+        deserializer.get(fingerprint);
+        final int signatureLength = deserializer.remaining();
+        final byte[] signature = new byte[signatureLength];
+        deserializer.get(signature);
+
+        certificates[certificates.length - 2] = generateCertificate(
+                new ByteArrayInputStream(WAHOO_INTERMEDIATE_CERTIFICATE.getBytes()));
+        certificates[certificates.length - 1] = generateCertificate(
+                new ByteArrayInputStream(GOOGLE_ROOT_CERTIFICATE.getBytes()));
+
+        deserializer.rewind();
+        deserializer.limit(deserializer.capacity() - signature.length);
+
+        final byte[] challenge = Arrays.copyOfRange(challengeMessage, CHALLENGE_LENGTH, CHALLENGE_LENGTH * 2);
+        return verify(context, fingerprint, challenge, deserializer.asReadOnlyBuffer(), signature, certificates);
+    }
+
     static byte[] generateSerialized(final byte[] challengeMessage) throws Exception {
         if (challengeMessage.length != CHALLENGE_LENGTH * 2) {
             throw new GeneralSecurityException("challenge is not " + CHALLENGE_LENGTH * 2 + " bytes");
@@ -630,55 +679,6 @@ class AttestationProtocol {
         serializer.get(serialized);
 
         return serialized;
-    }
-
-    static String verifySerialized(final Context context, final byte[] attestationResult, final byte[] challengeMessage) throws Exception {
-        final ByteBuffer deserializer = ByteBuffer.wrap(attestationResult);
-        final byte version = deserializer.get();
-        if (version != PROTOCOL_VERSION) {
-            throw new GeneralSecurityException("unsupported protocol version: " + version);
-        }
-
-        final short compressedChainLength = deserializer.getShort();
-        final byte[] compressedChain = new byte[compressedChainLength];
-        deserializer.get(compressedChain);
-
-        final byte[] chain = new byte[MAX_ENCODED_CHAIN_LENGTH];
-        final Inflater inflater = new Inflater(true);
-        inflater.setInput(compressedChain);
-        inflater.setDictionary(DEFLATE_DICTIONARY);
-        int chainLength = inflater.inflate(chain);
-        if (!inflater.finished()) {
-            throw new GeneralSecurityException("certificate chain is too large");
-        }
-        inflater.end();
-        Log.d(TAG, "encoded length: " + chainLength + ", compressed length: " + compressedChain.length);
-
-        final ByteBuffer chainDeserializer = ByteBuffer.wrap(chain, 0, chainLength);
-        final int certificateCount = 2;
-        final Certificate[] certificates = new Certificate[certificateCount + 2];
-        for (int i = 0; i < certificateCount; i++) {
-            final short encodedLength = chainDeserializer.getShort();
-            final byte[] encoded = new byte[encodedLength];
-            chainDeserializer.get(encoded);
-            certificates[i] = generateCertificate(new ByteArrayInputStream(encoded));
-        }
-        final byte[] fingerprint = new byte[FINGERPRINT_LENGTH];
-        deserializer.get(fingerprint);
-        final int signatureLength = deserializer.remaining();
-        final byte[] signature = new byte[signatureLength];
-        deserializer.get(signature);
-
-        certificates[certificates.length - 2] = generateCertificate(
-                new ByteArrayInputStream(WAHOO_INTERMEDIATE_CERTIFICATE.getBytes()));
-        certificates[certificates.length - 1] = generateCertificate(
-                new ByteArrayInputStream(GOOGLE_ROOT_CERTIFICATE.getBytes()));
-
-        deserializer.rewind();
-        deserializer.limit(deserializer.capacity() - signature.length);
-
-        final byte[] challenge = Arrays.copyOfRange(challengeMessage, CHALLENGE_LENGTH, CHALLENGE_LENGTH * 2);
-        return verify(context, fingerprint, challenge, deserializer.asReadOnlyBuffer(), signature, certificates);
     }
 
     private static void generateKeyPair(final String algorithm, final KeyGenParameterSpec spec)
