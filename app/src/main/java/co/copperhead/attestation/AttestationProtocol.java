@@ -257,8 +257,8 @@ class AttestationProtocol {
         return (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(in);
     }
 
-    private static Verified verifyAttestation(final Certificate[] certificates, final byte[] challenge)
-            throws GeneralSecurityException {
+    private static Verified verifyStateless(final Certificate[] certificates,
+            final byte[] challenge) throws GeneralSecurityException {
 
         verifyCertificateSignatures(certificates);
 
@@ -446,7 +446,7 @@ class AttestationProtocol {
             return builder.toString();
         }
 
-        final Verified verified = verifyAttestation(attestationCertificates, challenge);
+        final Verified verified = verifyStateless(attestationCertificates, challenge);
 
         builder.append("Verified attestation with trusted root and trusted intermediate.\n");
 
@@ -525,7 +525,7 @@ class AttestationProtocol {
         return builder.toString();
     }
 
-    static byte[] generateAttestation(final byte[] challengeMessage) throws Exception {
+    static byte[] generateSerialized(final byte[] challengeMessage) throws Exception {
         if (challengeMessage.length != CHALLENGE_LENGTH * 2) {
             throw new GeneralSecurityException("challenge is not " + CHALLENGE_LENGTH * 2 + " bytes");
         }
@@ -567,7 +567,7 @@ class AttestationProtocol {
         final Certificate[] attestationCertificates = keyStore.getCertificateChain(attestationKeystoreAlias);
 
         // sanity check on the device being verified before sending it off to the verifying device
-        verifyAttestation(attestationCertificates, challenge);
+        verifyStateless(attestationCertificates, challenge);
 
         final ByteBuffer serializer = ByteBuffer.allocate(MAX_MESSAGE_SIZE);
         serializer.put(PROTOCOL_VERSION);
@@ -628,7 +628,7 @@ class AttestationProtocol {
         return serialized;
     }
 
-    static String verifyAttestation(final Context context, final byte[] attestationResult, final byte[] challengeMessage) throws Exception {
+    static String verifySerialized(final Context context, final byte[] attestationResult, final byte[] challengeMessage) throws Exception {
         final ByteBuffer deserializer = ByteBuffer.wrap(attestationResult);
         final byte version = deserializer.get();
         if (version != PROTOCOL_VERSION) {
