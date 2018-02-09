@@ -335,6 +335,9 @@ class AttestationProtocol {
         if (teeEnforced.getOrigin() != AuthorizationList.KM_ORIGIN_GENERATED) {
             throw new GeneralSecurityException("not a generated key");
         }
+        if (teeEnforced.isAllApplications()) {
+            throw new GeneralSecurityException("expected key only usable by attestation app");
+        }
         if (!teeEnforced.isRollbackResistant()) {
             throw new GeneralSecurityException("expected rollback resistant key");
         }
