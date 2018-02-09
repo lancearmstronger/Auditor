@@ -124,9 +124,11 @@ class AttestationProtocol {
     private static final int OS_ENFORCED_FLAGS_NONE = 0;
     private static final int OS_ENFORCED_FLAGS_USER_PROFILE_SECURE = 1 << 0;
     private static final int OS_ENFORCED_FLAGS_ACCESSIBILITY = 1 << 1;
+    private static final int OS_ENFORCED_FLAGS_DEVICE_ADMIN = 1 << 2;
     private static final int OS_ENFORCED_FLAGS_ALL =
             OS_ENFORCED_FLAGS_USER_PROFILE_SECURE |
-            OS_ENFORCED_FLAGS_ACCESSIBILITY;
+            OS_ENFORCED_FLAGS_ACCESSIBILITY |
+            OS_ENFORCED_FLAGS_DEVICE_ADMIN;
 
     private static final int CHALLENGE_LENGTH = 32;
     private static final String EC_CURVE = "secp256r1";
@@ -443,7 +445,7 @@ class AttestationProtocol {
 
     private static String verify(final Context context, final byte[] fingerprint, final byte[] challenge,
             final ByteBuffer signedMessage, final byte[] signature, final Certificate[] attestationCertificates,
-            final boolean userProfileSecure, final boolean accessibility)
+            final boolean userProfileSecure, final boolean accessibility, final boolean deviceAdmin)
             throws GeneralSecurityException {
 
         final StringBuilder builder = new StringBuilder();
@@ -541,6 +543,7 @@ class AttestationProtocol {
 
         builder.append("User profile secure: " + userProfileSecure + "\n");
         builder.append("Accessibility service(s) enabled: " + accessibility + "\n");
+        builder.append("Device administrator(s) enabled: " + deviceAdmin + "\n");
 
         return builder.toString();
     }
@@ -584,6 +587,7 @@ class AttestationProtocol {
         }
         final boolean userProfileSecure = (osEnforcedFlags & OS_ENFORCED_FLAGS_USER_PROFILE_SECURE) != 0;
         final boolean accessibility = (osEnforcedFlags & OS_ENFORCED_FLAGS_ACCESSIBILITY) != 0;
+        final boolean deviceAdmin = (osEnforcedFlags & OS_ENFORCED_FLAGS_DEVICE_ADMIN) != 0;
         final int signatureLength = deserializer.remaining();
         final byte[] signature = new byte[signatureLength];
         deserializer.get(signature);
@@ -598,7 +602,7 @@ class AttestationProtocol {
 
         final byte[] challenge = Arrays.copyOfRange(challengeMessage, CHALLENGE_LENGTH, CHALLENGE_LENGTH * 2);
         return verify(context, fingerprint, challenge, deserializer.asReadOnlyBuffer(), signature,
-                certificates, userProfileSecure, accessibility);
+                certificates, userProfileSecure, accessibility, deviceAdmin);
     }
 
     static byte[] generateSerialized(final Context context, final byte[] challengeMessage) throws Exception {
@@ -646,6 +650,7 @@ class AttestationProtocol {
         verifyStateless(attestationCertificates, challenge);
 
         final DevicePolicyManager dpm = context.getSystemService(DevicePolicyManager.class);
+        final boolean deviceAdmin = dpm.getActiveAdmins() != null;
         final int encryptionStatus = dpm.getStorageEncryptionStatus();
         if (encryptionStatus != DevicePolicyManager.ENCRYPTION_STATUS_ACTIVE_PER_USER) {
             throw new GeneralSecurityException("invalid encryption status");
@@ -707,6 +712,9 @@ class AttestationProtocol {
         }
         if (accessibility) {
             osEnforcedFlags |= OS_ENFORCED_FLAGS_ACCESSIBILITY;
+        }
+        if (deviceAdmin) {
+            osEnforcedFlags |= OS_ENFORCED_FLAGS_DEVICE_ADMIN;
         }
         serializer.put(osEnforcedFlags);
 
