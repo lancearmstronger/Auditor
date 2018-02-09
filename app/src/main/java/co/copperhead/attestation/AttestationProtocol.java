@@ -11,6 +11,7 @@ import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Bytes;
 
+import android.app.admin.DevicePolicyManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
@@ -89,6 +90,7 @@ class AttestationProtocol {
     // short compressedChainLength
     // byte[] compressedChain { [short encodedCertificateLength, byte[] encodedCertificate] x certificateCount }
     // byte[] fingerprint (length: FINGERPRINT_LENGTH)
+    // byte userProfileSecure (OS enforced)
     // }
     // byte[] signature (rest of message)
     private static final byte PROTOCOL_VERSION = 1;
@@ -432,7 +434,8 @@ class AttestationProtocol {
     }
 
     private static String verify(final Context context, final byte[] fingerprint, final byte[] challenge,
-            final ByteBuffer signedMessage, final byte[] signature, final Certificate[] attestationCertificates)
+            final ByteBuffer signedMessage, final byte[] signature, final Certificate[] attestationCertificates,
+            final boolean userProfileSecure)
             throws GeneralSecurityException {
 
         final StringBuilder builder = new StringBuilder();
@@ -526,6 +529,10 @@ class AttestationProtocol {
             editor.apply();
         }
 
+        builder.append("\nInformation provided by the verified OS:\n\n");
+
+        builder.append("User profile secure: " + userProfileSecure);
+
         return builder.toString();
     }
 
@@ -562,6 +569,10 @@ class AttestationProtocol {
         }
         final byte[] fingerprint = new byte[FINGERPRINT_LENGTH];
         deserializer.get(fingerprint);
+        final byte userProfileSecure = deserializer.get();
+        if (userProfileSecure != 0 && userProfileSecure != 1) {
+            throw new GeneralSecurityException("invalid attestation");
+        }
         final int signatureLength = deserializer.remaining();
         final byte[] signature = new byte[signatureLength];
         deserializer.get(signature);
@@ -575,10 +586,11 @@ class AttestationProtocol {
         deserializer.limit(deserializer.capacity() - signature.length);
 
         final byte[] challenge = Arrays.copyOfRange(challengeMessage, CHALLENGE_LENGTH, CHALLENGE_LENGTH * 2);
-        return verify(context, fingerprint, challenge, deserializer.asReadOnlyBuffer(), signature, certificates);
+        return verify(context, fingerprint, challenge, deserializer.asReadOnlyBuffer(), signature,
+                certificates, userProfileSecure == 1);
     }
 
-    static byte[] generateSerialized(final byte[] challengeMessage) throws Exception {
+    static byte[] generateSerialized(final Context context, final byte[] challengeMessage) throws Exception {
         if (challengeMessage.length != CHALLENGE_LENGTH * 2) {
             throw new GeneralSecurityException("challenge is not " + CHALLENGE_LENGTH * 2 + " bytes");
         }
@@ -622,6 +634,16 @@ class AttestationProtocol {
         // sanity check on the device being verified before sending it off to the verifying device
         verifyStateless(attestationCertificates, challenge);
 
+        final DevicePolicyManager dpm = context.getSystemService(DevicePolicyManager.class);
+        final int encryptionStatus = dpm.getStorageEncryptionStatus();
+        boolean userProfileSecure = false;
+        if (encryptionStatus != DevicePolicyManager.ENCRYPTION_STATUS_ACTIVE_DEFAULT_KEY) {
+            if (encryptionStatus != DevicePolicyManager.ENCRYPTION_STATUS_ACTIVE_PER_USER) {
+                throw new GeneralSecurityException("invalid encryption status");
+            }
+            userProfileSecure = true;
+        }
+
         final ByteBuffer serializer = ByteBuffer.allocate(MAX_MESSAGE_SIZE);
         serializer.put(PROTOCOL_VERSION);
 
@@ -663,6 +685,8 @@ class AttestationProtocol {
             throw new RuntimeException("fingerprint length mismatch");
         }
         serializer.put(fingerprint);
+
+        serializer.put(userProfileSecure ? (byte)1 : (byte)0);
 
         final ByteBuffer message = serializer.duplicate();
         message.flip();

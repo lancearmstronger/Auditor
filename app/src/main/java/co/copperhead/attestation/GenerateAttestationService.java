@@ -38,7 +38,7 @@ public class GenerateAttestationService extends IntentService {
         final Intent resultIntent = new Intent(ACTION_ATTESTATION);
 
         try {
-            final byte[] serialized = AttestationProtocol.generateSerialized(challengeMessage);
+            final byte[] serialized = AttestationProtocol.generateSerialized(this, challengeMessage);
             resultIntent.putExtra(EXTRA_ATTESTATION, serialized);
         } catch (Exception e) {
             Log.e(TAG, "attestation generation error", e);
