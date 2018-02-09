@@ -12,6 +12,7 @@ import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Bytes;
 
 import android.app.admin.DevicePolicyManager;
+import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
@@ -636,12 +637,13 @@ class AttestationProtocol {
 
         final DevicePolicyManager dpm = context.getSystemService(DevicePolicyManager.class);
         final int encryptionStatus = dpm.getStorageEncryptionStatus();
-        boolean userProfileSecure = false;
-        if (encryptionStatus != DevicePolicyManager.ENCRYPTION_STATUS_ACTIVE_DEFAULT_KEY) {
-            if (encryptionStatus != DevicePolicyManager.ENCRYPTION_STATUS_ACTIVE_PER_USER) {
-                throw new GeneralSecurityException("invalid encryption status");
-            }
-            userProfileSecure = true;
+        if (encryptionStatus != DevicePolicyManager.ENCRYPTION_STATUS_ACTIVE_PER_USER) {
+            throw new GeneralSecurityException("invalid encryption status");
+        }
+        final KeyguardManager keyguard = context.getSystemService(KeyguardManager.class);
+        final boolean userProfileSecure = keyguard.isDeviceSecure();
+        if (userProfileSecure && !keyguard.isKeyguardSecure()) {
+            throw new GeneralSecurityException("keyguard state inconsistent");
         }
 
         final ByteBuffer serializer = ByteBuffer.allocate(MAX_MESSAGE_SIZE);
