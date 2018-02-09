@@ -438,7 +438,8 @@ class AttestationProtocol {
         final byte[] currentFingerprint = getFingerprint(attestationCertificates[0]);
         final boolean hasPersistentKey = !Arrays.equals(currentFingerprint, fingerprint);
 
-        final SharedPreferences preferences = context.getSharedPreferences(fingerprintHex, Context.MODE_PRIVATE);
+        final SharedPreferences preferences =
+                context.getSharedPreferences("device-" + fingerprintHex, Context.MODE_PRIVATE);
         if (hasPersistentKey && !preferences.contains(KEY_PINNED_DEVICE)) {
             builder.append("Pairing data for this Auditee is missing. Cannot perform paired attestation.\n");
             builder.append("\nEither the initial pairing was incomplete or the device is compromised.\n");
