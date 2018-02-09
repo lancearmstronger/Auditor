@@ -71,6 +71,7 @@ class AttestationProtocol {
     private static final String KEY_PINNED_CERTIFICATE = "pinned_certificate";
     private static final String KEY_PINNED_CERTIFICATE_LENGTH = "pinned_certificate_length";
     private static final String KEY_PINNED_DEVICE = "pinned_device";
+    private static final String KEY_PINNED_APP_VERSION = "pinned_app_version";
     private static final String KEY_PINNED_OS_VERSION = "pinned_os_version";
     private static final String KEY_PINNED_OS_PATCH_LEVEL = "pinned_os_patch_level";
     private static final String KEY_VERIFIED_TIME_FIRST = "verified_time_first";
@@ -254,12 +255,15 @@ class AttestationProtocol {
         final String device;
         final int osVersion;
         final int osPatchLevel;
+        final int appVersion;
         final boolean isStock;
 
-        Verified(final String device, final int osVersion, final int osPatchLevel, final boolean isStock) {
+        Verified(final String device, final int osVersion, final int osPatchLevel,
+                final int appVersion, final boolean isStock) {
             this.device = device;
             this.osVersion = osVersion;
             this.osPatchLevel = osPatchLevel;
+            this.appVersion = appVersion;
             this.isStock = isStock;
         }
     }
@@ -327,7 +331,8 @@ class AttestationProtocol {
         if (!ATTESTATION_APP_PACKAGE_NAME.equals(info.getPackageName())) {
             throw new GeneralSecurityException("wrong attestation app package name");
         }
-        if (info.getVersion() < ATTESTATION_APP_MINIMUM_VERSION) {
+        final int appVersion = info.getVersion();
+        if (appVersion < ATTESTATION_APP_MINIMUM_VERSION) {
             throw new GeneralSecurityException("attestation app is too old");
         }
         final List<byte[]> signatureDigests = attestationApplicationId.getSignatureDigests();
@@ -374,16 +379,16 @@ class AttestationProtocol {
         final String verifiedBootKey = BaseEncoding.base16().encode(rootOfTrust.getVerifiedBootKey());
         if (verifiedBootState == RootOfTrust.KM_VERIFIED_BOOT_SELF_SIGNED) {
             if (verifiedBootKey.equals(FINGERPRINT_COPPERHEADOS_TAIMEN)) {
-                return new Verified("Pixel 2 XL", osVersion, osPatchLevel, false);
+                return new Verified("Pixel 2 XL", osVersion, osPatchLevel, appVersion, false);
             } else if (verifiedBootKey.equals(FINGERPRINT_COPPERHEADOS_WALLEYE)) {
-                return new Verified("Pixel 2", osVersion, osPatchLevel, false);
+                return new Verified("Pixel 2", osVersion, osPatchLevel, appVersion, false);
             }
             throw new GeneralSecurityException("invalid key fingerprint");
         } else if (verifiedBootState == RootOfTrust.KM_VERIFIED_BOOT_VERIFIED) {
             if (verifiedBootKey.equals(FINGERPRINT_STOCK_TAIMEN)) {
-                return new Verified("Pixel 2 XL", osVersion, osPatchLevel, true);
+                return new Verified("Pixel 2 XL", osVersion, osPatchLevel, appVersion, true);
             } else if (verifiedBootKey.equals(FINGERPRINT_STOCK_WALLEYE)) {
-                return new Verified("Pixel 2", osVersion, osPatchLevel, true);
+                return new Verified("Pixel 2", osVersion, osPatchLevel, appVersion, true);
             }
             throw new GeneralSecurityException("invalid key fingerprint");
         }
@@ -481,6 +486,12 @@ class AttestationProtocol {
             }
             builder.append("\nNo downgrade detected from pinned OS version and OS patch level.\n");
 
+            final int pinnedAppVersion = preferences.getInt(KEY_PINNED_APP_VERSION, Integer.MAX_VALUE);
+            if (verified.appVersion < pinnedAppVersion) {
+                builder.append("\nApp version downgraded. The device may have been compromised.\n");
+            }
+            builder.append("\nNo downgrade detected from pinned app version.\n");
+
             if (attestationCertificates.length != preferences.getInt(KEY_PINNED_CERTIFICATE_LENGTH, 0)) {
                 throw new GeneralSecurityException("certificate chain mismatch");
             }
@@ -514,6 +525,7 @@ class AttestationProtocol {
             preferences.edit()
                     .putInt(KEY_PINNED_OS_VERSION, verified.osVersion)
                     .putInt(KEY_PINNED_OS_PATCH_LEVEL, verified.osPatchLevel)
+                    .putInt(KEY_PINNED_APP_VERSION, verified.appVersion)
                     .putLong(KEY_VERIFIED_TIME_LAST, new Date().getTime())
                     .apply();
         } else {
@@ -531,6 +543,7 @@ class AttestationProtocol {
             editor.putString(KEY_PINNED_DEVICE, verified.device);
             editor.putInt(KEY_PINNED_OS_VERSION, verified.osVersion);
             editor.putInt(KEY_PINNED_OS_PATCH_LEVEL, verified.osPatchLevel);
+            editor.putInt(KEY_PINNED_APP_VERSION, verified.appVersion);
 
             final long now = new Date().getTime();
             editor.putLong(KEY_VERIFIED_TIME_FIRST, now);
