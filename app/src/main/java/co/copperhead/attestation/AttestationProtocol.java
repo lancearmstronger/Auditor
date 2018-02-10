@@ -139,7 +139,7 @@ class AttestationProtocol {
     private static final int FINGERPRINT_LENGTH = FINGERPRINT_HASH_FUNCTION.bits() / 8;
 
     private static final String ATTESTATION_APP_PACKAGE_NAME = "co.copperhead.attestation";
-    private static final int ATTESTATION_APP_MINIMUM_VERSION = 4;
+    private static final int ATTESTATION_APP_MINIMUM_VERSION = 5;
     private static final String ATTESTATION_APP_SIGNATURE_DIGEST_DEBUG =
             "17727D8B61D55A864936B1A7B4A2554A15151F32EBCF44CDAA6E6C3258231890";
     private static final String ATTESTATION_APP_SIGNATURE_DIGEST_RELEASE =
