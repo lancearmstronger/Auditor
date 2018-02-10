@@ -488,7 +488,7 @@ class AttestationProtocol {
 
             final int pinnedAppVersion = preferences.getInt(KEY_PINNED_APP_VERSION, Integer.MAX_VALUE);
             if (verified.appVersion < pinnedAppVersion) {
-                builder.append("\nApp version downgraded. The device may have been compromised.\n");
+                throw new GeneralSecurityException("App version downgraded");
             }
             builder.append("\nNo downgrade detected from pinned app version.\n");
 
