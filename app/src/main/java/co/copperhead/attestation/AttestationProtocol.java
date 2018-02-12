@@ -71,9 +71,10 @@ class AttestationProtocol {
     private static final String KEY_PINNED_CERTIFICATE = "pinned_certificate";
     private static final String KEY_PINNED_CERTIFICATE_LENGTH = "pinned_certificate_length";
     private static final String KEY_PINNED_DEVICE = "pinned_device";
-    private static final String KEY_PINNED_APP_VERSION = "pinned_app_version";
+    private static final String KEY_PINNED_OS_STOCK = "pinned_os_stock";
     private static final String KEY_PINNED_OS_VERSION = "pinned_os_version";
     private static final String KEY_PINNED_OS_PATCH_LEVEL = "pinned_os_patch_level";
+    private static final String KEY_PINNED_APP_VERSION = "pinned_app_version";
     private static final String KEY_VERIFIED_TIME_FIRST = "verified_time_first";
     private static final String KEY_VERIFIED_TIME_LAST = "verified_time_last";
 
@@ -528,6 +529,11 @@ class AttestationProtocol {
             }
             builder.append("\nPinned device variant matches verified device variant.\n");
 
+            if (preferences.contains(KEY_PINNED_OS_STOCK)) {
+                if (verified.isStock != preferences.getBoolean(KEY_PINNED_OS_STOCK, true)) {
+                    throw new GeneralSecurityException("OS does not match");
+                }
+            }
             if (verified.osVersion < preferences.getInt(KEY_PINNED_OS_VERSION, Integer.MAX_VALUE)) {
                 throw new GeneralSecurityException("OS version downgrade detected");
             }
@@ -591,6 +597,7 @@ class AttestationProtocol {
             }
 
             editor.putString(KEY_PINNED_DEVICE, verified.device);
+            editor.putBoolean(KEY_PINNED_OS_STOCK, verified.isStock);
             editor.putInt(KEY_PINNED_OS_VERSION, verified.osVersion);
             editor.putInt(KEY_PINNED_OS_PATCH_LEVEL, verified.osPatchLevel);
             editor.putInt(KEY_PINNED_APP_VERSION, verified.appVersion);
