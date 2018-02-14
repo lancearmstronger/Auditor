@@ -68,7 +68,7 @@ class AttestationProtocol {
     private static final String KEY_CHALLENGE_INDEX = "challenge_index";
 
     // Per-Auditee preferences
-    private static final String KEY_PINNED_CERTIFICATE = "pinned_certificate";
+    private static final String KEY_PINNED_CERTIFICATE = "pinned_certificate_";
     private static final String KEY_PINNED_CERTIFICATE_LENGTH = "pinned_certificate_length";
     private static final String KEY_PINNED_DEVICE = "pinned_device";
     private static final String KEY_PINNED_OS_STOCK = "pinned_os_stock";
@@ -553,14 +553,14 @@ class AttestationProtocol {
             }
             for (int i = 1; i < attestationCertificates.length; i++) {
                 final X509Certificate a = (X509Certificate) attestationCertificates[i];
-                final byte[] b = BaseEncoding.base64().decode(preferences.getString(KEY_PINNED_CERTIFICATE + "_" + i, null));
+                final byte[] b = BaseEncoding.base64().decode(preferences.getString(KEY_PINNED_CERTIFICATE + i, null));
                 if (!Arrays.equals(a.getEncoded(), b)) {
                     throw new GeneralSecurityException("certificate chain mismatch");
                 }
             }
             builder.append("\nCertificate chain matches pinned certificate chain.\n");
 
-            final byte[] persistentCertificateEncoded = BaseEncoding.base64().decode(preferences.getString(KEY_PINNED_CERTIFICATE + "_0", null));
+            final byte[] persistentCertificateEncoded = BaseEncoding.base64().decode(preferences.getString(KEY_PINNED_CERTIFICATE + "0", null));
             final X509Certificate persistentCertificate = generateCertificate(
                     new ByteArrayInputStream(persistentCertificateEncoded));
             if (!Arrays.equals(fingerprint, getFingerprint(persistentCertificate))) {
@@ -593,7 +593,7 @@ class AttestationProtocol {
             for (int i = 0; i < attestationCertificates.length; i++) {
                 final X509Certificate cert = (X509Certificate) attestationCertificates[i];
                 final String encoded = BaseEncoding.base64().encode(cert.getEncoded());
-                editor.putString(KEY_PINNED_CERTIFICATE + "_" + i, encoded);
+                editor.putString(KEY_PINNED_CERTIFICATE + i, encoded);
             }
 
             editor.putString(KEY_PINNED_DEVICE, verified.device);
