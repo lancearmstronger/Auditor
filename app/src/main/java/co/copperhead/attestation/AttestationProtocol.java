@@ -499,6 +499,16 @@ class AttestationProtocol {
         builder.append("Identity: " + fingerprint + "\n");
     }
 
+    private static void verifySignature(final PublicKey key, final ByteBuffer message,
+            final byte[] signature) throws GeneralSecurityException {
+        final Signature sig = Signature.getInstance(SIGNATURE_ALGORITHM);
+        sig.initVerify(key);
+        sig.update(message);
+        if (!sig.verify(signature)) {
+            throw new GeneralSecurityException("signature verification failed");
+        }
+    }
+
     private static String verify(final Context context, final byte[] fingerprint, final byte[] challenge,
             final ByteBuffer signedMessage, final byte[] signature, final Certificate[] attestationCertificates,
             final boolean userProfileSecure, final boolean accessibility, final boolean deviceAdmin)
@@ -542,12 +552,7 @@ class AttestationProtocol {
             if (!Arrays.equals(fingerprint, getFingerprint(persistentCertificate))) {
                 throw new GeneralSecurityException("corrupt Auditor pinning data");
             }
-            final Signature sig = Signature.getInstance(SIGNATURE_ALGORITHM);
-            sig.initVerify(persistentCertificate.getPublicKey());
-            sig.update(signedMessage);
-            if (!sig.verify(signature)) {
-                throw new GeneralSecurityException("signature verification failed");
-            }
+            verifySignature(persistentCertificate.getPublicKey(), signedMessage, signature);
             builder.append("\nDevice identity confirmed with signed challenge.\n");
 
             if (!verified.device.equals(preferences.getString(KEY_PINNED_DEVICE, null))) {
@@ -585,12 +590,7 @@ class AttestationProtocol {
                     .putLong(KEY_VERIFIED_TIME_LAST, new Date().getTime())
                     .apply();
         } else {
-            final Signature sig = Signature.getInstance(SIGNATURE_ALGORITHM);
-            sig.initVerify(attestationCertificates[0].getPublicKey());
-            sig.update(signedMessage);
-            if (!sig.verify(signature)) {
-                throw new GeneralSecurityException("signature verification failed");
-            }
+            verifySignature(attestationCertificates[0].getPublicKey(), signedMessage, signature);
 
             appendVerifiedInformation(builder, verified, fingerprintHex);
 
