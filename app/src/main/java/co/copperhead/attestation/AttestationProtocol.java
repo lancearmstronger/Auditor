@@ -25,6 +25,7 @@ import android.view.accessibility.AccessibilityManager;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
@@ -49,6 +50,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
@@ -625,7 +627,8 @@ class AttestationProtocol {
         return builder.toString();
     }
 
-    static String verifySerialized(final Context context, final byte[] attestationResult, final byte[] challengeMessage) throws Exception {
+    static String verifySerialized(final Context context, final byte[] attestationResult,
+            final byte[] challengeMessage) throws DataFormatException, GeneralSecurityException {
         final ByteBuffer deserializer = ByteBuffer.wrap(attestationResult);
         final byte version = deserializer.get();
         if (version != PROTOCOL_VERSION) {
@@ -640,7 +643,7 @@ class AttestationProtocol {
         final Inflater inflater = new Inflater(true);
         inflater.setInput(compressedChain);
         inflater.setDictionary(DEFLATE_DICTIONARY);
-        int chainLength = inflater.inflate(chain);
+        final int chainLength = inflater.inflate(chain);
         if (!inflater.finished()) {
             throw new GeneralSecurityException("certificate chain is too large");
         }
@@ -682,7 +685,8 @@ class AttestationProtocol {
                 certificates, userProfileSecure, accessibility, deviceAdmin);
     }
 
-    static byte[] generateSerialized(final Context context, final byte[] challengeMessage) throws Exception {
+    static byte[] generateSerialized(final Context context, final byte[] challengeMessage)
+            throws GeneralSecurityException, IOException {
         if (challengeMessage.length != CHALLENGE_LENGTH * 2) {
             throw new GeneralSecurityException("challenge is not " + CHALLENGE_LENGTH * 2 + " bytes");
         }

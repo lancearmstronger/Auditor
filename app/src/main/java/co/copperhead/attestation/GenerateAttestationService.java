@@ -5,6 +5,9 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.util.Log;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+
 public class GenerateAttestationService extends IntentService {
     private static final String TAG = "GenerateAttestationService";
 
@@ -40,7 +43,7 @@ public class GenerateAttestationService extends IntentService {
         try {
             final byte[] serialized = AttestationProtocol.generateSerialized(this, challengeMessage);
             resultIntent.putExtra(EXTRA_ATTESTATION, serialized);
-        } catch (Exception e) {
+        } catch (final GeneralSecurityException | IOException e) {
             Log.e(TAG, "attestation generation error", e);
             resultIntent.putExtra(EXTRA_ATTESTATION_ERROR, e.getMessage());
         }

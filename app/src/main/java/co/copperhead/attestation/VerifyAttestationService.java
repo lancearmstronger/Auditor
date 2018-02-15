@@ -5,6 +5,9 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.util.Log;
 
+import java.security.GeneralSecurityException;
+import java.util.zip.DataFormatException;
+
 public class VerifyAttestationService extends IntentService {
     private static final String TAG = "VerifyAttestationService";
 
@@ -45,7 +48,7 @@ public class VerifyAttestationService extends IntentService {
         try {
             final String output = AttestationProtocol.verifySerialized(this, serialized, challengeMessage);
             resultIntent.putExtra(EXTRA_OUTPUT, output);
-        } catch (Exception e) {
+        } catch (final DataFormatException | GeneralSecurityException e) {
             Log.e(TAG, "attestation generation error", e);
             resultIntent.putExtra(EXTRA_ERROR, e.getMessage());
         }
