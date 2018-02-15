@@ -13,9 +13,11 @@ import com.google.common.primitives.Bytes;
 
 import android.app.admin.DevicePolicyManager;
 import android.app.KeyguardManager;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 import android.util.Base64;
@@ -179,10 +181,12 @@ class AttestationProtocol {
     private static final int OS_ENFORCED_FLAGS_USER_PROFILE_SECURE = 1 << 0;
     private static final int OS_ENFORCED_FLAGS_ACCESSIBILITY = 1 << 1;
     private static final int OS_ENFORCED_FLAGS_DEVICE_ADMIN = 1 << 2;
+    private static final int OS_ENFORCED_FLAGS_ADB_ENABLED = 1 << 3;
     private static final int OS_ENFORCED_FLAGS_ALL =
             OS_ENFORCED_FLAGS_USER_PROFILE_SECURE |
             OS_ENFORCED_FLAGS_ACCESSIBILITY |
-            OS_ENFORCED_FLAGS_DEVICE_ADMIN;
+            OS_ENFORCED_FLAGS_DEVICE_ADMIN |
+            OS_ENFORCED_FLAGS_ADB_ENABLED;
 
     private static final int CHALLENGE_LENGTH = 32;
     private static final String EC_CURVE = "secp256r1";
@@ -513,7 +517,7 @@ class AttestationProtocol {
 
     private static String verify(final Context context, final byte[] fingerprint, final byte[] challenge,
             final ByteBuffer signedMessage, final byte[] signature, final Certificate[] attestationCertificates,
-            final boolean userProfileSecure, final boolean accessibility, final boolean deviceAdmin)
+            final boolean userProfileSecure, final boolean accessibility, final boolean deviceAdmin, final boolean adbEnabled)
             throws GeneralSecurityException {
 
         final StringBuilder builder = new StringBuilder();
@@ -623,6 +627,7 @@ class AttestationProtocol {
         builder.append("User profile secure: " + userProfileSecure + "\n");
         builder.append("Accessibility service(s) enabled: " + accessibility + "\n");
         builder.append("Device administrator(s) enabled: " + deviceAdmin + "\n");
+        builder.append("Android Debug Bridge enabled: " + adbEnabled + "\n");
 
         return builder.toString();
     }
@@ -668,6 +673,7 @@ class AttestationProtocol {
         final boolean userProfileSecure = (osEnforcedFlags & OS_ENFORCED_FLAGS_USER_PROFILE_SECURE) != 0;
         final boolean accessibility = (osEnforcedFlags & OS_ENFORCED_FLAGS_ACCESSIBILITY) != 0;
         final boolean deviceAdmin = (osEnforcedFlags & OS_ENFORCED_FLAGS_DEVICE_ADMIN) != 0;
+        final boolean adbEnabled = (osEnforcedFlags & OS_ENFORCED_FLAGS_ADB_ENABLED) != 0;
         final int signatureLength = deserializer.remaining();
         final byte[] signature = new byte[signatureLength];
         deserializer.get(signature);
@@ -682,7 +688,7 @@ class AttestationProtocol {
 
         final byte[] challenge = Arrays.copyOfRange(challengeMessage, CHALLENGE_LENGTH, CHALLENGE_LENGTH * 2);
         return verify(context, fingerprint, challenge, deserializer.asReadOnlyBuffer(), signature,
-                certificates, userProfileSecure, accessibility, deviceAdmin);
+                certificates, userProfileSecure, accessibility, deviceAdmin, adbEnabled);
     }
 
     static byte[] generateSerialized(final Context context, final byte[] challengeMessage)
@@ -747,6 +753,9 @@ class AttestationProtocol {
         final AccessibilityManager am = context.getSystemService(AccessibilityManager.class);
         final boolean accessibility = am.isEnabled();
 
+        final boolean adbEnabled = Settings.Global.getInt(context.getContentResolver(),
+                Settings.Global.ADB_ENABLED, 0) != 0;
+
         // Serialization
 
         final ByteBuffer serializer = ByteBuffer.allocate(MAX_MESSAGE_SIZE);
@@ -800,6 +809,9 @@ class AttestationProtocol {
         }
         if (deviceAdmin) {
             osEnforcedFlags |= OS_ENFORCED_FLAGS_DEVICE_ADMIN;
+        }
+        if (adbEnabled) {
+            osEnforcedFlags |= OS_ENFORCED_FLAGS_ADB_ENABLED;
         }
         serializer.put(osEnforcedFlags);
 
