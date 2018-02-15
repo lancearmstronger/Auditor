@@ -585,6 +585,13 @@ class AttestationProtocol {
                     .putLong(KEY_VERIFIED_TIME_LAST, new Date().getTime())
                     .apply();
         } else {
+            final Signature sig = Signature.getInstance(SIGNATURE_ALGORITHM);
+            sig.initVerify(attestationCertificates[0].getPublicKey());
+            sig.update(signedMessage);
+            if (!sig.verify(signature)) {
+                throw new GeneralSecurityException("signature verification failed");
+            }
+
             appendVerifiedInformation(builder, verified, fingerprintHex);
 
             final SharedPreferences.Editor editor = preferences.edit();
