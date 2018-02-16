@@ -180,7 +180,7 @@ public class AttestationActivity extends AppCompatActivity {
         startService(intent);
     }
 
-    void auditeeShowAttestation(final byte[] serialized) {
+    private void auditeeShowAttestation(final byte[] serialized) {
         Log.d(TAG, "sending attestation: " + logFormatBytes(serialized));
         auditeeSerializedAttestation = serialized;
         mStage = Stage.AuditeeResults;
