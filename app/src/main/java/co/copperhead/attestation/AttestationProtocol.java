@@ -62,6 +62,9 @@ import static android.security.keystore.KeyProperties.KEY_ALGORITHM_EC;
 class AttestationProtocol {
     private static final String TAG = "AttestationProtocol";
 
+    private static final int CLOCK_SKEW_MS = 60 * 1000;
+    private static final int EXPIRE_OFFSET_MS = 5 * 60 * 1000 + CLOCK_SKEW_MS;
+
     private static final String KEYSTORE_ALIAS_FRESH = "fresh_attestation_key";
     private static final String KEYSTORE_ALIAS_PERSISTENT_PREFIX = "persistent_attestation_key_";
 
@@ -713,7 +716,7 @@ class AttestationProtocol {
             attestationKeystoreAlias = persistentKeystoreAlias;
         }
 
-        final Date startTime = new Date(new Date().getTime() - 10 * 1000);
+        final Date startTime = new Date(new Date().getTime() - CLOCK_SKEW_MS);
         final KeyGenParameterSpec.Builder builder = new KeyGenParameterSpec.Builder(attestationKeystoreAlias,
                 KeyProperties.PURPOSE_SIGN | KeyProperties.PURPOSE_VERIFY)
                 .setAlgorithmParameterSpec(new ECGenParameterSpec(EC_CURVE))
@@ -721,7 +724,7 @@ class AttestationProtocol {
                 .setAttestationChallenge(challenge)
                 .setKeyValidityStart(startTime);
         if (hasPersistentKey) {
-            builder.setKeyValidityEnd(new Date(startTime.getTime() + 60 * 1000));
+            builder.setKeyValidityEnd(new Date(startTime.getTime() + EXPIRE_OFFSET_MS));
         }
         generateKeyPair(KEY_ALGORITHM_EC, builder.build());
 
