@@ -13,7 +13,6 @@ import com.google.common.primitives.Bytes;
 
 import android.app.admin.DevicePolicyManager;
 import android.app.KeyguardManager;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
@@ -32,10 +31,8 @@ import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.InvalidParameterException;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
@@ -499,7 +496,7 @@ class AttestationProtocol {
 
         final String osPatchLevel = Integer.toString(verified.osPatchLevel);
         builder.append("OS patch level: " +
-                osPatchLevel.toString().substring(0, 4) + "-" +
+                osPatchLevel.substring(0, 4) + "-" +
                 osPatchLevel.substring(4, 6) + "\n");
 
         builder.append("Identity: " + fingerprint + "\n");
@@ -729,7 +726,7 @@ class AttestationProtocol {
         generateKeyPair(KEY_ALGORITHM_EC, builder.build());
 
         final byte[] fingerprint =
-                getFingerprint((X509Certificate) keyStore.getCertificate(persistentKeystoreAlias));
+                getFingerprint(keyStore.getCertificate(persistentKeystoreAlias));
 
         final Certificate[] attestationCertificates = keyStore.getCertificateChain(attestationKeystoreAlias);
 

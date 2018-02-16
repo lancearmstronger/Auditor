@@ -68,11 +68,11 @@ public class AttestationActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_attestation);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        auditee = (Button) findViewById(R.id.auditee);
-        auditor = (Button) findViewById(R.id.auditor);
+        auditee = findViewById(R.id.auditee);
+        auditor = findViewById(R.id.auditor);
 
         auditee.setOnClickListener((final View view) -> {
             if (!Build.DEVICE.equals("taimen") && !Build.DEVICE.equals("walleye")) {
@@ -86,20 +86,17 @@ public class AttestationActivity extends AppCompatActivity {
             runAuditee();
         });
 
-        auditor.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mStage = Stage.Auditor;
-                auditee.setVisibility(View.GONE);
-                auditor.setVisibility(View.GONE);
-                runAuditor();
-            }
+        auditor.setOnClickListener(view -> {
+            mStage = Stage.Auditor;
+            auditee.setVisibility(View.GONE);
+            auditor.setVisibility(View.GONE);
+            runAuditor();
         });
 
-        textView = (TextView) findViewById(R.id.textview);
+        textView = findViewById(R.id.textview);
         textView.setMovementMethod(new ScrollingMovementMethod());
 
-        mView = (ImageView) findViewById(R.id.imageview);
+        mView = findViewById(R.id.imageview);
 
         if (savedInstanceState != null) {
             auditeeSerializedAttestation = savedInstanceState.getByteArray(STATE_AUDITEE_SERIALIZED_ATTESTATION);
@@ -154,12 +151,7 @@ public class AttestationActivity extends AppCompatActivity {
         textView.setText(R.string.qr_code_scan_hint_auditor);
 
         // now tap to scan
-        mView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                showQrScanner("Auditor");
-            }
-        });
+        mView.setOnClickListener(view -> showQrScanner("Auditor"));
         // show results
     }
 
