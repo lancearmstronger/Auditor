@@ -44,6 +44,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
 import java.util.Arrays;
 import java.util.Date;
@@ -53,8 +54,6 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
-
-import java.security.cert.X509Certificate;
 
 import static android.security.keystore.KeyProperties.DIGEST_SHA256;
 import static android.security.keystore.KeyProperties.KEY_ALGORITHM_EC;
@@ -341,17 +340,17 @@ class AttestationProtocol {
         }
 
         // check that the root certificate is the Google key attestation root
-        final X509Certificate secureRoot = generateCertificate(
+        final Certificate secureRoot = generateCertificate(
                 new ByteArrayInputStream(GOOGLE_ROOT_CERTIFICATE.getBytes()));
-        final X509Certificate rootCert = (X509Certificate) certificates[certificates.length - 1];
+        final Certificate rootCert = certificates[certificates.length - 1];
         if (!Arrays.equals(secureRoot.getEncoded(), rootCert.getEncoded())) {
             throw new GeneralSecurityException("root certificate is not the Google key attestation root");
         }
 
         // check that 2nd last certificate is the expected intermediate (may prove to be too strict)
-        final X509Certificate pixelIntermediate = generateCertificate(
+        final Certificate pixelIntermediate = generateCertificate(
                 new ByteArrayInputStream(WAHOO_INTERMEDIATE_CERTIFICATE.getBytes()));
-        final X509Certificate intermediateCert = (X509Certificate) certificates[certificates.length - 2];
+        final Certificate intermediateCert = certificates[certificates.length - 2];
         if (!Arrays.equals(pixelIntermediate.getEncoded(), intermediateCert.getEncoded())) {
             throw new GeneralSecurityException("2nd last certificate is not the Pixel 2 (XL) intermediate");
         }
@@ -544,16 +543,15 @@ class AttestationProtocol {
                 throw new GeneralSecurityException("certificate chain mismatch");
             }
             for (int i = 1; i < attestationCertificates.length; i++) {
-                final X509Certificate a = (X509Certificate) attestationCertificates[i];
                 final byte[] b = BaseEncoding.base64().decode(preferences.getString(KEY_PINNED_CERTIFICATE + i, null));
-                if (!Arrays.equals(a.getEncoded(), b)) {
+                if (!Arrays.equals(attestationCertificates[i].getEncoded(), b)) {
                     throw new GeneralSecurityException("certificate chain mismatch");
                 }
             }
             builder.append("\nCertificate chain matches pinned certificate chain.\n");
 
             final byte[] persistentCertificateEncoded = BaseEncoding.base64().decode(preferences.getString(KEY_PINNED_CERTIFICATE + "0", null));
-            final X509Certificate persistentCertificate = generateCertificate(
+            final Certificate persistentCertificate = generateCertificate(
                     new ByteArrayInputStream(persistentCertificateEncoded));
             if (!Arrays.equals(fingerprint, getFingerprint(persistentCertificate))) {
                 throw new GeneralSecurityException("corrupt Auditor pinning data");
@@ -604,8 +602,8 @@ class AttestationProtocol {
 
             editor.putInt(KEY_PINNED_CERTIFICATE_LENGTH, attestationCertificates.length);
             for (int i = 0; i < attestationCertificates.length; i++) {
-                final X509Certificate cert = (X509Certificate) attestationCertificates[i];
-                final String encoded = BaseEncoding.base64().encode(cert.getEncoded());
+                final String encoded = BaseEncoding.base64().encode(
+                        attestationCertificates[i].getEncoded());
                 editor.putString(KEY_PINNED_CERTIFICATE + i, encoded);
             }
 
@@ -764,8 +762,7 @@ class AttestationProtocol {
         final ByteBuffer chainSerializer = ByteBuffer.allocate(MAX_ENCODED_CHAIN_LENGTH);
         final int certificateCount = attestationCertificates.length - 2;
         for (int i = 0; i < certificateCount; i++) {
-            final X509Certificate certificate = (X509Certificate) attestationCertificates[i];
-            final byte[] encoded = certificate.getEncoded();
+            final byte[] encoded = attestationCertificates[i].getEncoded();
             if (encoded.length > Short.MAX_VALUE) {
                 throw new RuntimeException("encoded certificate too long");
             }
