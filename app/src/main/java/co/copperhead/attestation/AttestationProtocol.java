@@ -564,10 +564,8 @@ class AttestationProtocol {
             }
             builder.append("\nPinned device variant matches verified device variant.\n");
 
-            if (preferences.contains(KEY_PINNED_OS_STOCK)) {
-                if (verified.isStock != preferences.getBoolean(KEY_PINNED_OS_STOCK, true)) {
-                    throw new GeneralSecurityException("OS does not match");
-                }
+            if (verified.isStock != preferences.getBoolean(KEY_PINNED_OS_STOCK, true)) {
+                throw new GeneralSecurityException("OS does not match");
             }
             if (verified.osVersion < preferences.getInt(KEY_PINNED_OS_VERSION, Integer.MAX_VALUE)) {
                 throw new GeneralSecurityException("OS version downgrade detected");
