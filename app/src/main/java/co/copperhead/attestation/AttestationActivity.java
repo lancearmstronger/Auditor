@@ -8,8 +8,6 @@ import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.method.ScrollingMovementMethod;
@@ -38,7 +36,7 @@ import static android.graphics.Color.BLACK;
 import static android.graphics.Color.WHITE;
 
 public class AttestationActivity extends AppCompatActivity {
-    private static final String TAG = "CopperheadAttestation";
+    private static final String TAG = "AttestationActivity";
 
     private static final String STATE_AUDITEE_SERIALIZED_ATTESTATION = "auditee_serialized_attestation";
     private static final String STATE_AUDITOR_CHALLENGE = "auditor_challenge";
@@ -222,18 +220,11 @@ public class AttestationActivity extends AppCompatActivity {
         return bitmap;
     }
 
-    private boolean hasCameraPermission() {
-        return ContextCompat.checkSelfPermission(this,
-                Manifest.permission.CAMERA)
-                == PackageManager.PERMISSION_GRANTED;
-    }
-
     private void showQrScanner(final String initiator) {
         Log.d(TAG, "showQrScanner: " + initiator);
 
-        if (!hasCameraPermission()) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.CAMERA},
+        if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.CAMERA},
                     MY_PERMISSIONS_REQUEST_CAMERA);
         } else {
             startActivityForResult(new Intent(this, QRScannerActivity.class), SCAN_REQUEST_CODE);
