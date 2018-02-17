@@ -86,8 +86,6 @@ public class AttestationActivity extends AppCompatActivity {
                 return;
             }
             mStage = Stage.Auditee;
-            auditee.setVisibility(View.GONE);
-            auditor.setVisibility(View.GONE);
             runAuditee();
         });
 
@@ -289,8 +287,6 @@ public class AttestationActivity extends AppCompatActivity {
                 if (contents == null) {
                     if (mStage == Stage.Auditee) {
                         mStage = Stage.None;
-                        auditee.setVisibility(View.VISIBLE);
-                        auditor.setVisibility(View.VISIBLE);
                     }
                     return;
                 }
@@ -302,6 +298,8 @@ public class AttestationActivity extends AppCompatActivity {
                 }
                 if (mStage == Stage.Auditee) {
                     mStage = Stage.AuditeeGenerate;
+                    auditee.setVisibility(View.GONE);
+                    auditor.setVisibility(View.GONE);
                     continueAuditee(contentsBytes);
                 } else if (mStage == Stage.Auditor) {
                     mStage = Stage.AuditorResults;
@@ -311,7 +309,9 @@ public class AttestationActivity extends AppCompatActivity {
                     Log.w(TAG, "received unexpected scan result");
                 }
             } else {
-                Log.w(TAG, "intent null");
+                if (mStage == Stage.Auditee) {
+                    mStage = Stage.None;
+                }
             }
         }
     }
