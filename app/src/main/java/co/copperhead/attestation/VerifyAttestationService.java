@@ -5,6 +5,7 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.util.Log;
 
+import java.nio.BufferUnderflowException;
 import java.security.GeneralSecurityException;
 import java.util.zip.DataFormatException;
 
@@ -57,6 +58,9 @@ public class VerifyAttestationService extends IntentService {
         } catch (final DataFormatException | GeneralSecurityException e) {
             Log.e(TAG, "attestation generation error", e);
             resultIntent.putExtra(EXTRA_ERROR, e.getMessage());
+        } catch (final BufferUnderflowException e) {
+            Log.e(TAG, "attestation generation error", e);
+            resultIntent.putExtra(EXTRA_ERROR, "Invalid attestation format");
         }
 
         try {
