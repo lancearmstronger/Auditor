@@ -667,8 +667,10 @@ class AttestationProtocol {
             chainDeserializer.get(encoded);
             certificates[i] = generateCertificate(new ByteArrayInputStream(encoded));
         }
+
         final byte[] fingerprint = new byte[FINGERPRINT_LENGTH];
         deserializer.get(fingerprint);
+
         final byte osEnforcedFlags = deserializer.get();
         if ((osEnforcedFlags & ~OS_ENFORCED_FLAGS_ALL) != 0) {
             Log.w(TAG, "unknown OS enforced flag set (flags: " + osEnforcedFlags + ")");
@@ -677,6 +679,7 @@ class AttestationProtocol {
         final boolean accessibility = (osEnforcedFlags & OS_ENFORCED_FLAGS_ACCESSIBILITY) != 0;
         final boolean deviceAdmin = (osEnforcedFlags & OS_ENFORCED_FLAGS_DEVICE_ADMIN) != 0;
         final boolean adbEnabled = (osEnforcedFlags & OS_ENFORCED_FLAGS_ADB_ENABLED) != 0;
+
         final int signatureLength = deserializer.remaining();
         final byte[] signature = new byte[signatureLength];
         deserializer.get(signature);
