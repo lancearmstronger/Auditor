@@ -667,7 +667,7 @@ class AttestationProtocol {
         deserializer.get(fingerprint);
         final byte osEnforcedFlags = deserializer.get();
         if ((osEnforcedFlags & ~OS_ENFORCED_FLAGS_ALL) != 0) {
-            throw new GeneralSecurityException("unknown OS enforced flag set");
+            Log.w(TAG, "unknown OS enforced flag set (flags: " + osEnforcedFlags + ")");
         }
         final boolean userProfileSecure = (osEnforcedFlags & OS_ENFORCED_FLAGS_USER_PROFILE_SECURE) != 0;
         final boolean accessibility = (osEnforcedFlags & OS_ENFORCED_FLAGS_ACCESSIBILITY) != 0;
