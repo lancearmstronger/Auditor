@@ -116,7 +116,7 @@ class AttestationProtocol {
     // (DEFLATE_DICTIONARY) generated from sample certificates.
     //
     // signed message {
-    // byte version = PROTOCOL_VERSION
+    // byte version = min(maxVersion, PROTOCOL_VERSION)
     // short compressedChainLength
     // byte[] compressedChain { [short encodedCertificateLength, byte[] encodedCertificate] x certificateCount }
     // byte[] fingerprint (length: FINGERPRINT_LENGTH)
