@@ -73,6 +73,7 @@ class AttestationProtocol {
     private static final String KEY_CHALLENGE_INDEX = "challenge_index";
 
     // Per-Auditee preferences
+    private static final String PREFERENCES_DEVICE_PREFIX = "device-";
     private static final String KEY_PINNED_CERTIFICATE = "pinned_certificate_";
     private static final String KEY_PINNED_CERTIFICATE_LENGTH = "pinned_certificate_length";
     private static final String KEY_PINNED_DEVICE = "pinned_device";
@@ -531,7 +532,8 @@ class AttestationProtocol {
         final boolean hasPersistentKey = !Arrays.equals(currentFingerprint, fingerprint);
 
         final SharedPreferences preferences =
-                context.getSharedPreferences("device-" + fingerprintHex, Context.MODE_PRIVATE);
+                context.getSharedPreferences(PREFERENCES_DEVICE_PREFIX + fingerprintHex,
+                        Context.MODE_PRIVATE);
         if (hasPersistentKey && !preferences.contains(KEY_PINNED_DEVICE)) {
             builder.append("Pairing data for this Auditee is missing. Cannot perform paired attestation.\n");
             builder.append("\nEither the initial pairing was incomplete or the device is compromised.\n");
@@ -865,7 +867,7 @@ class AttestationProtocol {
 
         final File dir = new File(context.getFilesDir().getParent() + "/shared_prefs/");
         for (final String file : dir.list()) {
-            if (file.startsWith("device-")) {
+            if (file.startsWith(PREFERENCES_DEVICE_PREFIX)) {
                 final String name = file.replace(".xml", "");
                 Log.d(TAG, "delete SharedPreferences " + name);
                 context.deleteSharedPreferences(name);
