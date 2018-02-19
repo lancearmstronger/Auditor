@@ -8,4 +8,6 @@
     <string name="verify_error">Error encountered verifying attestation:\n\n</string>
     <string name="qr_code_scan_hint_auditee">Now scan this QR Code from the other device.</string>
     <string name="qr_code_scan_hint_auditor">Now scan this QR Code from the other device.\nTap after scanning to proceed.</string>
+    <string name="action_clear_auditee">Clear Auditee pairings</string>
+    <string name="action_clear_auditor">Clear Auditor pairings</string>
 </resources>

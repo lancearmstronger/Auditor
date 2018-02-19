@@ -25,6 +25,7 @@ import android.view.accessibility.AccessibilityManager;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -48,6 +49,7 @@ import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
 import java.util.zip.DataFormatException;
@@ -841,5 +843,33 @@ class AttestationProtocol {
                 "AndroidKeyStore");
         keyPairGenerator.initialize(spec);
         keyPairGenerator.generateKeyPair();
+    }
+
+    static void clearAuditee() throws GeneralSecurityException, IOException {
+        final KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
+        keyStore.load(null);
+
+        final Enumeration<String> aliases = keyStore.aliases();
+        while (aliases.hasMoreElements()) {
+            final String alias = aliases.nextElement();
+            if (alias.startsWith(KEYSTORE_ALIAS_PERSISTENT_PREFIX)) {
+                Log.d(TAG, "deleting key " + alias);
+                keyStore.deleteEntry(alias);
+            }
+        }
+    }
+
+    static void clearAuditor(final Context context) {
+        PreferenceManager.getDefaultSharedPreferences(context)
+                .edit().remove(KEY_CHALLENGE_INDEX).apply();
+
+        final File dir = new File(context.getFilesDir().getParent() + "/shared_prefs/");
+        for (final String file : dir.list()) {
+            if (file.startsWith("device-")) {
+                final String name = file.replace(".xml", "");
+                Log.d(TAG, "delete SharedPreferences " + name);
+                context.deleteSharedPreferences(name);
+            }
+        }
     }
 }

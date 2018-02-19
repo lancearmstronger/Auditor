@@ -14,6 +14,7 @@ import android.text.method.ScrollingMovementMethod;
 import android.util.Base64;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.widget.Button;
@@ -27,7 +28,9 @@ import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.security.GeneralSecurityException;
 import java.util.EnumMap;
 import java.util.Locale;
 import java.util.Map;
@@ -142,7 +145,6 @@ public class AttestationActivity extends AppCompatActivity {
     }
 
     private void runAuditor() {
-        // generate qr
         if (auditorChallenge == null) {
             auditorChallenge = AttestationProtocol.getChallengeMessage(this);
         }
@@ -151,9 +153,7 @@ public class AttestationActivity extends AppCompatActivity {
         mView.setImageBitmap(createQrCode(auditorChallenge));
         textView.setText(R.string.qr_code_scan_hint_auditor);
 
-        // now tap to scan
         mView.setOnClickListener(view -> showQrScanner("Auditor"));
-        // show results
     }
 
     private void showAuditorResults(final byte[] serialized) {
@@ -308,9 +308,25 @@ public class AttestationActivity extends AppCompatActivity {
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
+    public boolean onCreateOptionsMenu(final Menu menu) {
         getMenuInflater().inflate(R.menu.menu_attestation, menu);
         return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(final MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_clear_auditee:
+                try {
+                    AttestationProtocol.clearAuditee();
+                } catch (final GeneralSecurityException | IOException e) {
+                    Log.e(TAG, "clearAuditee failed", e);
+                }
+                return true;
+            case R.id.action_clear_auditor:
+                AttestationProtocol.clearAuditor(this);
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }
