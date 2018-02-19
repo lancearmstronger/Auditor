@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">Auditor</string>
     <string name="unsupported_auditee">Only Pixel 2 and Pixel 2 XL devices can be audited.</string>
+    <string name="camera_permission_denied">Camera permission is required to scan QR codes. Please try again.</string>
     <string name="auditee_button">Auditee (device being verified)</string>
     <string name="auditor_button">Auditor (device performing verification)</string>
     <string name="qrcode_content_description">QR code</string>

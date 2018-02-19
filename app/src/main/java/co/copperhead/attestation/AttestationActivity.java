@@ -50,7 +50,7 @@ public class AttestationActivity extends AppCompatActivity {
     private static final int VERIFY_REQUEST_CODE = 1;
     private static final int SCAN_REQUEST_CODE = 2;
 
-    private static final int MY_PERMISSIONS_REQUEST_CAMERA = 10;
+    private static final int PERMISSIONS_REQUEST_CAMERA = 10;
 
     private TextView textView;
     private ImageView mView;
@@ -225,7 +225,7 @@ public class AttestationActivity extends AppCompatActivity {
 
         if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.CAMERA},
-                    MY_PERMISSIONS_REQUEST_CAMERA);
+                    PERMISSIONS_REQUEST_CAMERA);
         } else {
             startActivityForResult(new Intent(this, QRScannerActivity.class), SCAN_REQUEST_CODE);
         }
@@ -235,13 +235,14 @@ public class AttestationActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String permissions[], @NonNull int[] grantResults) {
         switch (requestCode) {
-            case MY_PERMISSIONS_REQUEST_CAMERA: {
+            case PERMISSIONS_REQUEST_CAMERA: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     startActivityForResult(new Intent(this, QRScannerActivity.class), SCAN_REQUEST_CODE);
                 } else {
-                    // App is basically unusable at this point. TODO: Show toast?
+                    Toast.makeText(this, getString(R.string.camera_permission_denied),
+                            Toast.LENGTH_LONG).show();
                 }
             }
         }
