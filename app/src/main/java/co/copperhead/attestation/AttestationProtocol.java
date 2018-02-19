@@ -632,7 +632,7 @@ class AttestationProtocol {
             final byte[] challengeMessage) throws DataFormatException, GeneralSecurityException {
         final ByteBuffer deserializer = ByteBuffer.wrap(attestationResult);
         final byte version = deserializer.get();
-        if (version != PROTOCOL_VERSION) {
+        if (version > PROTOCOL_VERSION) {
             throw new GeneralSecurityException("unsupported protocol version: " + version);
         }
 
