@@ -23,5 +23,4 @@
 
     <include layout="@layout/content_attestation" />
 
-
 </android.support.design.widget.CoordinatorLayout>

@@ -27,7 +27,7 @@ public class QRScannerActivity extends Activity implements ZXingScannerView.Resu
     public void onCreate(Bundle state) {
         super.onCreate(state);
         setContentView(R.layout.activity_qrscanner);
-        ViewGroup contentFrame = (ViewGroup) findViewById(R.id.content_frame);
+        ViewGroup contentFrame = findViewById(R.id.content_frame);
         mScannerView = new ZXingScannerView(this) {
             @Override
             protected IViewFinder createViewFinderView(Context context) {
@@ -35,7 +35,7 @@ public class QRScannerActivity extends Activity implements ZXingScannerView.Resu
             }
         };
         contentFrame.addView(mScannerView);
-        mScannerView.setFormats(new ArrayList<BarcodeFormat>(Collections.singletonList(BarcodeFormat.QR_CODE)));
+        mScannerView.setFormats(Collections.singletonList(BarcodeFormat.QR_CODE));
     }
 
     @Override
@@ -79,6 +79,5 @@ public class QRScannerActivity extends Activity implements ZXingScannerView.Resu
         public void onDraw(Canvas canvas) {
             super.onDraw(canvas);
         }
-
     }
 }
