@@ -330,4 +330,18 @@ public class AttestationActivity extends AppCompatActivity {
         }
         return super.onOptionsItemSelected(item);
     }
+
+    @Override
+    public void onBackPressed() {
+        if (mStage == Stage.AuditeeResults || mStage == Stage.Auditor ||
+                mStage == Stage.AuditorResults) {
+            auditeeSerializedAttestation = null;
+            auditorChallenge = null;
+            mStage = Stage.None;
+            textView.setText("");
+            recreate();
+            return;
+        }
+        super.onBackPressed();
+    }
 }
