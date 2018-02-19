@@ -81,8 +81,16 @@ class AttestationProtocol {
     private static final String KEY_VERIFIED_TIME_FIRST = "verified_time_first";
     private static final String KEY_VERIFIED_TIME_LAST = "verified_time_last";
 
+    private static final int CHALLENGE_LENGTH = 32;
+    private static final String EC_CURVE = "secp256r1";
+    private static final String SIGNATURE_ALGORITHM = "SHA256WithECDSA";
+    private static final String KEY_DIGEST = DIGEST_SHA256;
+    private static final HashFunction FINGERPRINT_HASH_FUNCTION = Hashing.sha256();
+    private static final int FINGERPRINT_LENGTH = FINGERPRINT_HASH_FUNCTION.bits() / 8;
+
     // Challenge message:
     //
+    // byte maxVersion = PROTOCOL_VERSION
     // byte[] challenge index (length: CHALLENGE_LENGTH)
     // byte[] challenge (length: CHALLENGE_LENGTH)
     //
@@ -151,6 +159,8 @@ class AttestationProtocol {
     // downgrade protection for the OS version/patch (bootloader/TEE enforced) and app version (OS
     // enforced) by keeping them updated.
     private static final byte PROTOCOL_VERSION = 1;
+    // can become longer in the future, but this is the minimum length
+    private static final byte CHALLENGE_MESSAGE_LENGTH = 1 + CHALLENGE_LENGTH * 2;
     private static final int MAX_ENCODED_CHAIN_LENGTH = 3000;
     private static final int MAX_MESSAGE_SIZE = 2953;
     // cat samples/taimen_attestation.der.x509 samples/taimen_intermediate.der.x509 | base64
@@ -187,15 +197,8 @@ class AttestationProtocol {
             OS_ENFORCED_FLAGS_DEVICE_ADMIN |
             OS_ENFORCED_FLAGS_ADB_ENABLED;
 
-    private static final int CHALLENGE_LENGTH = 32;
-    private static final String EC_CURVE = "secp256r1";
-    private static final String SIGNATURE_ALGORITHM = "SHA256WithECDSA";
-    private static final String KEY_DIGEST = DIGEST_SHA256;
-    private static final HashFunction FINGERPRINT_HASH_FUNCTION = Hashing.sha256();
-    private static final int FINGERPRINT_LENGTH = FINGERPRINT_HASH_FUNCTION.bits() / 8;
-
     private static final String ATTESTATION_APP_PACKAGE_NAME = "co.copperhead.attestation";
-    private static final int ATTESTATION_APP_MINIMUM_VERSION = 5;
+    private static final int ATTESTATION_APP_MINIMUM_VERSION = 7;
     private static final String ATTESTATION_APP_SIGNATURE_DIGEST_DEBUG =
             "17727D8B61D55A864936B1A7B4A2554A15151F32EBCF44CDAA6E6C3258231890";
     private static final String ATTESTATION_APP_SIGNATURE_DIGEST_RELEASE =
@@ -299,7 +302,7 @@ class AttestationProtocol {
     }
 
     static byte[] getChallengeMessage(final Context context) {
-        return Bytes.concat(getChallengeIndex(context), getChallenge());
+        return Bytes.concat(new byte[]{PROTOCOL_VERSION}, getChallengeIndex(context), getChallenge());
     }
 
     private static byte[] getFingerprint(final Certificate certificate)
@@ -682,19 +685,23 @@ class AttestationProtocol {
         deserializer.rewind();
         deserializer.limit(deserializer.capacity() - signature.length);
 
-        final byte[] challenge = Arrays.copyOfRange(challengeMessage, CHALLENGE_LENGTH, CHALLENGE_LENGTH * 2);
+        final byte[] challenge = Arrays.copyOfRange(challengeMessage, 1 + CHALLENGE_LENGTH, 1 + CHALLENGE_LENGTH * 2);
         return verify(context, fingerprint, challenge, deserializer.asReadOnlyBuffer(), signature,
                 certificates, userProfileSecure, accessibility, deviceAdmin, adbEnabled);
     }
 
     static byte[] generateSerialized(final Context context, final byte[] challengeMessage)
             throws GeneralSecurityException, IOException {
-        if (challengeMessage.length != CHALLENGE_LENGTH * 2) {
-            throw new GeneralSecurityException("challenge is not " + CHALLENGE_LENGTH * 2 + " bytes");
+        if (challengeMessage.length < CHALLENGE_MESSAGE_LENGTH) {
+            throw new GeneralSecurityException("challenge message is too small");
         }
 
-        final byte[] challengeIndex = Arrays.copyOfRange(challengeMessage, 0, CHALLENGE_LENGTH);
-        final byte[] challenge = Arrays.copyOfRange(challengeMessage, CHALLENGE_LENGTH, CHALLENGE_LENGTH * 2);
+        final byte maxVersion = challengeMessage[0];
+        if (maxVersion <= PROTOCOL_VERSION && challengeMessage.length != CHALLENGE_MESSAGE_LENGTH) {
+            throw new GeneralSecurityException("challenge message is not the expected size");
+        }
+        final byte[] challengeIndex = Arrays.copyOfRange(challengeMessage, 1, 1 + CHALLENGE_LENGTH);
+        final byte[] challenge = Arrays.copyOfRange(challengeMessage, 1 + CHALLENGE_LENGTH, 1 + CHALLENGE_LENGTH * 2);
 
         final KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
         keyStore.load(null);
@@ -755,7 +762,7 @@ class AttestationProtocol {
         // Serialization
 
         final ByteBuffer serializer = ByteBuffer.allocate(MAX_MESSAGE_SIZE);
-        serializer.put(PROTOCOL_VERSION);
+        serializer.put((byte) Math.min(PROTOCOL_VERSION, maxVersion));
 
         final ByteBuffer chainSerializer = ByteBuffer.allocate(MAX_ENCODED_CHAIN_LENGTH);
         final int certificateCount = attestationCertificates.length - 2;
