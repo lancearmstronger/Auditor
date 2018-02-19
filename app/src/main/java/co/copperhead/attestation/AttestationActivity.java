@@ -190,14 +190,15 @@ public class AttestationActivity extends AppCompatActivity {
     }
 
     private Bitmap createQrCode(final byte[] contents) {
-        BitMatrix result;
+        final BitMatrix result;
         try {
-            QRCodeWriter writer = new QRCodeWriter();
-            Map<EncodeHintType,Object> hints = new EnumMap<>(EncodeHintType.class);
+            final QRCodeWriter writer = new QRCodeWriter();
+            final Map<EncodeHintType,Object> hints = new EnumMap<>(EncodeHintType.class);
             hints.put(EncodeHintType.CHARACTER_SET, "ISO-8859-1");
             try {
-                result = writer.encode(new String(contents, "ISO-8859-1"), BarcodeFormat.QR_CODE, mView.getWidth(),
-                        mView.getWidth(), hints);
+                final int size = Math.min(mView.getWidth(), mView.getHeight());
+                result = writer.encode(new String(contents, "ISO-8859-1"), BarcodeFormat.QR_CODE,
+                        size, size, hints);
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException("ISO-8859-1 not supported", e);
             }
@@ -205,19 +206,17 @@ public class AttestationActivity extends AppCompatActivity {
             return null;
         }
 
-        int width = result.getWidth();
-        int height = result.getHeight();
-        int[] pixels = new int[width * height];
+        final int width = result.getWidth();
+        final int height = result.getHeight();
+        final int[] pixels = new int[width * height];
         for (int y = 0; y < height; y++) {
-            int offset = y * width;
+            final int offset = y * width;
             for (int x = 0; x < width; x++) {
                 pixels[offset + x] = result.get(x, y) ? BLACK : WHITE;
             }
         }
 
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        bitmap.setPixels(pixels, 0, width, 0, 0, width, height);
-        return bitmap;
+        return Bitmap.createBitmap(pixels, width, height, Bitmap.Config.RGB_565);
     }
 
     private void showQrScanner(final String initiator) {
