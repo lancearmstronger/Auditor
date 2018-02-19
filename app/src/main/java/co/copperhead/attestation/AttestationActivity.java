@@ -316,16 +316,18 @@ public class AttestationActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(final MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.action_clear_auditee:
-                try {
-                    AttestationProtocol.clearAuditee();
-                } catch (final GeneralSecurityException | IOException e) {
-                    Log.e(TAG, "clearAuditee failed", e);
-                }
+            case R.id.action_clear_auditee: {
+                final Intent intent = new Intent(this, GenerateAttestationService.class);
+                intent.putExtra(GenerateAttestationService.EXTRA_CLEAR, true);
+                startService(intent);
                 return true;
-            case R.id.action_clear_auditor:
-                AttestationProtocol.clearAuditor(this);
+            }
+            case R.id.action_clear_auditor: {
+                final Intent intent = new Intent(this, VerifyAttestationService.class);
+                intent.putExtra(VerifyAttestationService.EXTRA_CLEAR, true);
+                startService(intent);
                 return true;
+            }
         }
         return super.onOptionsItemSelected(item);
     }

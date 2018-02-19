@@ -17,6 +17,7 @@ public class VerifyAttestationService extends IntentService {
 
     static final String EXTRA_OUTPUT = "co.copperhead.attestation.OUTPUT";
     static final String EXTRA_ERROR = "co.copperhead.attestation.ERROR";
+    static final String EXTRA_CLEAR = "co.copperhead.attestation.CLEAR";
 
     static final int RESULT_CODE = 0;
 
@@ -29,6 +30,11 @@ public class VerifyAttestationService extends IntentService {
     @Override
     protected void onHandleIntent(final Intent intent) {
         Log.d(TAG, "intent service started");
+
+        if (intent.getBooleanExtra(EXTRA_CLEAR, false)) {
+            AttestationProtocol.clearAuditor(this);
+            return;
+        }
 
         final byte[] challengeMessage = intent.getByteArrayExtra(EXTRA_CHALLENGE_MESSAGE);
         if (challengeMessage == null) {

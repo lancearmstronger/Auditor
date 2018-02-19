@@ -16,6 +16,7 @@ public class GenerateAttestationService extends IntentService {
 
     static final String EXTRA_ATTESTATION = "co.copperhead.attestation.ATTESTATION";
     static final String EXTRA_ATTESTATION_ERROR = "co.copperhead.attestation.ATTESTATION_ERROR";
+    static final String EXTRA_CLEAR = "co.copperhead.attestation.CLEAR";
 
     static final int RESULT_CODE = 0;
 
@@ -28,6 +29,15 @@ public class GenerateAttestationService extends IntentService {
     @Override
     protected void onHandleIntent(final Intent intent) {
         Log.d(TAG, "intent service started");
+
+        if (intent.getBooleanExtra(EXTRA_CLEAR, false)) {
+            try {
+                AttestationProtocol.clearAuditee();
+            } catch (final GeneralSecurityException | IOException e) {
+                Log.e(TAG, "clearAuditee", e);
+            }
+            return;
+        }
 
         final byte[] challengeMessage = intent.getByteArrayExtra(EXTRA_CHALLENGE_MESSAGE);
         if (challengeMessage == null) {
