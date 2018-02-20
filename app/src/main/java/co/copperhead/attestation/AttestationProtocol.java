@@ -697,7 +697,17 @@ class AttestationProtocol {
                 certificates, userProfileSecure, accessibility, deviceAdmin, adbEnabled);
     }
 
-    static byte[] generateSerialized(final Context context, final byte[] challengeMessage)
+    static class AttestationResult {
+        final boolean pairing;
+        final byte[] serialized;
+
+        AttestationResult(final boolean pairing, final byte[] serialized) {
+            this.pairing = pairing;
+            this.serialized = serialized;
+        }
+    }
+
+    static AttestationResult generateSerialized(final Context context, final byte[] challengeMessage)
             throws GeneralSecurityException, IOException {
         if (challengeMessage.length < CHALLENGE_MESSAGE_LENGTH) {
             throw new GeneralSecurityException("challenge message is too small");
@@ -838,7 +848,7 @@ class AttestationProtocol {
         final byte[] serialized = new byte[serializer.remaining()];
         serializer.get(serialized);
 
-        return serialized;
+        return new AttestationResult(!hasPersistentKey, serialized);
     }
 
     private static void generateKeyPair(final String algorithm, final KeyGenParameterSpec spec)

@@ -39,6 +39,7 @@ import static android.graphics.Color.WHITE;
 public class AttestationActivity extends AppCompatActivity {
     private static final String TAG = "AttestationActivity";
 
+    private static final String STATE_AUDITEE_PAIRING = "auditee_pairing";
     private static final String STATE_AUDITEE_SERIALIZED_ATTESTATION = "auditee_serialized_attestation";
     private static final String STATE_AUDITOR_CHALLENGE = "auditor_challenge";
     private static final String STATE_STAGE = "stage";
@@ -65,6 +66,7 @@ public class AttestationActivity extends AppCompatActivity {
     }
 
     private Stage mStage = Stage.None;
+    private boolean auditeePairing;
     private byte[] auditeeSerializedAttestation;
     private byte[] auditorChallenge;
 
@@ -101,6 +103,7 @@ public class AttestationActivity extends AppCompatActivity {
         mView = findViewById(R.id.imageview);
 
         if (savedInstanceState != null) {
+            auditeePairing = savedInstanceState.getBoolean(STATE_AUDITEE_PAIRING);
             auditeeSerializedAttestation = savedInstanceState.getByteArray(STATE_AUDITEE_SERIALIZED_ATTESTATION);
             auditorChallenge = savedInstanceState.getByteArray(STATE_AUDITOR_CHALLENGE);
             mStage = Stage.valueOf(savedInstanceState.getString(STATE_STAGE));
@@ -131,6 +134,7 @@ public class AttestationActivity extends AppCompatActivity {
     @Override
     public void onSaveInstanceState(final Bundle savedInstanceState) {
         super.onSaveInstanceState(savedInstanceState);
+        savedInstanceState.putBoolean(STATE_AUDITEE_PAIRING, auditeePairing);
         savedInstanceState.putByteArray(STATE_AUDITEE_SERIALIZED_ATTESTATION, auditeeSerializedAttestation);
         savedInstanceState.putByteArray(STATE_AUDITOR_CHALLENGE, auditorChallenge);
         savedInstanceState.putString(STATE_STAGE, mStage.name());
@@ -184,7 +188,11 @@ public class AttestationActivity extends AppCompatActivity {
         auditeeSerializedAttestation = serialized;
         mStage = Stage.AuditeeResults;
         mView.setImageBitmap(createQrCode(serialized));
-        textView.setText(R.string.qr_code_scan_hint_auditee);
+        if (auditeePairing) {
+            textView.setText(R.string.qr_code_scan_hint_auditee_pairing);
+        } else {
+            textView.setText(R.string.qr_code_scan_hint_auditee);
+        }
     }
 
     private Bitmap createQrCode(final byte[] contents) {
@@ -258,6 +266,7 @@ public class AttestationActivity extends AppCompatActivity {
                 textView.append(intent.getStringExtra(GenerateAttestationService.EXTRA_ATTESTATION_ERROR));
                 return;
             }
+            auditeePairing = intent.getBooleanExtra(GenerateAttestationService.EXTRA_PAIRING, false);
             auditeeShowAttestation(intent.getByteArrayExtra(GenerateAttestationService.EXTRA_ATTESTATION));
         } else if (requestCode == VERIFY_REQUEST_CODE) {
             if (resultCode != VerifyAttestationService.RESULT_CODE) {
