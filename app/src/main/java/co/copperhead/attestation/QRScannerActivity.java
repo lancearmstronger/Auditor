@@ -4,8 +4,12 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.ViewGroup;
 
 import com.google.zxing.BarcodeFormat;
@@ -61,23 +65,48 @@ public class QRScannerActivity extends Activity implements ZXingScannerView.Resu
     }
 
     private static class SquareViewFinderView extends ViewFinderView {
-        public SquareViewFinderView(Context context) {
+        private static final int LABEL_TEXT_SIZE_SP = 14;
+        private final Paint paint = new Paint();
+        private String labelText;
+
+        public SquareViewFinderView(final Context context) {
             super(context);
-            init();
+            init(context);
         }
 
-        public SquareViewFinderView(Context context, AttributeSet attrs) {
+        public SquareViewFinderView(final Context context, final AttributeSet attrs) {
             super(context, attrs);
-            init();
+            init(context);
         }
 
-        private void init() {
+        private void init(final Context context) {
+            labelText = context.getString(R.string.scanner_label);
+            paint.setColor(Color.WHITE);
+            paint.setAntiAlias(true);
+            final float textPixelSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
+                    LABEL_TEXT_SIZE_SP, getResources().getDisplayMetrics());
+            paint.setTextSize(textPixelSize);
             setSquareViewFinder(true);
         }
 
         @Override
-        public void onDraw(Canvas canvas) {
+        public void onDraw(final Canvas canvas) {
             super.onDraw(canvas);
+            drawLabel(canvas);
+        }
+
+        private void drawLabel(final Canvas canvas) {
+            final Rect framingRect = getFramingRect();
+            final float labelTop;
+            final float labelLeft;
+            if (framingRect != null) {
+                labelTop = framingRect.bottom + paint.getTextSize() + 10;
+                labelLeft = framingRect.left;
+            } else {
+                labelTop = 10;
+                labelLeft = canvas.getHeight() - paint.getTextSize() - 10;
+            }
+            canvas.drawText(labelText, labelLeft, labelTop, paint);
         }
     }
 }
