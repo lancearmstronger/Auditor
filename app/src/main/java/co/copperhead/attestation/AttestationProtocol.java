@@ -1,18 +1,7 @@
 package co.copperhead.attestation;
 
-import co.copperhead.attestation.attestation.AuthorizationList;
-import co.copperhead.attestation.attestation.Attestation;
-import co.copperhead.attestation.attestation.AttestationApplicationId;
-import co.copperhead.attestation.attestation.AttestationPackageInfo;
-import co.copperhead.attestation.attestation.RootOfTrust;
-
-import com.google.common.hash.HashFunction;
-import com.google.common.hash.Hashing;
-import com.google.common.io.BaseEncoding;
-import com.google.common.primitives.Bytes;
-
-import android.app.admin.DevicePolicyManager;
 import android.app.KeyguardManager;
+import android.app.admin.DevicePolicyManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
@@ -23,11 +12,16 @@ import android.util.Base64;
 import android.util.Log;
 import android.view.accessibility.AccessibilityManager;
 
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
+import com.google.common.io.BaseEncoding;
+import com.google.common.primitives.Bytes;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
@@ -42,8 +36,8 @@ import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
@@ -56,6 +50,12 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
+
+import co.copperhead.attestation.attestation.Attestation;
+import co.copperhead.attestation.attestation.AttestationApplicationId;
+import co.copperhead.attestation.attestation.AttestationPackageInfo;
+import co.copperhead.attestation.attestation.AuthorizationList;
+import co.copperhead.attestation.attestation.RootOfTrust;
 
 import static android.security.keystore.KeyProperties.DIGEST_SHA256;
 import static android.security.keystore.KeyProperties.KEY_ALGORITHM_EC;

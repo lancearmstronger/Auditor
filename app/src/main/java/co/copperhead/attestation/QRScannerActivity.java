@@ -15,7 +15,6 @@ import android.view.ViewGroup;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.Result;
 
-import java.util.ArrayList;
 import java.util.Collections;
 
 import me.dm7.barcodescanner.core.IViewFinder;
