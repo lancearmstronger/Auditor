@@ -60,5 +60,6 @@
         android:id="@+id/imageview"
         android:contentDescription="@string/qrcode_content_description"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:layout_below="@id/textview" />
 </RelativeLayout>
