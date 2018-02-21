@@ -9,7 +9,7 @@
     <string name="verify_error">Error encountered verifying attestation:\n\n</string>
     <string name="qr_code_scan_hint_auditee">Now scan this QR Code from the other device.</string>
     <string name="qr_code_scan_hint_auditee_pairing">Now scan this QR Code from the other device.\n\nThis is the initial pairing and needs to be completed or pairings will need to be cleared on either side to try again.</string>
-    <string name="qr_code_scan_hint_auditor">Now scan this QR Code from the other device.\n\nTap after scanning to proceed.</string>
+    <string name="qr_code_scan_hint_auditor">Now scan this QR Code from the other device.\n\nTap this QR code after scanning to proceed.</string>
     <string name="action_clear_auditee">Clear Auditee pairings</string>
     <string name="action_clear_auditor">Clear Auditor pairings</string>
     <string name="scanner_label">Scan QR code shown on the other device.</string>
