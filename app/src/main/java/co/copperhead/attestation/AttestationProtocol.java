@@ -12,6 +12,7 @@ import android.util.Base64;
 import android.util.Log;
 import android.view.accessibility.AccessibilityManager;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
@@ -274,14 +275,12 @@ class AttestationProtocol {
             "hJdzo2/IBw==\n" +
             "-----END CERTIFICATE-----";
 
-    private static final String FINGERPRINT_COPPERHEADOS_TAIMEN =
-            "815DCBA82BAC1B1758211FF53CAA0B6883CB6C901BE285E1B291C8BDAA12DF75";
-    private static final String FINGERPRINT_COPPERHEADOS_WALLEYE =
-            "36D067F8517A2284781B99A2984966BFF02D3F47310F831FCDCC4D792426B6DF";
-    private static final String FINGERPRINT_STOCK_TAIMEN =
-            "171616EAEF26009FC46DC6D89F3D24217E926C81A67CE65D2E3A9DC27040C7AB";
-    private static final String FINGERPRINT_STOCK_WALLEYE =
-            "1962B0538579FFCE9AC9F507C46AFE3B92055BAC7146462283C85C500BE78D82";
+    private static final ImmutableMap<String, String> fingerprintsCopperheadOS = ImmutableMap.of(
+            "815DCBA82BAC1B1758211FF53CAA0B6883CB6C901BE285E1B291C8BDAA12DF75", "Pixel 2 XL",
+            "36D067F8517A2284781B99A2984966BFF02D3F47310F831FCDCC4D792426B6DF", "Pixel 2");
+    private static final ImmutableMap<String, String> fingerprintsStock = ImmutableMap.of(
+            "171616EAEF26009FC46DC6D89F3D24217E926C81A67CE65D2E3A9DC27040C7AB", "Pixel 2 XL",
+            "1962B0538579FFCE9AC9F507C46AFE3B92055BAC7146462283C85C500BE78D82", "Pixel 2");
 
     private static byte[] getChallengeIndex(final Context context) {
         final SharedPreferences global = PreferenceManager.getDefaultSharedPreferences(context);
@@ -440,17 +439,15 @@ class AttestationProtocol {
         final int verifiedBootState = rootOfTrust.getVerifiedBootState();
         final String verifiedBootKey = BaseEncoding.base16().encode(rootOfTrust.getVerifiedBootKey());
         if (verifiedBootState == RootOfTrust.KM_VERIFIED_BOOT_SELF_SIGNED) {
-            if (verifiedBootKey.equals(FINGERPRINT_COPPERHEADOS_TAIMEN)) {
-                return new Verified("Pixel 2 XL", osVersion, osPatchLevel, appVersion, false);
-            } else if (verifiedBootKey.equals(FINGERPRINT_COPPERHEADOS_WALLEYE)) {
-                return new Verified("Pixel 2", osVersion, osPatchLevel, appVersion, false);
+            final String device = fingerprintsCopperheadOS.get(verifiedBootKey);
+            if (device != null) {
+                return new Verified(device, osVersion, osPatchLevel, appVersion, false);
             }
             throw new GeneralSecurityException("invalid key fingerprint");
         } else if (verifiedBootState == RootOfTrust.KM_VERIFIED_BOOT_VERIFIED) {
-            if (verifiedBootKey.equals(FINGERPRINT_STOCK_TAIMEN)) {
-                return new Verified("Pixel 2 XL", osVersion, osPatchLevel, appVersion, true);
-            } else if (verifiedBootKey.equals(FINGERPRINT_STOCK_WALLEYE)) {
-                return new Verified("Pixel 2", osVersion, osPatchLevel, appVersion, true);
+            final String device = fingerprintsStock.get(verifiedBootKey);
+            if (device != null) {
+                return new Verified(device, osVersion, osPatchLevel, appVersion, true);
             }
             throw new GeneralSecurityException("invalid key fingerprint");
         }
