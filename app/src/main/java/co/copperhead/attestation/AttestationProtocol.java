@@ -534,7 +534,7 @@ class AttestationProtocol {
         if (hasPersistentKey && !preferences.contains(KEY_PINNED_DEVICE)) {
             builder.append("Pairing data for this Auditee is missing. Cannot perform paired attestation.\n");
             builder.append("\nEither the initial pairing was incomplete or the device is compromised.\n");
-            builder.append("\nIf the initial pairing was simply not completed, clear the app data on either the Auditee or the Auditor and try again.\n");
+            builder.append("\nIf the initial pairing was simply not completed, clear the pairing data on either the Auditee or the Auditor via the menu and try again.\n");
             return builder.toString();
         }
 
