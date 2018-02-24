@@ -619,6 +619,7 @@ class AttestationProtocol {
 
         builder.append("\nInformation provided by the verified OS:\n\n");
 
+        builder.append("Auditor app version: ").append(verified.appVersion).append("\n");
         builder.append("User profile secure: " + userProfileSecure + "\n");
         builder.append("Accessibility service(s) enabled: " + accessibility + "\n");
         builder.append("Device administrator(s) enabled: " + deviceAdmin + "\n");
