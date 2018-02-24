@@ -540,8 +540,6 @@ class AttestationProtocol {
 
         final Verified verified = verifyStateless(attestationCertificates, challenge);
 
-        builder.append("Verified attestation with trusted root and trusted intermediate.\n");
-
         if (hasPersistentKey) {
             if (attestationCertificates.length != preferences.getInt(KEY_PINNED_CERTIFICATE_LENGTH, 0)) {
                 throw new GeneralSecurityException("certificate chain mismatch");
@@ -552,7 +550,6 @@ class AttestationProtocol {
                     throw new GeneralSecurityException("certificate chain mismatch");
                 }
             }
-            builder.append("\nCertificate chain matches pinned certificate chain.\n");
 
             final byte[] persistentCertificateEncoded = BaseEncoding.base64().decode(preferences.getString(KEY_PINNED_CERTIFICATE + "0", null));
             final Certificate persistentCertificate = generateCertificate(
@@ -561,29 +558,26 @@ class AttestationProtocol {
                 throw new GeneralSecurityException("corrupt Auditor pinning data");
             }
             verifySignature(persistentCertificate.getPublicKey(), signedMessage, signature);
-            builder.append("\nDevice identity confirmed with signed challenge.\n");
 
             if (!verified.device.equals(preferences.getString(KEY_PINNED_DEVICE, null))) {
                 throw new GeneralSecurityException("pinned device mismatch");
             }
-            builder.append("\nPinned device variant matches verified device variant.\n");
-
             if (verified.isStock != preferences.getBoolean(KEY_PINNED_OS_STOCK, true)) {
                 throw new GeneralSecurityException("OS does not match");
             }
+
             if (verified.osVersion < preferences.getInt(KEY_PINNED_OS_VERSION, Integer.MAX_VALUE)) {
                 throw new GeneralSecurityException("OS version downgrade detected");
             }
             if (verified.osPatchLevel < preferences.getInt(KEY_PINNED_OS_PATCH_LEVEL, Integer.MAX_VALUE)) {
                 throw new GeneralSecurityException("OS patch level downgrade detected");
             }
-            builder.append("\nNo downgrade detected from pinned OS version and OS patch level.\n");
-
             final int pinnedAppVersion = preferences.getInt(KEY_PINNED_APP_VERSION, Integer.MAX_VALUE);
             if (verified.appVersion < pinnedAppVersion) {
                 throw new GeneralSecurityException("App version downgraded");
             }
-            builder.append("\nNo downgrade detected from pinned app version.\n");
+
+            builder.append("Successfully performed strong paired verification and identity confirmation.\n");
 
             appendVerifiedInformation(builder, verified, fingerprintHex);
             builder.append("First verified: " + new Date(preferences.getLong(KEY_VERIFIED_TIME_FIRST, 0)) + "\n");
@@ -597,8 +591,6 @@ class AttestationProtocol {
                     .apply();
         } else {
             verifySignature(attestationCertificates[0].getPublicKey(), signedMessage, signature);
-
-            appendVerifiedInformation(builder, verified, fingerprintHex);
 
             final SharedPreferences.Editor editor = preferences.edit();
 
@@ -620,6 +612,9 @@ class AttestationProtocol {
             editor.putLong(KEY_VERIFIED_TIME_LAST, now);
 
             editor.apply();
+
+            builder.append("Successfully performed basic initial verification and pairing.\n");
+            appendVerifiedInformation(builder, verified, fingerprintHex);
         }
 
         builder.append("\nInformation provided by the verified OS:\n\n");
