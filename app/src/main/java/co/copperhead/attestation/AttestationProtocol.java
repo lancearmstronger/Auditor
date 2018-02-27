@@ -4,6 +4,7 @@ import android.app.KeyguardManager;
 import android.app.admin.DevicePolicyManager;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.hardware.fingerprint.FingerprintManager;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.security.keystore.KeyGenParameterSpec;
@@ -199,12 +200,14 @@ class AttestationProtocol {
     private static final int OS_ENFORCED_FLAGS_DEVICE_ADMIN = 1 << 2;
     private static final int OS_ENFORCED_FLAGS_ADB_ENABLED = 1 << 3;
     private static final int OS_ENFORCED_FLAGS_ADD_USERS_WHEN_LOCKED = 1 << 4;
+    private static final int OS_ENFORCED_FLAGS_ENROLLED_FINGERPRINTS = 1 << 5;
     private static final int OS_ENFORCED_FLAGS_ALL =
             OS_ENFORCED_FLAGS_USER_PROFILE_SECURE |
             OS_ENFORCED_FLAGS_ACCESSIBILITY |
             OS_ENFORCED_FLAGS_DEVICE_ADMIN |
             OS_ENFORCED_FLAGS_ADB_ENABLED |
-            OS_ENFORCED_FLAGS_ADD_USERS_WHEN_LOCKED;
+            OS_ENFORCED_FLAGS_ADD_USERS_WHEN_LOCKED |
+            OS_ENFORCED_FLAGS_ENROLLED_FINGERPRINTS;
 
     private static final String ATTESTATION_APP_PACKAGE_NAME = "co.copperhead.attestation";
     private static final int ATTESTATION_APP_MINIMUM_VERSION = 7;
@@ -526,7 +529,7 @@ class AttestationProtocol {
             final byte[] challenge, final ByteBuffer signedMessage, final byte[] signature,
             final Certificate[] attestationCertificates, final boolean userProfileSecure,
             final boolean accessibility, final boolean deviceAdmin, final boolean adbEnabled,
-            final boolean addUsersWhenLocked) throws GeneralSecurityException {
+            final boolean addUsersWhenLocked, final boolean enrolledFingerprints) throws GeneralSecurityException {
 
         final StringBuilder builder = new StringBuilder();
 
@@ -627,6 +630,7 @@ class AttestationProtocol {
 
         builder.append("Auditor app version: ").append(verified.appVersion).append("\n");
         builder.append("User profile secure: " + userProfileSecure + "\n");
+        builder.append("Enrolled fingerprints: " + enrolledFingerprints + "\n");
         builder.append("Accessibility service(s) enabled: " + accessibility + "\n");
         builder.append("Device administrator(s) enabled: " + deviceAdmin + "\n");
         builder.append("Android Debug Bridge enabled: " + adbEnabled + "\n");
@@ -680,6 +684,7 @@ class AttestationProtocol {
         final boolean deviceAdmin = (osEnforcedFlags & OS_ENFORCED_FLAGS_DEVICE_ADMIN) != 0;
         final boolean adbEnabled = (osEnforcedFlags & OS_ENFORCED_FLAGS_ADB_ENABLED) != 0;
         final boolean addUsersWhenLocked = (osEnforcedFlags & OS_ENFORCED_FLAGS_ADD_USERS_WHEN_LOCKED) != 0;
+        final boolean enrolledFingerprints = (osEnforcedFlags & OS_ENFORCED_FLAGS_ENROLLED_FINGERPRINTS) != 0;
 
         final int signatureLength = deserializer.remaining();
         final byte[] signature = new byte[signatureLength];
@@ -696,7 +701,7 @@ class AttestationProtocol {
         final byte[] challenge = Arrays.copyOfRange(challengeMessage, 1 + CHALLENGE_LENGTH, 1 + CHALLENGE_LENGTH * 2);
         return verify(context, fingerprint, challenge, deserializer.asReadOnlyBuffer(), signature,
                 certificates, userProfileSecure, accessibility, deviceAdmin, adbEnabled,
-                addUsersWhenLocked);
+                addUsersWhenLocked, enrolledFingerprints);
     }
 
     static class AttestationResult {
@@ -771,6 +776,8 @@ class AttestationProtocol {
         if (userProfileSecure && !keyguard.isKeyguardSecure()) {
             throw new GeneralSecurityException("keyguard state inconsistent");
         }
+        final FingerprintManager fingerprintManager = context.getSystemService(FingerprintManager.class);
+        final boolean enrolledFingerprints = fingerprintManager.hasEnrolledFingerprints();
 
         final AccessibilityManager am = context.getSystemService(AccessibilityManager.class);
         final boolean accessibility = am.isEnabled();
@@ -838,6 +845,9 @@ class AttestationProtocol {
         }
         if (addUsersWhenLocked) {
             osEnforcedFlags |= OS_ENFORCED_FLAGS_ADD_USERS_WHEN_LOCKED;
+        }
+        if (enrolledFingerprints) {
+            osEnforcedFlags |= OS_ENFORCED_FLAGS_ENROLLED_FINGERPRINTS;
         }
         serializer.put(osEnforcedFlags);
 
