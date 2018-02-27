@@ -666,7 +666,7 @@ class AttestationProtocol {
 
         final byte osEnforcedFlags = deserializer.get();
         if ((osEnforcedFlags & ~OS_ENFORCED_FLAGS_ALL) != 0) {
-            Log.w(TAG, "unknown OS enforced flag set (flags: " + osEnforcedFlags + ")");
+            Log.w(TAG, "unknown OS enforced flag set (flags: " + Integer.toBinaryString(osEnforcedFlags) + ")");
         }
         final boolean userProfileSecure = (osEnforcedFlags & OS_ENFORCED_FLAGS_USER_PROFILE_SECURE) != 0;
         final boolean accessibility = (osEnforcedFlags & OS_ENFORCED_FLAGS_ACCESSIBILITY) != 0;
