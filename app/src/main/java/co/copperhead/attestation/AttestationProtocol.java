@@ -64,6 +64,9 @@ import static android.security.keystore.KeyProperties.KEY_ALGORITHM_EC;
 class AttestationProtocol {
     private static final String TAG = "AttestationProtocol";
 
+    // Settings.Global.ADD_USERS_WHEN_LOCKED is a private API
+    private static final String ADD_USERS_WHEN_LOCKED = "add_users_when_locked";
+
     private static final int CLOCK_SKEW_MS = 60 * 1000;
     private static final int EXPIRE_OFFSET_MS = 5 * 60 * 1000 + CLOCK_SKEW_MS;
 
@@ -195,11 +198,13 @@ class AttestationProtocol {
     private static final int OS_ENFORCED_FLAGS_ACCESSIBILITY = 1 << 1;
     private static final int OS_ENFORCED_FLAGS_DEVICE_ADMIN = 1 << 2;
     private static final int OS_ENFORCED_FLAGS_ADB_ENABLED = 1 << 3;
+    private static final int OS_ENFORCED_FLAGS_ADD_USERS_WHEN_LOCKED = 1 << 4;
     private static final int OS_ENFORCED_FLAGS_ALL =
             OS_ENFORCED_FLAGS_USER_PROFILE_SECURE |
             OS_ENFORCED_FLAGS_ACCESSIBILITY |
             OS_ENFORCED_FLAGS_DEVICE_ADMIN |
-            OS_ENFORCED_FLAGS_ADB_ENABLED;
+            OS_ENFORCED_FLAGS_ADB_ENABLED |
+            OS_ENFORCED_FLAGS_ADD_USERS_WHEN_LOCKED;
 
     private static final String ATTESTATION_APP_PACKAGE_NAME = "co.copperhead.attestation";
     private static final int ATTESTATION_APP_MINIMUM_VERSION = 7;
@@ -517,10 +522,11 @@ class AttestationProtocol {
         }
     }
 
-    private static String verify(final Context context, final byte[] fingerprint, final byte[] challenge,
-            final ByteBuffer signedMessage, final byte[] signature, final Certificate[] attestationCertificates,
-            final boolean userProfileSecure, final boolean accessibility, final boolean deviceAdmin, final boolean adbEnabled)
-            throws GeneralSecurityException {
+    private static String verify(final Context context, final byte[] fingerprint,
+            final byte[] challenge, final ByteBuffer signedMessage, final byte[] signature,
+            final Certificate[] attestationCertificates, final boolean userProfileSecure,
+            final boolean accessibility, final boolean deviceAdmin, final boolean adbEnabled,
+            final boolean addUsersWhenLocked) throws GeneralSecurityException {
 
         final StringBuilder builder = new StringBuilder();
 
@@ -624,6 +630,7 @@ class AttestationProtocol {
         builder.append("Accessibility service(s) enabled: " + accessibility + "\n");
         builder.append("Device administrator(s) enabled: " + deviceAdmin + "\n");
         builder.append("Android Debug Bridge enabled: " + adbEnabled + "\n");
+        builder.append("Add users from lock screen: " + addUsersWhenLocked + "\n");
 
         return builder.toString();
     }
@@ -672,6 +679,7 @@ class AttestationProtocol {
         final boolean accessibility = (osEnforcedFlags & OS_ENFORCED_FLAGS_ACCESSIBILITY) != 0;
         final boolean deviceAdmin = (osEnforcedFlags & OS_ENFORCED_FLAGS_DEVICE_ADMIN) != 0;
         final boolean adbEnabled = (osEnforcedFlags & OS_ENFORCED_FLAGS_ADB_ENABLED) != 0;
+        final boolean addUsersWhenLocked = (osEnforcedFlags & OS_ENFORCED_FLAGS_ADD_USERS_WHEN_LOCKED) != 0;
 
         final int signatureLength = deserializer.remaining();
         final byte[] signature = new byte[signatureLength];
@@ -687,7 +695,8 @@ class AttestationProtocol {
 
         final byte[] challenge = Arrays.copyOfRange(challengeMessage, 1 + CHALLENGE_LENGTH, 1 + CHALLENGE_LENGTH * 2);
         return verify(context, fingerprint, challenge, deserializer.asReadOnlyBuffer(), signature,
-                certificates, userProfileSecure, accessibility, deviceAdmin, adbEnabled);
+                certificates, userProfileSecure, accessibility, deviceAdmin, adbEnabled,
+                addUsersWhenLocked);
     }
 
     static class AttestationResult {
@@ -768,6 +777,8 @@ class AttestationProtocol {
 
         final boolean adbEnabled = Settings.Global.getInt(context.getContentResolver(),
                 Settings.Global.ADB_ENABLED, 0) != 0;
+        final boolean addUsersWhenLocked = Settings.Global.getInt(context.getContentResolver(),
+                ADD_USERS_WHEN_LOCKED, 0) != 0;
 
         // Serialization
 
@@ -824,6 +835,9 @@ class AttestationProtocol {
         }
         if (adbEnabled) {
             osEnforcedFlags |= OS_ENFORCED_FLAGS_ADB_ENABLED;
+        }
+        if (addUsersWhenLocked) {
+            osEnforcedFlags |= OS_ENFORCED_FLAGS_ADD_USERS_WHEN_LOCKED;
         }
         serializer.put(osEnforcedFlags);
 
