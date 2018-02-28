@@ -22,6 +22,7 @@ import android.view.View;
 import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -152,13 +153,22 @@ public class AttestationActivity extends AppCompatActivity {
                 Base64.encodeToString(bytes, Base64.NO_WRAP));
     }
 
+    private void chooseBestLayout() {
+        final View content = findViewById(R.id.content_attestation);
+        final LinearLayout resultLayout = findViewById(R.id.result);
+        if (content.getHeight() - textView.getHeight() > content.getWidth() - textView.getWidth()) {
+            resultLayout.setOrientation(LinearLayout.VERTICAL);
+        }
+    }
+
     private void runAuditor() {
         if (auditorChallenge == null) {
             auditorChallenge = AttestationProtocol.getChallengeMessage(this);
         }
         Log.d(TAG, "sending random challenge: " + logFormatBytes(auditorChallenge));
-        mView.setImageBitmap(createQrCode(auditorChallenge));
         textView.setText(R.string.qr_code_scan_hint_auditor);
+        chooseBestLayout();
+        mView.setImageBitmap(createQrCode(auditorChallenge));
 
         mView.setOnClickListener(view -> showQrScanner("Auditor"));
     }
@@ -192,12 +202,13 @@ public class AttestationActivity extends AppCompatActivity {
         Log.d(TAG, "sending attestation: " + logFormatBytes(serialized));
         auditeeSerializedAttestation = serialized;
         mStage = Stage.AuditeeResults;
-        mView.setImageBitmap(createQrCode(serialized));
         if (auditeePairing) {
             textView.setText(R.string.qr_code_scan_hint_auditee_pairing);
         } else {
             textView.setText(R.string.qr_code_scan_hint_auditee);
         }
+        chooseBestLayout();
+        mView.setImageBitmap(createQrCode(serialized));
     }
 
     private Bitmap createQrCode(final byte[] contents) {
