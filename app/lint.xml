@@ -19,4 +19,9 @@
     <issue id="GoogleAppIndexingWarning">
         <ignore path="src/main/AndroidManifest.xml"/>
     </issue>
+
+    <!-- LinearLayout is used programmatically -->
+    <issue id="UseCompoundDrawables">
+      <ignore path="src/main/res/layout/content_attestation.xml"/>
+    </issue>
 </lint>
