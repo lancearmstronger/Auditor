@@ -493,7 +493,6 @@ class AttestationProtocol {
     }
 
     private static void appendVerifiedInformation(final StringBuilder builder, final Verified verified, final String fingerprint) {
-        builder.append("Verified device information:\n\n");
         builder.append("Device: " + verified.device + "\n");
         if (verified.isStock) {
             builder.append("OS: Google Android (unmodified official release)\n");
