@@ -57,8 +57,7 @@ public class AttestationActivity extends AppCompatActivity {
 
     private TextView textView;
     private ImageView mView;
-    private Button auditee;
-    private Button auditor;
+    private View buttons;
 
     private enum Stage {
         None,
@@ -82,10 +81,9 @@ public class AttestationActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        auditee = findViewById(R.id.auditee);
-        auditor = findViewById(R.id.auditor);
+        buttons = findViewById(R.id.buttons);
 
-        auditee.setOnClickListener((final View view) -> {
+        findViewById(R.id.auditee).setOnClickListener((final View view) -> {
             if (!Build.DEVICE.equals("taimen") && !Build.DEVICE.equals("walleye")) {
                 Toast.makeText(this, getString(R.string.unsupported_auditee),
                         Toast.LENGTH_LONG).show();
@@ -95,10 +93,9 @@ public class AttestationActivity extends AppCompatActivity {
             runAuditee();
         });
 
-        auditor.setOnClickListener(view -> {
+        findViewById(R.id.auditor).setOnClickListener(view -> {
             mStage = Stage.Auditor;
-            auditee.setVisibility(View.GONE);
-            auditor.setVisibility(View.GONE);
+            buttons.setVisibility(View.GONE);
             runAuditor();
         });
 
@@ -123,8 +120,7 @@ public class AttestationActivity extends AppCompatActivity {
             public boolean onPreDraw() {
                 mView.getViewTreeObserver().removeOnPreDrawListener(this);
                 if (mStage != Stage.None) {
-                    auditee.setVisibility(View.GONE);
-                    auditor.setVisibility(View.GONE);
+                    buttons.setVisibility(View.GONE);
                     if (mStage == Stage.Auditee) {
                         runAuditee();
                     } else if (mStage == Stage.AuditeeResults) {
@@ -319,8 +315,7 @@ public class AttestationActivity extends AppCompatActivity {
                 }
                 if (mStage == Stage.Auditee) {
                     mStage = Stage.AuditeeGenerate;
-                    auditee.setVisibility(View.GONE);
-                    auditor.setVisibility(View.GONE);
+                    buttons.setVisibility(View.GONE);
                     continueAuditee(contentsBytes);
                 } else if (mStage == Stage.Auditor) {
                     mStage = Stage.AuditorResults;

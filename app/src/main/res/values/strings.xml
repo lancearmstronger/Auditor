@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">Auditor</string>
+    <string name="introduction">Two devices are needed to perform verification:\n\n- A Pixel 2 or Pixel 2 XL to be verified (Auditee).\n\n- An Android 7.0+ device to perform the verification (Auditor).\n\nThe verification process requires sending data between the devices by scanning QR codes.</string>
     <string name="unsupported_auditee">Only Pixel 2 and Pixel 2 XL devices can be audited.</string>
     <string name="camera_permission_denied">Camera permission is required to scan QR codes. Please try again.</string>
     <string name="auditee_button">Auditee (device being verified)</string>
