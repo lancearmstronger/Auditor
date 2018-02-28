@@ -525,7 +525,17 @@ class AttestationProtocol {
         }
     }
 
-    private static String verify(final Context context, final byte[] fingerprint,
+    static class VerificationResult {
+        final boolean strong;
+        final String output;
+
+        VerificationResult(final boolean strong, final String output) {
+            this.strong = strong;
+            this.output = output;
+        }
+    }
+
+    private static VerificationResult verify(final Context context, final byte[] fingerprint,
             final byte[] challenge, final ByteBuffer signedMessage, final byte[] signature,
             final Certificate[] attestationCertificates, final boolean userProfileSecure,
             final boolean accessibility, final boolean deviceAdmin, final boolean adbEnabled,
@@ -541,10 +551,10 @@ class AttestationProtocol {
                 context.getSharedPreferences(PREFERENCES_DEVICE_PREFIX + fingerprintHex,
                         Context.MODE_PRIVATE);
         if (hasPersistentKey && !preferences.contains(KEY_PINNED_DEVICE)) {
-            builder.append("Pairing data for this Auditee is missing. Cannot perform paired attestation.\n");
-            builder.append("\nEither the initial pairing was incomplete or the device is compromised.\n");
-            builder.append("\nIf the initial pairing was simply not completed, clear the pairing data on either the Auditee or the Auditor via the menu and try again.\n");
-            return builder.toString();
+            throw new GeneralSecurityException(
+                    "Pairing data for this Auditee is missing. Cannot perform paired attestation.\n" +
+                    "\nEither the initial pairing was incomplete or the device is compromised.\n" +
+                    "\nIf the initial pairing was simply not completed, clear the pairing data on either the Auditee or the Auditor via the menu and try again.\n");
         }
 
         final Verified verified = verifyStateless(attestationCertificates, challenge);
@@ -636,10 +646,10 @@ class AttestationProtocol {
         builder.append("Android Debug Bridge enabled: " + adbEnabled + "\n");
         builder.append("Add users from lock screen: " + addUsersWhenLocked + "\n");
 
-        return builder.toString();
+        return new VerificationResult(hasPersistentKey, builder.toString());
     }
 
-    static String verifySerialized(final Context context, final byte[] attestationResult,
+    static VerificationResult verifySerialized(final Context context, final byte[] attestationResult,
             final byte[] challengeMessage) throws DataFormatException, GeneralSecurityException {
         final ByteBuffer deserializer = ByteBuffer.wrap(attestationResult);
         final byte version = deserializer.get();

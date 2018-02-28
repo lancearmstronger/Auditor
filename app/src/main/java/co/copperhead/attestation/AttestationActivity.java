@@ -44,6 +44,7 @@ public class AttestationActivity extends AppCompatActivity {
     private static final String STATE_AUDITOR_CHALLENGE = "auditor_challenge";
     private static final String STATE_STAGE = "stage";
     private static final String STATE_OUTPUT = "output";
+    private static final String STATE_BACKGROUND_RESOURCE = "background_resource";
 
     private static final int GENERATE_REQUEST_CODE = 0;
     private static final int VERIFY_REQUEST_CODE = 1;
@@ -69,6 +70,7 @@ public class AttestationActivity extends AppCompatActivity {
     private boolean auditeePairing;
     private byte[] auditeeSerializedAttestation;
     private byte[] auditorChallenge;
+    private int backgroundResource;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,6 +110,7 @@ public class AttestationActivity extends AppCompatActivity {
             auditorChallenge = savedInstanceState.getByteArray(STATE_AUDITOR_CHALLENGE);
             mStage = Stage.valueOf(savedInstanceState.getString(STATE_STAGE));
             textView.setText(savedInstanceState.getString(STATE_OUTPUT));
+            backgroundResource = savedInstanceState.getInt(STATE_BACKGROUND_RESOURCE);
         }
 
         final ViewTreeObserver vto = mView.getViewTreeObserver();
@@ -126,6 +129,7 @@ public class AttestationActivity extends AppCompatActivity {
                         runAuditor();
                     }
                 }
+                findViewById(R.id.content_attestation).setBackgroundResource(backgroundResource);
                 return true;
             }
         });
@@ -139,6 +143,7 @@ public class AttestationActivity extends AppCompatActivity {
         savedInstanceState.putByteArray(STATE_AUDITOR_CHALLENGE, auditorChallenge);
         savedInstanceState.putString(STATE_STAGE, mStage.name());
         savedInstanceState.putString(STATE_OUTPUT, textView.getText().toString());
+        savedInstanceState.putInt(STATE_BACKGROUND_RESOURCE, backgroundResource);
     }
 
     private static String logFormatBytes(final byte[] bytes) {
@@ -253,6 +258,12 @@ public class AttestationActivity extends AppCompatActivity {
         }
     }
 
+    private void setBackgroundResource(final int resid) {
+        final View content = findViewById(R.id.content_attestation);
+        backgroundResource = resid;
+        content.setBackgroundResource(resid);
+    }
+
     @Override
     public void onActivityResult(final int requestCode, final int resultCode, final Intent intent) {
         Log.d(TAG, "onActivityResult " + requestCode + " " + resultCode);
@@ -262,6 +273,7 @@ public class AttestationActivity extends AppCompatActivity {
                 throw new RuntimeException("unexpected result code");
             }
             if (intent.hasExtra(GenerateAttestationService.EXTRA_ATTESTATION_ERROR)) {
+                setBackgroundResource(R.color.red200);
                 textView.setText(R.string.generate_error);
                 textView.append(intent.getStringExtra(GenerateAttestationService.EXTRA_ATTESTATION_ERROR));
                 return;
@@ -273,10 +285,13 @@ public class AttestationActivity extends AppCompatActivity {
                 throw new RuntimeException("unexpected result code");
             }
             if (intent.hasExtra(VerifyAttestationService.EXTRA_ERROR)) {
+                setBackgroundResource(R.color.red200);
                 textView.setText(getString(R.string.verify_error));
                 textView.append(intent.getStringExtra(VerifyAttestationService.EXTRA_ERROR));
                 return;
             }
+            final boolean strong = intent.getBooleanExtra(VerifyAttestationService.EXTRA_STRONG, false);
+            setBackgroundResource(strong ? R.color.green200 : R.color.orange200);
             textView.setText(intent.getStringExtra(VerifyAttestationService.EXTRA_OUTPUT));
         } else if (requestCode == SCAN_REQUEST_CODE) {
             if (intent != null) {
@@ -347,6 +362,7 @@ public class AttestationActivity extends AppCompatActivity {
             auditorChallenge = null;
             mStage = Stage.None;
             textView.setText("");
+            backgroundResource = 0;
             recreate();
             return;
         }

@@ -16,6 +16,7 @@ public class VerifyAttestationService extends IntentService {
     static final String EXTRA_SERIALIZED = "co.copperhead.attestation.SERIALIZED";
     static final String EXTRA_PENDING_RESULT = "co.copperhead.attestation.PENDING_RESULT";
 
+    static final String EXTRA_STRONG = "co.copperhead.attestation.STRONG";
     static final String EXTRA_OUTPUT = "co.copperhead.attestation.OUTPUT";
     static final String EXTRA_ERROR = "co.copperhead.attestation.ERROR";
     static final String EXTRA_CLEAR = "co.copperhead.attestation.CLEAR";
@@ -53,8 +54,9 @@ public class VerifyAttestationService extends IntentService {
         final Intent resultIntent = new Intent(ACTION_ATTESTATION);
 
         try {
-            final String output = AttestationProtocol.verifySerialized(this, serialized, challengeMessage);
-            resultIntent.putExtra(EXTRA_OUTPUT, output);
+            final AttestationProtocol.VerificationResult result = AttestationProtocol.verifySerialized(this, serialized, challengeMessage);
+            resultIntent.putExtra(EXTRA_STRONG, result.strong);
+            resultIntent.putExtra(EXTRA_OUTPUT, result.output);
         } catch (final DataFormatException | GeneralSecurityException e) {
             Log.e(TAG, "attestation generation error", e);
             resultIntent.putExtra(EXTRA_ERROR, e.getMessage());
