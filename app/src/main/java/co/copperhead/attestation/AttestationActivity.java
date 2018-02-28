@@ -168,7 +168,16 @@ public class AttestationActivity extends AppCompatActivity {
         Log.d(TAG, "sending random challenge: " + logFormatBytes(auditorChallenge));
         textView.setText(R.string.qr_code_scan_hint_auditor);
         chooseBestLayout();
-        mView.setImageBitmap(createQrCode(auditorChallenge));
+
+        final ViewTreeObserver vto = mView.getViewTreeObserver();
+        vto.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            @Override
+            public boolean onPreDraw() {
+                mView.getViewTreeObserver().removeOnPreDrawListener(this);
+                mView.setImageBitmap(createQrCode(auditorChallenge));
+                return true;
+            }
+        });
 
         mView.setOnClickListener(view -> showQrScanner("Auditor"));
     }
@@ -208,7 +217,16 @@ public class AttestationActivity extends AppCompatActivity {
             textView.setText(R.string.qr_code_scan_hint_auditee);
         }
         chooseBestLayout();
-        mView.setImageBitmap(createQrCode(serialized));
+
+        final ViewTreeObserver vto = mView.getViewTreeObserver();
+        vto.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            @Override
+            public boolean onPreDraw() {
+                mView.getViewTreeObserver().removeOnPreDrawListener(this);
+                mView.setImageBitmap(createQrCode(serialized));
+                return true;
+            }
+        });
     }
 
     private Bitmap createQrCode(final byte[] contents) {
