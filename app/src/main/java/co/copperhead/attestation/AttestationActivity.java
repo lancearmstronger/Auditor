@@ -75,6 +75,10 @@ public class AttestationActivity extends AppCompatActivity {
     private byte[] auditorChallenge;
     private int backgroundResource;
 
+    private static boolean isSupportedAuditee() {
+        return Build.DEVICE.equals("taimen") || Build.DEVICE.equals("walleye");
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -85,7 +89,7 @@ public class AttestationActivity extends AppCompatActivity {
         buttons = findViewById(R.id.buttons);
 
         findViewById(R.id.auditee).setOnClickListener((final View view) -> {
-            if (!Build.DEVICE.equals("taimen") && !Build.DEVICE.equals("walleye")) {
+            if (!isSupportedAuditee()) {
                 Toast.makeText(this, getString(R.string.unsupported_auditee),
                         Toast.LENGTH_LONG).show();
                 return;
@@ -364,6 +368,9 @@ public class AttestationActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(final Menu menu) {
         getMenuInflater().inflate(R.menu.menu_attestation, menu);
+        if (!isSupportedAuditee()) {
+            menu.findItem(R.id.action_clear_auditee).setEnabled(false);
+        }
         return true;
     }
 
