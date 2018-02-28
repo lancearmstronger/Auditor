@@ -294,7 +294,9 @@ public class AttestationActivity extends AppCompatActivity {
             setBackgroundResource(strong ? R.color.green200 : R.color.orange200);
             textView.setText(strong ? R.string.verify_strong : R.string.verify_basic);
             textView.append(getString(R.string.device_information));
-            textView.append(intent.getStringExtra(VerifyAttestationService.EXTRA_OUTPUT));
+            textView.append(intent.getStringExtra(VerifyAttestationService.EXTRA_TEE_ENFORCED));
+            textView.append(getString(R.string.os_enforced));
+            textView.append(intent.getStringExtra(VerifyAttestationService.EXTRA_OS_ENFORCED));
         } else if (requestCode == SCAN_REQUEST_CODE) {
             if (intent != null) {
                 // handle scan result

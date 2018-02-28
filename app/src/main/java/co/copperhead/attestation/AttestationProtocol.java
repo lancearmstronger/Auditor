@@ -526,11 +526,14 @@ class AttestationProtocol {
 
     static class VerificationResult {
         final boolean strong;
-        final String output;
+        final String teeEnforced;
+        final String osEnforced;
 
-        VerificationResult(final boolean strong, final String output) {
+        VerificationResult(final boolean strong, final String teeEnforced,
+                final String osEnforced) {
             this.strong = strong;
-            this.output = output;
+            this.teeEnforced = teeEnforced;
+            this.osEnforced = osEnforced;
         }
     }
 
@@ -539,8 +542,6 @@ class AttestationProtocol {
             final Certificate[] attestationCertificates, final boolean userProfileSecure,
             final boolean accessibility, final boolean deviceAdmin, final boolean adbEnabled,
             final boolean addUsersWhenLocked, final boolean enrolledFingerprints) throws GeneralSecurityException {
-
-        final StringBuilder builder = new StringBuilder();
 
         final String fingerprintHex = BaseEncoding.base16().encode(fingerprint);
         final byte[] currentFingerprint = getFingerprint(attestationCertificates[0]);
@@ -557,6 +558,8 @@ class AttestationProtocol {
         }
 
         final Verified verified = verifyStateless(attestationCertificates, challenge);
+
+        final StringBuilder teeEnforced = new StringBuilder();
 
         if (hasPersistentKey) {
             if (attestationCertificates.length != preferences.getInt(KEY_PINNED_CERTIFICATE_LENGTH, 0)) {
@@ -595,9 +598,9 @@ class AttestationProtocol {
                 throw new GeneralSecurityException("App version downgraded");
             }
 
-            appendVerifiedInformation(builder, verified, fingerprintHex);
-            builder.append("First verified: " + new Date(preferences.getLong(KEY_VERIFIED_TIME_FIRST, 0)) + "\n");
-            builder.append("Last verified: " + new Date(preferences.getLong(KEY_VERIFIED_TIME_LAST, 0)) + "\n");
+            appendVerifiedInformation(teeEnforced, verified, fingerprintHex);
+            teeEnforced.append("First verified: " + new Date(preferences.getLong(KEY_VERIFIED_TIME_FIRST, 0)) + "\n");
+            teeEnforced.append("Last verified: " + new Date(preferences.getLong(KEY_VERIFIED_TIME_LAST, 0)) + "\n");
 
             preferences.edit()
                     .putInt(KEY_PINNED_OS_VERSION, verified.osVersion)
@@ -629,20 +632,19 @@ class AttestationProtocol {
 
             editor.apply();
 
-            appendVerifiedInformation(builder, verified, fingerprintHex);
+            appendVerifiedInformation(teeEnforced, verified, fingerprintHex);
         }
 
-        builder.append("\nInformation provided by the verified OS:\n\n");
+        final StringBuilder osEnforced = new StringBuilder();
+        osEnforced.append("Auditor app version: ").append(verified.appVersion).append("\n");
+        osEnforced.append("User profile secure: " + userProfileSecure + "\n");
+        osEnforced.append("Enrolled fingerprints: " + enrolledFingerprints + "\n");
+        osEnforced.append("Accessibility service(s) enabled: " + accessibility + "\n");
+        osEnforced.append("Device administrator(s) enabled: " + deviceAdmin + "\n");
+        osEnforced.append("Android Debug Bridge enabled: " + adbEnabled + "\n");
+        osEnforced.append("Add users from lock screen: " + addUsersWhenLocked + "\n");
 
-        builder.append("Auditor app version: ").append(verified.appVersion).append("\n");
-        builder.append("User profile secure: " + userProfileSecure + "\n");
-        builder.append("Enrolled fingerprints: " + enrolledFingerprints + "\n");
-        builder.append("Accessibility service(s) enabled: " + accessibility + "\n");
-        builder.append("Device administrator(s) enabled: " + deviceAdmin + "\n");
-        builder.append("Android Debug Bridge enabled: " + adbEnabled + "\n");
-        builder.append("Add users from lock screen: " + addUsersWhenLocked + "\n");
-
-        return new VerificationResult(hasPersistentKey, builder.toString());
+        return new VerificationResult(hasPersistentKey, teeEnforced.toString(), osEnforced.toString());
     }
 
     static VerificationResult verifySerialized(final Context context, final byte[] attestationResult,
