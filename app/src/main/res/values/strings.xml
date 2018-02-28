@@ -16,5 +16,19 @@
     <string name="verify_strong">Successfully performed strong paired verification and identity confirmation.\n\n</string>
     <string name="verify_basic">Successfully performed basic initial verification and pairing.\n\n</string>
     <string name="device_information">Verified device information:\n\n</string>
+    <string name="device">Device: %s\n</string>
+    <string name="os">OS: %s (unmodified official release)\n</string>
+    <string name="os_version">OS version: %s\n</string>
+    <string name="os_patch_level">OS patch level: %s\n</string>
+    <string name="identity">Identity: %s\n</string>
+    <string name="first_verified">First verified: %s\n</string>
+    <string name="last_verified">Last verified: %s\n</string>
     <string name="os_enforced">\nInformation provided by the verified OS:\n\n</string>
+    <string name="auditor_app_version">Auditor app version: %d\n</string>
+    <string name="user_profile_secure">User profile secure: %b\n</string>
+    <string name="enrolled_fingerprints">Enrolled fingerprints: %b\n</string>
+    <string name="accessibility">Accessibility service(s) enabled: %b\n</string>
+    <string name="device_admin">Device administrator(s) enabled: %b\n</string>
+    <string name="adb_enabled">Android Debug Bridge enabled: %b\n</string>
+    <string name="add_users_when_locked">Add users from lock screen: %b\n</string>
 </resources>

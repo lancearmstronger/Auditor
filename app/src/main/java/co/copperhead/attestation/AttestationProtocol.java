@@ -492,26 +492,26 @@ class AttestationProtocol {
         }
     }
 
-    private static void appendVerifiedInformation(final StringBuilder builder, final Verified verified, final String fingerprint) {
-        builder.append("Device: " + verified.device + "\n");
+    private static void appendVerifiedInformation(final Context context,
+            final StringBuilder builder, final Verified verified, final String fingerprint) {
+        builder.append(context.getString(R.string.device, verified.device));
         if (verified.isStock) {
-            builder.append("OS: Google Android (unmodified official release)\n");
+            builder.append(context.getString(R.string.os, "Google Android"));
         } else {
-            builder.append("OS: CopperheadOS (unmodified official release)\n");
+            builder.append(context.getString(R.string.os, "CopperheadOS"));
         }
 
         final String osVersion = String.format(Locale.US, "%06d", verified.osVersion);
-        builder.append("OS version: " +
+        builder.append(context.getString(R.string.os_version,
                 Integer.parseInt(osVersion.substring(0, 2)) + "." +
                 Integer.parseInt(osVersion.substring(2, 4)) + "." +
-                Integer.parseInt(osVersion.substring(4, 6)) + "\n");
+                Integer.parseInt(osVersion.substring(4, 6))));
 
         final String osPatchLevel = Integer.toString(verified.osPatchLevel);
-        builder.append("OS patch level: " +
-                osPatchLevel.substring(0, 4) + "-" +
-                osPatchLevel.substring(4, 6) + "\n");
+        builder.append(context.getString(R.string.os_patch_level,
+                osPatchLevel.substring(0, 4) + "-" + osPatchLevel.substring(4, 6)));
 
-        builder.append("Identity: " + fingerprint + "\n");
+        builder.append(context.getString(R.string.identity, fingerprint));
     }
 
     private static void verifySignature(final PublicKey key, final ByteBuffer message,
@@ -598,9 +598,11 @@ class AttestationProtocol {
                 throw new GeneralSecurityException("App version downgraded");
             }
 
-            appendVerifiedInformation(teeEnforced, verified, fingerprintHex);
-            teeEnforced.append("First verified: " + new Date(preferences.getLong(KEY_VERIFIED_TIME_FIRST, 0)) + "\n");
-            teeEnforced.append("Last verified: " + new Date(preferences.getLong(KEY_VERIFIED_TIME_LAST, 0)) + "\n");
+            appendVerifiedInformation(context, teeEnforced, verified, fingerprintHex);
+            teeEnforced.append(context.getString(R.string.first_verified,
+                    new Date(preferences.getLong(KEY_VERIFIED_TIME_FIRST, 0))));
+            teeEnforced.append(context.getString(R.string.last_verified,
+                    new Date(preferences.getLong(KEY_VERIFIED_TIME_LAST, 0))));
 
             preferences.edit()
                     .putInt(KEY_PINNED_OS_VERSION, verified.osVersion)
@@ -632,17 +634,17 @@ class AttestationProtocol {
 
             editor.apply();
 
-            appendVerifiedInformation(teeEnforced, verified, fingerprintHex);
+            appendVerifiedInformation(context, teeEnforced, verified, fingerprintHex);
         }
 
         final StringBuilder osEnforced = new StringBuilder();
-        osEnforced.append("Auditor app version: ").append(verified.appVersion).append("\n");
-        osEnforced.append("User profile secure: " + userProfileSecure + "\n");
-        osEnforced.append("Enrolled fingerprints: " + enrolledFingerprints + "\n");
-        osEnforced.append("Accessibility service(s) enabled: " + accessibility + "\n");
-        osEnforced.append("Device administrator(s) enabled: " + deviceAdmin + "\n");
-        osEnforced.append("Android Debug Bridge enabled: " + adbEnabled + "\n");
-        osEnforced.append("Add users from lock screen: " + addUsersWhenLocked + "\n");
+        osEnforced.append(context.getString(R.string.auditor_app_version, verified.appVersion));
+        osEnforced.append(context.getString(R.string.user_profile_secure, userProfileSecure));
+        osEnforced.append(context.getString(R.string.enrolled_fingerprints, enrolledFingerprints));
+        osEnforced.append(context.getString(R.string.accessibility, accessibility));
+        osEnforced.append(context.getString(R.string.device_admin, deviceAdmin));
+        osEnforced.append(context.getString(R.string.adb_enabled, adbEnabled));
+        osEnforced.append(context.getString(R.string.add_users_when_locked, addUsersWhenLocked));
 
         return new VerificationResult(hasPersistentKey, teeEnforced.toString(), osEnforced.toString());
     }
