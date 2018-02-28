@@ -188,7 +188,7 @@ public class AttestationActivity extends AppCompatActivity {
 
     private void showAuditorResults(final byte[] serialized) {
         Log.d(TAG, "received attestation: " + logFormatBytes(serialized));
-
+        textView.setText(R.string.verifying_attestation);
         final PendingIntent pending = createPendingResult(VERIFY_REQUEST_CODE, new Intent(), 0);
         final Intent intent = new Intent(this, VerifyAttestationService.class);
         intent.putExtra(VerifyAttestationService.EXTRA_CHALLENGE_MESSAGE, auditorChallenge);
@@ -203,7 +203,7 @@ public class AttestationActivity extends AppCompatActivity {
 
     private void continueAuditee(final byte[] challenge) {
         Log.d(TAG, "received random challenge: " + logFormatBytes(challenge));
-
+        textView.setText(R.string.generating_attestation);
         final PendingIntent pending = createPendingResult(GENERATE_REQUEST_CODE, new Intent(), 0);
         final Intent intent = new Intent(this, GenerateAttestationService.class);
         intent.putExtra(GenerateAttestationService.EXTRA_CHALLENGE_MESSAGE, challenge);
