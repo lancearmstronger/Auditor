@@ -13,9 +13,9 @@
     <string name="action_clear_auditee">Clear Auditee pairings</string>
     <string name="action_clear_auditor">Clear Auditor pairings</string>
     <string name="scanner_label">Scan QR code shown on the other device.</string>
-    <string name="verify_strong">Successfully performed strong paired verification and identity confirmation.\n\n</string>
-    <string name="verify_basic">Successfully performed basic initial verification and pairing.\n\n</string>
-    <string name="device_information">Verified device information:\n\n</string>
+    <string name="verify_strong"><b>Successfully performed strong paired verification and identity confirmation.</b>\n\n</string>
+    <string name="verify_basic"><b>Successfully performed basic initial verification and pairing.</b>\n\n</string>
+    <string name="device_information"><b>Verified device information:</b>\n\n</string>
     <string name="device">Device: %s\n</string>
     <string name="os">OS: %s (unmodified official release)\n</string>
     <string name="os_version">OS version: %s\n</string>
@@ -23,7 +23,7 @@
     <string name="identity">Identity: %s\n</string>
     <string name="first_verified">First verified: %s\n</string>
     <string name="last_verified">Last verified: %s\n</string>
-    <string name="os_enforced">\nInformation provided by the verified OS:\n\n</string>
+    <string name="os_enforced">\n<b>Information provided by the verified OS:</b>\n\n</string>
     <string name="auditor_app_version">Auditor app version: %d\n</string>
     <string name="user_profile_secure">User profile secure: %b\n</string>
     <string name="enrolled_fingerprints">Enrolled fingerprints: %b\n</string>

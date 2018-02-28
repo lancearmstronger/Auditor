@@ -5,11 +5,14 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.Html;
+import android.text.Spanned;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Base64;
 import android.util.Log;
@@ -109,7 +112,8 @@ public class AttestationActivity extends AppCompatActivity {
             auditeeSerializedAttestation = savedInstanceState.getByteArray(STATE_AUDITEE_SERIALIZED_ATTESTATION);
             auditorChallenge = savedInstanceState.getByteArray(STATE_AUDITOR_CHALLENGE);
             mStage = Stage.valueOf(savedInstanceState.getString(STATE_STAGE));
-            textView.setText(savedInstanceState.getString(STATE_OUTPUT));
+            textView.setText(Html.fromHtml(savedInstanceState.getString(STATE_OUTPUT),
+                    Html.FROM_HTML_MODE_LEGACY));
             backgroundResource = savedInstanceState.getInt(STATE_BACKGROUND_RESOURCE);
         }
 
@@ -142,7 +146,8 @@ public class AttestationActivity extends AppCompatActivity {
         savedInstanceState.putByteArray(STATE_AUDITEE_SERIALIZED_ATTESTATION, auditeeSerializedAttestation);
         savedInstanceState.putByteArray(STATE_AUDITOR_CHALLENGE, auditorChallenge);
         savedInstanceState.putString(STATE_STAGE, mStage.name());
-        savedInstanceState.putString(STATE_OUTPUT, textView.getText().toString());
+        savedInstanceState.putString(STATE_OUTPUT, Html.toHtml((Spanned) textView.getText(),
+                Html.TO_HTML_PARAGRAPH_LINES_CONSECUTIVE));
         savedInstanceState.putInt(STATE_BACKGROUND_RESOURCE, backgroundResource);
     }
 
@@ -292,9 +297,9 @@ public class AttestationActivity extends AppCompatActivity {
             final boolean strong = intent.getBooleanExtra(VerifyAttestationService.EXTRA_STRONG, false);
             setBackgroundResource(strong ? R.color.green200 : R.color.orange200);
             textView.setText(strong ? R.string.verify_strong : R.string.verify_basic);
-            textView.append(getString(R.string.device_information));
+            textView.append(getText(R.string.device_information));
             textView.append(intent.getStringExtra(VerifyAttestationService.EXTRA_TEE_ENFORCED));
-            textView.append(getString(R.string.os_enforced));
+            textView.append(getText(R.string.os_enforced));
             textView.append(intent.getStringExtra(VerifyAttestationService.EXTRA_OS_ENFORCED));
         } else if (requestCode == SCAN_REQUEST_CODE) {
             if (intent != null) {
