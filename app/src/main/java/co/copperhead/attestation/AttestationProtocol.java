@@ -201,13 +201,15 @@ class AttestationProtocol {
     private static final int OS_ENFORCED_FLAGS_ADB_ENABLED = 1 << 3;
     private static final int OS_ENFORCED_FLAGS_ADD_USERS_WHEN_LOCKED = 1 << 4;
     private static final int OS_ENFORCED_FLAGS_ENROLLED_FINGERPRINTS = 1 << 5;
+    private static final int OS_ENFORCED_FLAGS_DENY_NEW_USB = 1 << 6;
     private static final int OS_ENFORCED_FLAGS_ALL =
             OS_ENFORCED_FLAGS_USER_PROFILE_SECURE |
             OS_ENFORCED_FLAGS_ACCESSIBILITY |
             OS_ENFORCED_FLAGS_DEVICE_ADMIN |
             OS_ENFORCED_FLAGS_ADB_ENABLED |
             OS_ENFORCED_FLAGS_ADD_USERS_WHEN_LOCKED |
-            OS_ENFORCED_FLAGS_ENROLLED_FINGERPRINTS;
+            OS_ENFORCED_FLAGS_ENROLLED_FINGERPRINTS |
+            OS_ENFORCED_FLAGS_DENY_NEW_USB;
 
     private static final String ATTESTATION_APP_PACKAGE_NAME = "co.copperhead.attestation";
     private static final int ATTESTATION_APP_MINIMUM_VERSION = 7;
@@ -544,7 +546,8 @@ class AttestationProtocol {
             final byte[] challenge, final ByteBuffer signedMessage, final byte[] signature,
             final Certificate[] attestationCertificates, final boolean userProfileSecure,
             final boolean accessibility, final boolean deviceAdmin, final boolean adbEnabled,
-            final boolean addUsersWhenLocked, final boolean enrolledFingerprints) throws GeneralSecurityException {
+            final boolean addUsersWhenLocked, final boolean enrolledFingerprints,
+            final boolean denyNewUsb) throws GeneralSecurityException {
 
         final String fingerprintHex = BaseEncoding.base16().encode(fingerprint);
         final byte[] currentFingerprint = getFingerprint(attestationCertificates[0]);
@@ -649,6 +652,7 @@ class AttestationProtocol {
         osEnforced.append(context.getString(R.string.device_admin, deviceAdmin));
         osEnforced.append(context.getString(R.string.adb_enabled, adbEnabled));
         osEnforced.append(context.getString(R.string.add_users_when_locked, addUsersWhenLocked));
+        osEnforced.append(context.getString(R.string.deny_new_usb, denyNewUsb));
 
         return new VerificationResult(hasPersistentKey, teeEnforced.toString(), osEnforced.toString());
     }
@@ -699,6 +703,7 @@ class AttestationProtocol {
         final boolean adbEnabled = (osEnforcedFlags & OS_ENFORCED_FLAGS_ADB_ENABLED) != 0;
         final boolean addUsersWhenLocked = (osEnforcedFlags & OS_ENFORCED_FLAGS_ADD_USERS_WHEN_LOCKED) != 0;
         final boolean enrolledFingerprints = (osEnforcedFlags & OS_ENFORCED_FLAGS_ENROLLED_FINGERPRINTS) != 0;
+        final boolean denyNewUsb = (osEnforcedFlags & OS_ENFORCED_FLAGS_DENY_NEW_USB) != 0;
 
         final int signatureLength = deserializer.remaining();
         final byte[] signature = new byte[signatureLength];
@@ -715,7 +720,7 @@ class AttestationProtocol {
         final byte[] challenge = Arrays.copyOfRange(challengeMessage, 1 + CHALLENGE_LENGTH, 1 + CHALLENGE_LENGTH * 2);
         return verify(context, fingerprint, challenge, deserializer.asReadOnlyBuffer(), signature,
                 certificates, userProfileSecure, accessibility, deviceAdmin, adbEnabled,
-                addUsersWhenLocked, enrolledFingerprints);
+                addUsersWhenLocked, enrolledFingerprints, denyNewUsb);
     }
 
     static class AttestationResult {
@@ -801,6 +806,10 @@ class AttestationProtocol {
         final boolean addUsersWhenLocked = Settings.Global.getInt(context.getContentResolver(),
                 ADD_USERS_WHEN_LOCKED, 0) != 0;
 
+        final String denyNewUsbValue =
+                SystemProperties.get("persist.security.deny_new_usb", "disabled");
+        final boolean denyNewUsb = !denyNewUsbValue.equals("disabled");
+
         // Serialization
 
         final ByteBuffer serializer = ByteBuffer.allocate(MAX_MESSAGE_SIZE);
@@ -862,6 +871,9 @@ class AttestationProtocol {
         }
         if (enrolledFingerprints) {
             osEnforcedFlags |= OS_ENFORCED_FLAGS_ENROLLED_FINGERPRINTS;
+        }
+        if (denyNewUsb) {
+            osEnforcedFlags |= OS_ENFORCED_FLAGS_DENY_NEW_USB;
         }
         serializer.put(osEnforcedFlags);
 
