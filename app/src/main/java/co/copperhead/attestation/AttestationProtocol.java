@@ -195,7 +195,7 @@ class AttestationProtocol {
             "HoD3nXysHziKlLoAhCup8V4dNmWu6htIt43I3ANmVm7CzetNqgEjNPACMQCBuDKKwLOHBA9a/dHb" +
             "9y8ApGZ+AU6StdxH/rHPYRFq84/5WOmUV7vPeFuRoMPe080=");
     private static final int OS_ENFORCED_FLAGS_NONE = 0;
-    private static final int OS_ENFORCED_FLAGS_USER_PROFILE_SECURE = 1 << 0;
+    private static final int OS_ENFORCED_FLAGS_USER_PROFILE_SECURE = 1;
     private static final int OS_ENFORCED_FLAGS_ACCESSIBILITY = 1 << 1;
     private static final int OS_ENFORCED_FLAGS_DEVICE_ADMIN = 1 << 2;
     private static final int OS_ENFORCED_FLAGS_ADB_ENABLED = 1 << 3;

@@ -156,7 +156,6 @@ public class AttestationActivity extends AppCompatActivity {
             auditorChallenge = AttestationProtocol.getChallengeMessage(this);
         }
         Log.d(TAG, "sending random challenge: " + logFormatBytes(auditorChallenge));
-
         mView.setImageBitmap(createQrCode(auditorChallenge));
         textView.setText(R.string.qr_code_scan_hint_auditor);
 
@@ -214,7 +213,7 @@ public class AttestationActivity extends AppCompatActivity {
                 throw new RuntimeException("ISO-8859-1 not supported", e);
             }
         } catch (WriterException e) {
-            return null;
+            throw new RuntimeException(e);
         }
 
         final int width = result.getWidth();
@@ -323,7 +322,7 @@ public class AttestationActivity extends AppCompatActivity {
                     mView.setVisibility(View.GONE);
                     showAuditorResults(contentsBytes);
                 } else {
-                    Log.w(TAG, "received unexpected scan result");
+                    throw new RuntimeException("received unexpected scan result");
                 }
             } else {
                 if (mStage == Stage.Auditee) {

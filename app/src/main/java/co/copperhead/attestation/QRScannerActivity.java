@@ -22,8 +22,6 @@ import me.dm7.barcodescanner.core.ViewFinderView;
 import me.dm7.barcodescanner.zxing.ZXingScannerView;
 
 public class QRScannerActivity extends Activity implements ZXingScannerView.ResultHandler {
-    private static final String TAG = "QRScannerActivity";
-
     private ZXingScannerView mScannerView;
 
     @Override
