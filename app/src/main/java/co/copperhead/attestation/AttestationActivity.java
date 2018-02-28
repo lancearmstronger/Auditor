@@ -292,7 +292,8 @@ public class AttestationActivity extends AppCompatActivity {
             }
             final boolean strong = intent.getBooleanExtra(VerifyAttestationService.EXTRA_STRONG, false);
             setBackgroundResource(strong ? R.color.green200 : R.color.orange200);
-            textView.setText(intent.getStringExtra(VerifyAttestationService.EXTRA_OUTPUT));
+            textView.setText(strong ? R.string.verify_strong : R.string.verify_basic);
+            textView.append(intent.getStringExtra(VerifyAttestationService.EXTRA_OUTPUT));
         } else if (requestCode == SCAN_REQUEST_CODE) {
             if (intent != null) {
                 // handle scan result

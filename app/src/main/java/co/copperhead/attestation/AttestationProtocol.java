@@ -493,8 +493,8 @@ class AttestationProtocol {
     }
 
     private static void appendVerifiedInformation(final StringBuilder builder, final Verified verified, final String fingerprint) {
-        builder.append("\nVerified device information:\n");
-        builder.append("\nDevice: " + verified.device + "\n");
+        builder.append("Verified device information:\n\n");
+        builder.append("Device: " + verified.device + "\n");
         if (verified.isStock) {
             builder.append("OS: Google Android (unmodified official release)\n");
         } else {
@@ -596,8 +596,6 @@ class AttestationProtocol {
                 throw new GeneralSecurityException("App version downgraded");
             }
 
-            builder.append("Successfully performed strong paired verification and identity confirmation.\n");
-
             appendVerifiedInformation(builder, verified, fingerprintHex);
             builder.append("First verified: " + new Date(preferences.getLong(KEY_VERIFIED_TIME_FIRST, 0)) + "\n");
             builder.append("Last verified: " + new Date(preferences.getLong(KEY_VERIFIED_TIME_LAST, 0)) + "\n");
@@ -632,7 +630,6 @@ class AttestationProtocol {
 
             editor.apply();
 
-            builder.append("Successfully performed basic initial verification and pairing.\n");
             appendVerifiedInformation(builder, verified, fingerprintHex);
         }
 
