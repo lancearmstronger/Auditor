@@ -218,6 +218,9 @@ class AttestationProtocol {
     private static final int OS_VERSION_MINIMUM = 80100;
     private static final int OS_PATCH_LEVEL_MINIMUM = 201801;
 
+    // Offset from version code to user-facing version: version 1 has version code 10, etc.
+    private static final int ATTESTATION_APP_VERSION_CODE_OFFSET = 9;
+
     // Root for Google certified devices.
     private static final String GOOGLE_ROOT_CERTIFICATE =
             "-----BEGIN CERTIFICATE-----\n" +
@@ -638,7 +641,8 @@ class AttestationProtocol {
         }
 
         final StringBuilder osEnforced = new StringBuilder();
-        osEnforced.append(context.getString(R.string.auditor_app_version, verified.appVersion));
+        osEnforced.append(context.getString(R.string.auditor_app_version,
+                verified.appVersion - ATTESTATION_APP_VERSION_CODE_OFFSET));
         osEnforced.append(context.getString(R.string.user_profile_secure, userProfileSecure));
         osEnforced.append(context.getString(R.string.enrolled_fingerprints, enrolledFingerprints));
         osEnforced.append(context.getString(R.string.accessibility, accessibility));
