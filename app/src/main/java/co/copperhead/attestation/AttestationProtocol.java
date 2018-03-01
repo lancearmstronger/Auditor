@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
+import com.google.common.io.ByteStreams;
 import com.google.common.primitives.Bytes;
 
 import java.io.ByteArrayInputStream;
@@ -177,29 +178,7 @@ class AttestationProtocol {
     private static final byte CHALLENGE_MESSAGE_LENGTH = 1 + CHALLENGE_LENGTH * 2;
     private static final int MAX_ENCODED_CHAIN_LENGTH = 3000;
     private static final int MAX_MESSAGE_SIZE = 2953;
-    // cat samples/taimen_attestation.der.x509 samples/taimen_intermediate.der.x509 | base64
-    private static final byte[] DEFLATE_DICTIONARY = BaseEncoding.base64().decode(
-            "MIICZjCCAg2gAwIBAgIBATAKBggqhkjOPQQDAjAbMRkwFwYDVQQFExBkNzc1MjM0ODY2ZjM3ZjUz" +
-            "MCAXDTE4MDIwNTAxNDM1OVoYDzIxMDYwMjA3MDYyODE1WjAfMR0wGwYDVQQDDBRBbmRyb2lkIEtl" +
-            "eXN0b3JlIEtleTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABODxAGPDQUKeGN90LJ30XS5voSvK" +
-            "VvEj2a0UP7R6fOy+pob45fFAH1qvqqLv9J6Ajb7PZX7HTpanJ7uaIQ5wpRmjggE6MIIBNjAOBgNV" +
-            "HQ8BAf8EBAMCB4AwggEiBgorBgEEAdZ5AgERBIIBEjCCAQ4CAQIKAQECAQMKAQEEIHpMSeMQFv3g" +
-            "4qCffZTszv/WNaIc3ePgFDtbvAM/uwLvBAAwZr+DEAgCBgFhY6JZLr+FPQgCBgFhY6Meu7+FRUoE" +
-            "SDBGMSAwHgQZY28uY29wcGVyaGVhZC5hdHRlc3RhdGlvbgIBATEiBCAW9DOe5NbEQZ3vCP9JSfcq" +
-            "G5CR7Ymx/pRH8xqOO8y8bzB0oQgxBgIBAgIBA6IDAgEDowQCAgEApQUxAwIBBKoDAgEBv4N3AgUA" +
-            "v4U+AwIBAL+FPwIFAL+FQCowKAQgFxYW6u8mAJ/EbcbYnz0kIX6SbIGmfOZdLjqdwnBAx6sBAf8K" +
-            "AQC/hUEFAgMBOOS/hUIFAgMDFEkwCgYIKoZIzj0EAwIDRwAwRAIgRQm5K1AAPmPc5lcJm3sICuav" +
-            "Zfaf3RBuEZHHpmc17YoCIAroE4eLaP5edIVWDGYCR5dTgEY3TOkACdQsQvfZCOKaMIICKTCCAa+g" +
-            "AwIBAgIJaDkSRnQoRzlhMAoGCCqGSM49BAMCMBsxGTAXBgNVBAUTEDg3ZjQ1MTQ0NzViYTBhMmIw" +
-            "HhcNMTYwNTI2MTcwNzMzWhcNMjYwNTI0MTcwNzMzWjAbMRkwFwYDVQQFExBkNzc1MjM0ODY2ZjM3" +
-            "ZjUzMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEqrXOysRNrb+GjpMdrmsXrqq+jyLaahkcgCo6" +
-            "rAROyYWOKaERvaFowtGsxkSfMSbqopj3qp//JBOW5iRrHRcp4KOB2zCB2DAdBgNVHQ4EFgQUL78c" +
-            "0llO0rDTlgtwnhdE3BoQUEswHwYDVR0jBBgwFoAUMEQj5aL2BuFQq3dfFha7kcxjxlkwDAYDVR0T" +
-            "AQH/BAIwADAOBgNVHQ8BAf8EBAMCB4AwJAYDVR0eBB0wG6AZMBeCFWludmFsaWQ7ZW1haWw6aW52" +
-            "YWxpZDBSBgNVHR8ESzBJMEegRaBDhkFodHRwczovL2FuZHJvaWQuZ29vZ2xlYXBpcy5jb20vYXR0" +
-            "ZXN0YXRpb24vY3JsLzY4MzkxMjQ2NzQyODQ3Mzk2MTAKBggqhkjOPQQDAgNoADBlAjA9rA4BW4Nt" +
-            "HoD3nXysHziKlLoAhCup8V4dNmWu6htIt43I3ANmVm7CzetNqgEjNPACMQCBuDKKwLOHBA9a/dHb" +
-            "9y8ApGZ+AU6StdxH/rHPYRFq84/5WOmUV7vPeFuRoMPe080=");
+
     private static final int OS_ENFORCED_FLAGS_NONE = 0;
     private static final int OS_ENFORCED_FLAGS_USER_PROFILE_SECURE = 1;
     private static final int OS_ENFORCED_FLAGS_ACCESSIBILITY = 1 << 1;
@@ -733,7 +712,7 @@ class AttestationProtocol {
     }
 
     static VerificationResult verifySerialized(final Context context, final byte[] attestationResult,
-            final byte[] challengeMessage) throws DataFormatException, GeneralSecurityException {
+            final byte[] challengeMessage) throws DataFormatException, GeneralSecurityException, IOException {
         final ByteBuffer deserializer = ByteBuffer.wrap(attestationResult);
         final byte version = deserializer.get();
         if (version > PROTOCOL_VERSION) {
@@ -747,7 +726,9 @@ class AttestationProtocol {
         final byte[] chain = new byte[MAX_ENCODED_CHAIN_LENGTH];
         final Inflater inflater = new Inflater(true);
         inflater.setInput(compressedChain);
-        inflater.setDictionary(DEFLATE_DICTIONARY);
+        try (final InputStream stream = context.getResources().openRawResource(R.raw.deflate_dictionary)) {
+            inflater.setDictionary(ByteStreams.toByteArray(stream));
+        }
         final int chainLength = inflater.inflate(chain);
         if (!inflater.finished()) {
             throw new GeneralSecurityException("certificate chain is too large");
@@ -943,7 +924,9 @@ class AttestationProtocol {
 
         final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         final Deflater deflater = new Deflater(Deflater.DEFAULT_COMPRESSION, true);
-        deflater.setDictionary(DEFLATE_DICTIONARY);
+        try (final InputStream stream = context.getResources().openRawResource(R.raw.deflate_dictionary)) {
+            deflater.setDictionary(ByteStreams.toByteArray(stream));
+        }
         final DeflaterOutputStream deflaterStream = new DeflaterOutputStream(byteStream, deflater);
         deflaterStream.write(chain);
         deflaterStream.finish();
