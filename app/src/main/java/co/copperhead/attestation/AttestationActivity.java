@@ -57,7 +57,7 @@ public class AttestationActivity extends AppCompatActivity {
     private static final int PERMISSIONS_REQUEST_CAMERA = 10;
 
     private TextView textView;
-    private ImageView mView;
+    private ImageView imageView;
     private View buttons;
 
     private enum Stage {
@@ -107,7 +107,7 @@ public class AttestationActivity extends AppCompatActivity {
         textView = findViewById(R.id.textview);
         textView.setMovementMethod(new ScrollingMovementMethod());
 
-        mView = findViewById(R.id.imageview);
+        imageView = findViewById(R.id.imageview);
 
         if (savedInstanceState != null) {
             auditeePairing = savedInstanceState.getBoolean(STATE_AUDITEE_PAIRING);
@@ -119,11 +119,11 @@ public class AttestationActivity extends AppCompatActivity {
             backgroundResource = savedInstanceState.getInt(STATE_BACKGROUND_RESOURCE);
         }
 
-        final ViewTreeObserver vto = mView.getViewTreeObserver();
+        final ViewTreeObserver vto = imageView.getViewTreeObserver();
         vto.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
             @Override
             public boolean onPreDraw() {
-                mView.getViewTreeObserver().removeOnPreDrawListener(this);
+                imageView.getViewTreeObserver().removeOnPreDrawListener(this);
                 if (mStage != Stage.None) {
                     buttons.setVisibility(View.GONE);
                     if (mStage == Stage.Auditee) {
@@ -173,17 +173,17 @@ public class AttestationActivity extends AppCompatActivity {
         textView.setText(R.string.qr_code_scan_hint_auditor);
         chooseBestLayout();
 
-        final ViewTreeObserver vto = mView.getViewTreeObserver();
+        final ViewTreeObserver vto = imageView.getViewTreeObserver();
         vto.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
             @Override
             public boolean onPreDraw() {
-                mView.getViewTreeObserver().removeOnPreDrawListener(this);
-                mView.setImageBitmap(createQrCode(auditorChallenge));
+                imageView.getViewTreeObserver().removeOnPreDrawListener(this);
+                imageView.setImageBitmap(createQrCode(auditorChallenge));
                 return true;
             }
         });
 
-        mView.setOnClickListener(view -> showQrScanner("Auditor"));
+        imageView.setOnClickListener(view -> showQrScanner("Auditor"));
     }
 
     private void showAuditorResults(final byte[] serialized) {
@@ -222,12 +222,12 @@ public class AttestationActivity extends AppCompatActivity {
         }
         chooseBestLayout();
 
-        final ViewTreeObserver vto = mView.getViewTreeObserver();
+        final ViewTreeObserver vto = imageView.getViewTreeObserver();
         vto.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
             @Override
             public boolean onPreDraw() {
-                mView.getViewTreeObserver().removeOnPreDrawListener(this);
-                mView.setImageBitmap(createQrCode(serialized));
+                imageView.getViewTreeObserver().removeOnPreDrawListener(this);
+                imageView.setImageBitmap(createQrCode(serialized));
                 return true;
             }
         });
@@ -240,7 +240,7 @@ public class AttestationActivity extends AppCompatActivity {
             final Map<EncodeHintType,Object> hints = new EnumMap<>(EncodeHintType.class);
             hints.put(EncodeHintType.CHARACTER_SET, "ISO-8859-1");
             try {
-                final int size = Math.min(mView.getWidth(), mView.getHeight());
+                final int size = Math.min(imageView.getWidth(), imageView.getHeight());
                 result = writer.encode(new String(contents, "ISO-8859-1"), BarcodeFormat.QR_CODE,
                         size, size, hints);
             } catch (UnsupportedEncodingException e) {
@@ -352,7 +352,7 @@ public class AttestationActivity extends AppCompatActivity {
                     continueAuditee(contentsBytes);
                 } else if (mStage == Stage.Auditor) {
                     mStage = Stage.AuditorResults;
-                    mView.setVisibility(View.GONE);
+                    imageView.setVisibility(View.GONE);
                     showAuditorResults(contentsBytes);
                 } else {
                     throw new RuntimeException("received unexpected scan result");
