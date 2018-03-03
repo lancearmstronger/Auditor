@@ -9,6 +9,7 @@ import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Html;
@@ -24,7 +25,6 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
@@ -90,8 +90,8 @@ public class AttestationActivity extends AppCompatActivity {
 
         findViewById(R.id.auditee).setOnClickListener((final View view) -> {
             if (!isSupportedAuditee()) {
-                Toast.makeText(this, getString(R.string.unsupported_auditee),
-                        Toast.LENGTH_LONG).show();
+                Snackbar.make(findViewById(R.id.content_attestation), R.string.unsupported_auditee,
+                        Snackbar.LENGTH_LONG).show();
                 return;
             }
             mStage = Stage.Auditee;
@@ -284,8 +284,8 @@ public class AttestationActivity extends AppCompatActivity {
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     startActivityForResult(new Intent(this, QRScannerActivity.class), SCAN_REQUEST_CODE);
                 } else {
-                    Toast.makeText(this, getString(R.string.camera_permission_denied),
-                            Toast.LENGTH_LONG).show();
+                    Snackbar.make(findViewById(R.id.content_attestation),
+                            R.string.camera_permission_denied, Snackbar.LENGTH_LONG).show();
                 }
             }
         }
