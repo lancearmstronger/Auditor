@@ -3,7 +3,10 @@ package co.copperhead.attestation;
 import android.app.KeyguardManager;
 import android.app.admin.DevicePolicyManager;
 import android.content.Context;
+import android.content.ComponentName;
 import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.hardware.fingerprint.FingerprintManager;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
@@ -202,6 +205,7 @@ class AttestationProtocol {
     private static final int OS_ENFORCED_FLAGS_ADD_USERS_WHEN_LOCKED = 1 << 4;
     private static final int OS_ENFORCED_FLAGS_ENROLLED_FINGERPRINTS = 1 << 5;
     private static final int OS_ENFORCED_FLAGS_DENY_NEW_USB = 1 << 6;
+    private static final int OS_ENFORCED_FLAGS_DEVICE_ADMIN_NON_SYSTEM = 1 << 7;
     private static final int OS_ENFORCED_FLAGS_ALL =
             OS_ENFORCED_FLAGS_USER_PROFILE_SECURE |
             OS_ENFORCED_FLAGS_ACCESSIBILITY |
@@ -209,7 +213,8 @@ class AttestationProtocol {
             OS_ENFORCED_FLAGS_ADB_ENABLED |
             OS_ENFORCED_FLAGS_ADD_USERS_WHEN_LOCKED |
             OS_ENFORCED_FLAGS_ENROLLED_FINGERPRINTS |
-            OS_ENFORCED_FLAGS_DENY_NEW_USB;
+            OS_ENFORCED_FLAGS_DENY_NEW_USB |
+            OS_ENFORCED_FLAGS_DEVICE_ADMIN_NON_SYSTEM;
 
     private static final String ATTESTATION_APP_PACKAGE_NAME = "co.copperhead.attestation";
     private static final int ATTESTATION_APP_MINIMUM_VERSION = 7;
@@ -555,7 +560,8 @@ class AttestationProtocol {
     private static VerificationResult verify(final Context context, final byte[] fingerprint,
             final byte[] challenge, final ByteBuffer signedMessage, final byte[] signature,
             final Certificate[] attestationCertificates, final boolean userProfileSecure,
-            final boolean accessibility, final boolean deviceAdmin, final boolean adbEnabled,
+            final boolean accessibility, final boolean deviceAdmin,
+            final boolean deviceAdminNonSystem, final boolean adbEnabled,
             final boolean addUsersWhenLocked, final boolean enrolledFingerprints,
             final boolean denyNewUsb) throws GeneralSecurityException {
 
@@ -659,7 +665,17 @@ class AttestationProtocol {
         osEnforced.append(context.getString(R.string.user_profile_secure, userProfileSecure));
         osEnforced.append(context.getString(R.string.enrolled_fingerprints, enrolledFingerprints));
         osEnforced.append(context.getString(R.string.accessibility, accessibility));
-        osEnforced.append(context.getString(R.string.device_admin, deviceAdmin));
+
+        final String deviceAdminState;
+        if (deviceAdminNonSystem) {
+            deviceAdminState = context.getString(R.string.device_admin_non_system);
+        } else if (deviceAdmin) {
+            deviceAdminState = context.getString(R.string.device_admin_system);
+        } else {
+            deviceAdminState = context.getString(R.string.device_admin_none);
+        }
+        osEnforced.append(context.getString(R.string.device_admin, deviceAdminState));
+
         osEnforced.append(context.getString(R.string.adb_enabled, adbEnabled));
         osEnforced.append(context.getString(R.string.add_users_when_locked, addUsersWhenLocked));
         osEnforced.append(context.getString(R.string.deny_new_usb, denyNewUsb));
@@ -710,10 +726,15 @@ class AttestationProtocol {
         final boolean userProfileSecure = (osEnforcedFlags & OS_ENFORCED_FLAGS_USER_PROFILE_SECURE) != 0;
         final boolean accessibility = (osEnforcedFlags & OS_ENFORCED_FLAGS_ACCESSIBILITY) != 0;
         final boolean deviceAdmin = (osEnforcedFlags & OS_ENFORCED_FLAGS_DEVICE_ADMIN) != 0;
+        final boolean deviceAdminNonSystem = (osEnforcedFlags & OS_ENFORCED_FLAGS_DEVICE_ADMIN_NON_SYSTEM) != 0;
         final boolean adbEnabled = (osEnforcedFlags & OS_ENFORCED_FLAGS_ADB_ENABLED) != 0;
         final boolean addUsersWhenLocked = (osEnforcedFlags & OS_ENFORCED_FLAGS_ADD_USERS_WHEN_LOCKED) != 0;
         final boolean enrolledFingerprints = (osEnforcedFlags & OS_ENFORCED_FLAGS_ENROLLED_FINGERPRINTS) != 0;
         final boolean denyNewUsb = (osEnforcedFlags & OS_ENFORCED_FLAGS_DENY_NEW_USB) != 0;
+
+        if (deviceAdminNonSystem && !deviceAdmin) {
+            throw new GeneralSecurityException("invalid device administrator state");
+        }
 
         final int signatureLength = deserializer.remaining();
         final byte[] signature = new byte[signatureLength];
@@ -729,8 +750,8 @@ class AttestationProtocol {
 
         final byte[] challenge = Arrays.copyOfRange(challengeMessage, 1 + CHALLENGE_LENGTH, 1 + CHALLENGE_LENGTH * 2);
         return verify(context, fingerprint, challenge, deserializer.asReadOnlyBuffer(), signature,
-                certificates, userProfileSecure, accessibility, deviceAdmin, adbEnabled,
-                addUsersWhenLocked, enrolledFingerprints, denyNewUsb);
+                certificates, userProfileSecure, accessibility, deviceAdmin, deviceAdminNonSystem,
+                adbEnabled, addUsersWhenLocked, enrolledFingerprints, denyNewUsb);
     }
 
     static class AttestationResult {
@@ -796,8 +817,22 @@ class AttestationProtocol {
 
         final DevicePolicyManager dpm = context.getSystemService(DevicePolicyManager.class);
 
-        final List<?> activeAdmins = dpm.getActiveAdmins();
+        final List<ComponentName> activeAdmins = dpm.getActiveAdmins();
         final boolean deviceAdmin = activeAdmins != null && activeAdmins.size() > 0;
+        boolean deviceAdminNonSystem = false;
+        if (activeAdmins != null) {
+            for (final ComponentName name : activeAdmins) {
+                final PackageManager pm = context.getPackageManager();
+                try {
+                    final ApplicationInfo info = pm.getApplicationInfo(name.getPackageName(), 0);
+                    if ((info.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
+                        deviceAdminNonSystem = true;
+                    }
+                } catch (final PackageManager.NameNotFoundException e) {
+                    throw new GeneralSecurityException(e);
+                }
+            }
+        }
 
         final int encryptionStatus = dpm.getStorageEncryptionStatus();
         if (encryptionStatus != DevicePolicyManager.ENCRYPTION_STATUS_ACTIVE_PER_USER) {
@@ -875,6 +910,9 @@ class AttestationProtocol {
         }
         if (deviceAdmin) {
             osEnforcedFlags |= OS_ENFORCED_FLAGS_DEVICE_ADMIN;
+        }
+        if (deviceAdminNonSystem) {
+            osEnforcedFlags |= OS_ENFORCED_FLAGS_DEVICE_ADMIN_NON_SYSTEM;
         }
         if (adbEnabled) {
             osEnforcedFlags |= OS_ENFORCED_FLAGS_ADB_ENABLED;
