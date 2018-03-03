@@ -59,6 +59,7 @@ public class AttestationActivity extends AppCompatActivity {
     private TextView textView;
     private ImageView imageView;
     private View buttons;
+    private Snackbar snackbar;
 
     private enum Stage {
         None,
@@ -87,11 +88,11 @@ public class AttestationActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         buttons = findViewById(R.id.buttons);
+        snackbar = Snackbar.make(findViewById(R.id.content_attestation), "", Snackbar.LENGTH_LONG);
 
         findViewById(R.id.auditee).setOnClickListener((final View view) -> {
             if (!isSupportedAuditee()) {
-                Snackbar.make(findViewById(R.id.content_attestation), R.string.unsupported_auditee,
-                        Snackbar.LENGTH_LONG).show();
+                snackbar.setText(R.string.unsupported_auditee).show();
                 return;
             }
             mStage = Stage.Auditee;
@@ -99,6 +100,7 @@ public class AttestationActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.auditor).setOnClickListener(view -> {
+            snackbar.dismiss();
             mStage = Stage.Auditor;
             buttons.setVisibility(View.GONE);
             runAuditor();
@@ -282,10 +284,10 @@ public class AttestationActivity extends AppCompatActivity {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    snackbar.dismiss();
                     startActivityForResult(new Intent(this, QRScannerActivity.class), SCAN_REQUEST_CODE);
                 } else {
-                    Snackbar.make(findViewById(R.id.content_attestation),
-                            R.string.camera_permission_denied, Snackbar.LENGTH_LONG).show();
+                    snackbar.setText(R.string.camera_permission_denied).show();
                 }
             }
         }
