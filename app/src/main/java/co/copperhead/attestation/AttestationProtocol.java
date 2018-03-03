@@ -222,6 +222,8 @@ class AttestationProtocol {
 
     // Offset from version code to user-facing version: version 1 has version code 10, etc.
     private static final int ATTESTATION_APP_VERSION_CODE_OFFSET = 9;
+    // Split displayed fingerprint into groups of 4 characters
+    private static final int FINGERPRINT_SPLIT_INTERVAL = 4;
 
     // Root for Google certified devices.
     private static final String GOOGLE_ROOT_CERTIFICATE =
@@ -516,7 +518,15 @@ class AttestationProtocol {
         builder.append(context.getString(R.string.os_patch_level,
                 osPatchLevel.substring(0, 4) + "-" + osPatchLevel.substring(4, 6)));
 
-        builder.append(context.getString(R.string.identity, fingerprint));
+        final StringBuilder splitFingerprint = new StringBuilder();
+        for (int i = 0; i < fingerprint.length(); i += FINGERPRINT_SPLIT_INTERVAL) {
+            splitFingerprint.append(fingerprint.substring(i,
+                    Math.min(fingerprint.length(), i + FINGERPRINT_SPLIT_INTERVAL)));
+            if (i + FINGERPRINT_SPLIT_INTERVAL < fingerprint.length()) {
+                splitFingerprint.append("-");
+            }
+        }
+        builder.append(context.getString(R.string.identity, splitFingerprint.toString()));
     }
 
     private static void verifySignature(final PublicKey key, final ByteBuffer message,
