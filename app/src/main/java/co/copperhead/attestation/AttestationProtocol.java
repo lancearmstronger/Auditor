@@ -795,7 +795,10 @@ class AttestationProtocol {
         // OS-enforced checks and information
 
         final DevicePolicyManager dpm = context.getSystemService(DevicePolicyManager.class);
-        final boolean deviceAdmin = dpm.getActiveAdmins() != null;
+
+        final List<?> activeAdmins = dpm.getActiveAdmins();
+        final boolean deviceAdmin = activeAdmins != null && activeAdmins.size() > 0;
+
         final int encryptionStatus = dpm.getStorageEncryptionStatus();
         if (encryptionStatus != DevicePolicyManager.ENCRYPTION_STATUS_ACTIVE_PER_USER) {
             throw new GeneralSecurityException("invalid encryption status");
