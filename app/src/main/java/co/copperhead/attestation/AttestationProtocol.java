@@ -588,13 +588,13 @@ class AttestationProtocol {
                 throw new GeneralSecurityException("certificate chain mismatch");
             }
             for (int i = 1; i < attestationCertificates.length; i++) {
-                final byte[] b = BaseEncoding.base64().decode(preferences.getString(KEY_PINNED_CERTIFICATE + i, null));
+                final byte[] b = BaseEncoding.base64().decode(preferences.getString(KEY_PINNED_CERTIFICATE + i, ""));
                 if (!Arrays.equals(attestationCertificates[i].getEncoded(), b)) {
                     throw new GeneralSecurityException("certificate chain mismatch");
                 }
             }
 
-            final byte[] persistentCertificateEncoded = BaseEncoding.base64().decode(preferences.getString(KEY_PINNED_CERTIFICATE + "0", null));
+            final byte[] persistentCertificateEncoded = BaseEncoding.base64().decode(preferences.getString(KEY_PINNED_CERTIFICATE + "0", ""));
             final Certificate persistentCertificate = generateCertificate(
                     new ByteArrayInputStream(persistentCertificateEncoded));
             if (!Arrays.equals(fingerprint, getFingerprint(persistentCertificate))) {
