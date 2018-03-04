@@ -880,7 +880,7 @@ class AttestationProtocol {
             if (encoded.length > Short.MAX_VALUE) {
                 throw new RuntimeException("encoded certificate too long");
             }
-            chainSerializer.putShort((short)encoded.length);
+            chainSerializer.putShort((short) encoded.length);
             chainSerializer.put(encoded);
         }
         chainSerializer.flip();
@@ -903,7 +903,7 @@ class AttestationProtocol {
         if (compressed.length > Short.MAX_VALUE) {
             throw new RuntimeException("compressed chain too long");
         }
-        serializer.putShort((short)compressed.length);
+        serializer.putShort((short) compressed.length);
         serializer.put(compressed);
 
         if (fingerprint.length != FINGERPRINT_LENGTH) {
