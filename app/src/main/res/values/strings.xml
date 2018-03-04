@@ -28,14 +28,15 @@
     <string name="last_verified">Last verified: %s\n</string>
     <string name="os_enforced">\n<b>Information provided by the verified OS:</b>\n\n</string>
     <string name="auditor_app_version">Auditor app version: %d\n</string>
-    <string name="user_profile_secure">User profile secure: %b\n</string>
-    <string name="enrolled_fingerprints">Enrolled fingerprints: %b\n</string>
-    <string name="accessibility">Accessibility service(s) enabled: %b\n</string>
+    <string name="user_profile_secure">User profile secure: %s\n</string>
+    <string name="enrolled_fingerprints">Enrolled fingerprints: %s\n</string>
+    <string name="accessibility">Accessibility service(s) enabled: %s\n</string>
     <string name="device_admin">Device administrator(s) enabled: %s\n</string>
-    <string name="device_admin_none">no</string>
     <string name="device_admin_system">yes, but only system apps</string>
     <string name="device_admin_non_system">yes, with non-system apps</string>
-    <string name="adb_enabled">Android Debug Bridge enabled: %b\n</string>
-    <string name="add_users_when_locked">Add users from lock screen: %b\n</string>
-    <string name="deny_new_usb">Disallow new USB peripherals when locked: %b\n</string>
+    <string name="adb_enabled">Android Debug Bridge enabled: %s\n</string>
+    <string name="add_users_when_locked">Add users from lock screen: %s\n</string>
+    <string name="deny_new_usb">Disallow new USB peripherals when locked: %s\n</string>
+    <string name="no">no</string>
+    <string name="yes">yes</string>
 </resources>

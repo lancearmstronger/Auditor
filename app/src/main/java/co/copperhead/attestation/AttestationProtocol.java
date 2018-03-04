@@ -557,6 +557,10 @@ class AttestationProtocol {
         }
     }
 
+    private static String toYesNoString(final Context context, final boolean value) {
+        return value ? context.getString(R.string.yes) : context.getString(R.string.no);
+    }
+
     private static VerificationResult verify(final Context context, final byte[] fingerprint,
             final byte[] challenge, final ByteBuffer signedMessage, final byte[] signature,
             final Certificate[] attestationCertificates, final boolean userProfileSecure,
@@ -662,9 +666,12 @@ class AttestationProtocol {
         final StringBuilder osEnforced = new StringBuilder();
         osEnforced.append(context.getString(R.string.auditor_app_version,
                 verified.appVersion - ATTESTATION_APP_VERSION_CODE_OFFSET));
-        osEnforced.append(context.getString(R.string.user_profile_secure, userProfileSecure));
-        osEnforced.append(context.getString(R.string.enrolled_fingerprints, enrolledFingerprints));
-        osEnforced.append(context.getString(R.string.accessibility, accessibility));
+        osEnforced.append(context.getString(R.string.user_profile_secure,
+                toYesNoString(context, userProfileSecure)));
+        osEnforced.append(context.getString(R.string.enrolled_fingerprints,
+                toYesNoString(context, enrolledFingerprints)));
+        osEnforced.append(context.getString(R.string.accessibility,
+                toYesNoString(context, accessibility)));
 
         final String deviceAdminState;
         if (deviceAdminNonSystem) {
@@ -672,13 +679,16 @@ class AttestationProtocol {
         } else if (deviceAdmin) {
             deviceAdminState = context.getString(R.string.device_admin_system);
         } else {
-            deviceAdminState = context.getString(R.string.device_admin_none);
+            deviceAdminState = context.getString(R.string.no);
         }
         osEnforced.append(context.getString(R.string.device_admin, deviceAdminState));
 
-        osEnforced.append(context.getString(R.string.adb_enabled, adbEnabled));
-        osEnforced.append(context.getString(R.string.add_users_when_locked, addUsersWhenLocked));
-        osEnforced.append(context.getString(R.string.deny_new_usb, denyNewUsb));
+        osEnforced.append(context.getString(R.string.adb_enabled,
+                toYesNoString(context, adbEnabled)));
+        osEnforced.append(context.getString(R.string.add_users_when_locked,
+                toYesNoString(context, addUsersWhenLocked)));
+        osEnforced.append(context.getString(R.string.deny_new_usb,
+                toYesNoString(context, denyNewUsb)));
 
         return new VerificationResult(hasPersistentKey, teeEnforced.toString(), osEnforced.toString());
     }
