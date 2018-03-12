@@ -151,13 +151,14 @@ class AttestationProtocol {
     // never actually used, only generated for fresh key attestation data.
     //
     // The OS can use the persistent generated hardware-backed key for signing but cannot obtain
-    // the private key. The key wouldn't be usable if verified boot fails or the OS is downgraded
-    // and the keys are protected against replay attacks via the Replay Protected Memory Block. It
-    // can be expected that the security of the keystore will improve, particularly if it's moved
-    // to a future revision of the Pixel security chip. The API could also be improved with better
-    // guarantees about the certificate chain remaining the same, including rollback indexes in
-    // key attestation metadata and adding a per-app-install generated intermediate to the chain
-    // to be pinned with the others.
+    // the private key. The key isn't be usable if verified boot fails or the OS is downgraded and
+    // the keys are protected against replay attacks via the Replay Protected Memory Block. Future
+    // devices launching with Android P or later will be able to provide a StrongBox Keymaster to
+    // support storing the keys in a dedicated hardware security module paired with the TEE which
+    // will substantially reduce the attack surface for obtaining the keys. The attestation API
+    // could also be improved with better guarantees about the certificate chain remaining the
+    // same, including rollback indexes in key attestation metadata and adding a per-app-install
+    // generated intermediate to the chain to be pinned with the others.
     //
     // The attestation message also includes osEnforcedFlags with data obtained at the OS level,
     // which is vulnerable to tampering by an attacker with control over the OS. However, the OS
