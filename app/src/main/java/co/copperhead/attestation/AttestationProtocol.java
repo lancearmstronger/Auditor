@@ -56,6 +56,8 @@ import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
 
+import javax.security.auth.x500.X500Principal;
+
 import co.copperhead.attestation.attestation.Attestation;
 import co.copperhead.attestation.attestation.AttestationApplicationId;
 import co.copperhead.attestation.attestation.AttestationPackageInfo;
@@ -296,12 +298,42 @@ class AttestationProtocol {
             "hJdzo2/IBw==\n" +
             "-----END CERTIFICATE-----";
 
+    private static final String BKL_L04_INTERMEDIATE_CERTIFICATE =
+            "-----BEGIN CERTIFICATE-----\n" +
+            "MIIDwzCCAaugAwIBAgIKA4gmZ2BliZaFdzANBgkqhkiG9w0BAQsFADAbMRkwFwYD" +
+            "VQQFExBmOTIwMDllODUzYjZiMDQ1MB4XDTE2MDUyNjE3MjIxOVoXDTI2MDUyNDE3" +
+            "MjIxOVowGzEZMBcGA1UEBRMQYmU0MDY0NjZiZWEzNzgyYjB2MBAGByqGSM49AgEG" +
+            "BSuBBAAiA2IABNG7VnbdYr9743R76MZBPgjpEy54v1pz7FyAgnATGLfiCjHvXtxm" +
+            "T7uvCB0bUvGPTfU2JMoKGXjxBBVA2RVDN01jZ65EpXntTvctKV9SlwFgubp0w4tB" +
+            "0IJNGo5SxOF1YaOBtjCBszAdBgNVHQ4EFgQUprPevzFgmWV9vksDm3PQsGV3SgEw" +
+            "HwYDVR0jBBgwFoAUNmHhAHyIBQlRi0RsR/8aTMnqTxIwDwYDVR0TAQH/BAUwAwEB" +
+            "/zAOBgNVHQ8BAf8EBAMCAYYwUAYDVR0fBEkwRzBFoEOgQYY/aHR0cHM6Ly9hbmRy" +
+            "b2lkLmdvb2dsZWFwaXMuY29tL2F0dGVzdGF0aW9uL2NybC9FOEZBMTk2MzE0RDJG" +
+            "QTE4MA0GCSqGSIb3DQEBCwUAA4ICAQCmQbMLG+NeRm6A/rtF1pgD8q8Sd+13RCC2" +
+            "4gMBhpdcgSJfPRF4f7Y61d2NL8OlGhVCJoqXvxVXx3lJNYJAwLeZIKk9iwZaJ7BI" +
+            "6zpxJUFaaGzf6793Z1jNLeqAMBbluxbSik+ZHdY1m/2kjLKqOIrYniCubahKl/Ow" +
+            "sQeTJibATNaSe1IbSxZGBgzgRYtpQGIUvPk4wJ9Zs1Z/drsAZ70LciS3T+68WFjW" +
+            "iBzoXZ1JBG9BpR0zQzkxN2jkSAtBmGLagR1WGbxwwehThcBi7cGCJVGGFv0TbvZO" +
+            "tmoaa0E+zPcDz0HTxk+YalABrLeUrRC9DtEl+lwM8TNzruG7/+r89Wga40/WxcTr" +
+            "dAFCExsKx6Q3RC5wMVvesUSlsa9nndLUzZbRdiyS+x477gqDt6JwQ2ZLYxpt0D94" +
+            "czJd9KY4YY246i/ge0ggAfrozoOquXWnfHb0j73SS6ZFU8uX6o8+M9Aac/ZMcLVF" +
+            "eXUCF67Sxjce0cFRKaFs63Dhph8MKjIvtsue+LxhCJ8agrULkqvNeT+6TxYicH8H" +
+            "j7K8BJmlVHsM35o90OHQtn5h755+Fjtrgcvnk0o1C/cfc4WzejGEgDuY9M6Z6kxd" +
+            "NKdomAV8YupF2PLwjdessamdr66tyt08Tea1zsxJ6e6Z/jkRFtAKbAUsfeqAD+aB" +
+            "WNgu5/XzFg==\n" +
+            "-----END CERTIFICATE-----";
+
     private static final ImmutableMap<String, String> fingerprintsCopperheadOS = ImmutableMap.of(
             "815DCBA82BAC1B1758211FF53CAA0B6883CB6C901BE285E1B291C8BDAA12DF75", "Pixel 2 XL",
             "36D067F8517A2284781B99A2984966BFF02D3F47310F831FCDCC4D792426B6DF", "Pixel 2");
     private static final ImmutableMap<String, String> fingerprintsStock = ImmutableMap.of(
+            "5341E6B2646979A70E57653007A1F310169421EC9BDD9F1A5648F75ADE005AF1", "BKL-L04",
             "171616EAEF26009FC46DC6D89F3D24217E926C81A67CE65D2E3A9DC27040C7AB", "Pixel 2 XL",
             "1962B0538579FFCE9AC9F507C46AFE3B92055BAC7146462283C85C500BE78D82", "Pixel 2");
+    private static final ImmutableMap<String, String> deviceIntermediates = ImmutableMap.of(
+            "BKL-L04", BKL_L04_INTERMEDIATE_CERTIFICATE,
+            "Pixel 2", WAHOO_INTERMEDIATE_CERTIFICATE,
+            "Pixel 2 XL", WAHOO_INTERMEDIATE_CERTIFICATE);
 
     private static byte[] getChallengeIndex(final Context context) {
         final SharedPreferences global = PreferenceManager.getDefaultSharedPreferences(context);
@@ -373,14 +405,6 @@ class AttestationProtocol {
             throw new GeneralSecurityException("root certificate is not the Google key attestation root");
         }
 
-        // check that 2nd last certificate is the expected intermediate (may prove to be too strict)
-        final Certificate pixelIntermediate = generateCertificate(
-                new ByteArrayInputStream(WAHOO_INTERMEDIATE_CERTIFICATE.getBytes()));
-        final Certificate intermediateCert = certificates[certificates.length - 2];
-        if (!Arrays.equals(pixelIntermediate.getEncoded(), intermediateCert.getEncoded())) {
-            throw new GeneralSecurityException("2nd last certificate is not the Pixel 2 (XL) intermediate");
-        }
-
         final Attestation attestation = new Attestation((X509Certificate) certificates[0]);
 
         // prevent replay attacks
@@ -430,17 +454,6 @@ class AttestationProtocol {
 
         final AuthorizationList teeEnforced = attestation.getTeeEnforced();
 
-        // key sanity checks
-        if (teeEnforced.getOrigin() != AuthorizationList.KM_ORIGIN_GENERATED) {
-            throw new GeneralSecurityException("not a generated key");
-        }
-        if (teeEnforced.isAllApplications()) {
-            throw new GeneralSecurityException("expected key only usable by attestation app");
-        }
-        if (!teeEnforced.isRollbackResistant()) {
-            throw new GeneralSecurityException("expected rollback resistant key");
-        }
-
         // verified boot security checks
         final int osVersion = teeEnforced.getOsVersion();
         if (osVersion < OS_VERSION_MINIMUM) {
@@ -457,22 +470,47 @@ class AttestationProtocol {
         if (!rootOfTrust.isDeviceLocked()) {
             throw new GeneralSecurityException("device is not locked");
         }
+
         final int verifiedBootState = rootOfTrust.getVerifiedBootState();
         final String verifiedBootKey = BaseEncoding.base16().encode(rootOfTrust.getVerifiedBootKey());
+        final String device;
+        final boolean stock;
         if (verifiedBootState == RootOfTrust.KM_VERIFIED_BOOT_SELF_SIGNED) {
-            final String device = fingerprintsCopperheadOS.get(verifiedBootKey);
-            if (device != null) {
-                return new Verified(device, osVersion, osPatchLevel, appVersion, false);
-            }
-            throw new GeneralSecurityException("invalid key fingerprint");
+            device = fingerprintsCopperheadOS.get(verifiedBootKey);
+            stock = false;
         } else if (verifiedBootState == RootOfTrust.KM_VERIFIED_BOOT_VERIFIED) {
-            final String device = fingerprintsStock.get(verifiedBootKey);
-            if (device != null) {
-                return new Verified(device, osVersion, osPatchLevel, appVersion, true);
-            }
+            device = fingerprintsStock.get(verifiedBootKey);
+            stock = true;
+        } else {
+            throw new GeneralSecurityException("verified boot state is not verified or self signed");
+        }
+
+        if (device == null) {
             throw new GeneralSecurityException("invalid key fingerprint");
         }
-        throw new GeneralSecurityException("verified boot state is not verified or self signed");
+
+        // key sanity checks
+        if (teeEnforced.getOrigin() != AuthorizationList.KM_ORIGIN_GENERATED) {
+            throw new GeneralSecurityException("not a generated key");
+        }
+        if (teeEnforced.isAllApplications()) {
+            throw new GeneralSecurityException("expected key only usable by attestation app");
+        }
+        if (!"BKL-L04".equals(device)) {
+            if (!teeEnforced.isRollbackResistant()) {
+                throw new GeneralSecurityException("expected rollback resistant key");
+            }
+        }
+
+        // check that 2nd last certificate is the expected intermediate (may prove to be too strict)
+        final Certificate deviceIntermediate = generateCertificate(
+                new ByteArrayInputStream(deviceIntermediates.get(device).getBytes()));
+        final Certificate intermediateCert = certificates[certificates.length - 2];
+        if (!Arrays.equals(deviceIntermediate.getEncoded(), intermediateCert.getEncoded())) {
+            throw new GeneralSecurityException("2nd last certificate is not the correct intermediate for " + device);
+        }
+
+        return new Verified(device, osVersion, osPatchLevel, appVersion, stock);
     }
 
     private static void verifyCertificateSignatures(Certificate[] certChain)
@@ -751,8 +789,19 @@ class AttestationProtocol {
         final byte[] signature = new byte[signatureLength];
         deserializer.get(signature);
 
-        certificates[certificates.length - 2] = generateCertificate(
-                new ByteArrayInputStream(WAHOO_INTERMEDIATE_CERTIFICATE.getBytes()));
+        final X500Principal issuer = ((X509Certificate) certificates[certificates.length - 3]).getIssuerX500Principal();
+        for (final String intermediate : deviceIntermediates.values()) {
+            final X509Certificate intermediateCert = generateCertificate(
+                new ByteArrayInputStream(intermediate.getBytes()));
+            if (intermediateCert.getSubjectX500Principal().equals(issuer)) {
+                certificates[certificates.length - 2] = intermediateCert;
+                break;
+            }
+        }
+        if (certificates[certificates.length - 2] == null) {
+            throw new GeneralSecurityException("unknown intermediate");
+        }
+
         certificates[certificates.length - 1] = generateCertificate(
                 new ByteArrayInputStream(GOOGLE_ROOT_CERTIFICATE.getBytes()));
 

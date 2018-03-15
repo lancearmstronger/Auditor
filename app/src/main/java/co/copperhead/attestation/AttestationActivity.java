@@ -23,6 +23,8 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.google.common.collect.ImmutableSet;
+
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
 import com.google.zxing.WriterException;
@@ -73,8 +75,11 @@ public class AttestationActivity extends AppCompatActivity {
     private byte[] auditorChallenge;
     private int backgroundResource;
 
+    private static final ImmutableSet<String> supportedModels = ImmutableSet.of(
+            "BKL-L04", "Pixel 2", "Pixel 2 XL");
+
     private static boolean isSupportedAuditee() {
-        return BuildConfig.DEBUG || Build.DEVICE.equals("taimen") || Build.DEVICE.equals("walleye");
+        return BuildConfig.DEBUG || supportedModels.contains(Build.MODEL);
     }
 
     @Override
