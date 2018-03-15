@@ -74,7 +74,7 @@ public class AttestationActivity extends AppCompatActivity {
     private int backgroundResource;
 
     private static boolean isSupportedAuditee() {
-        return Build.DEVICE.equals("taimen") || Build.DEVICE.equals("walleye");
+        return BuildConfig.DEBUG || Build.DEVICE.equals("taimen") || Build.DEVICE.equals("walleye");
     }
 
     @Override
