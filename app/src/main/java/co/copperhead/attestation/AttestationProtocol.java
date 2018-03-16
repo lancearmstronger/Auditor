@@ -774,10 +774,9 @@ class AttestationProtocol {
         final Certificate[] attestationCertificates = keyStore.getCertificateChain(attestationKeystoreAlias);
 
         // sanity check on the device being verified before sending it off to the verifying device
-        try (final InputStream stream = context.getResources().openRawResource(R.raw.google_root)) {
-            verifyStateless(attestationCertificates, challenge, generateCertificate(stream),
-                    context.getResources());
-        }
+        verifyStateless(attestationCertificates, challenge,
+                attestationCertificates[attestationCertificates.length - 1],
+                context.getResources());
 
         // OS-enforced checks and information
 
