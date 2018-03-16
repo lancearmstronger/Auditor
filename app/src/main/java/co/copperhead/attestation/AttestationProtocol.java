@@ -227,6 +227,9 @@ class AttestationProtocol {
             "BKL-L04", R.raw.intermediate_honor_view_10,
             "Pixel 2", R.raw.intermediate_wahoo,
             "Pixel 2 XL", R.raw.intermediate_wahoo);
+    private static final ImmutableMap<String, Integer> deviceIntermediatesByName = ImmutableMap.of(
+            "2.5.4.5=#131062653430363436366265613337383262", R.raw.intermediate_honor_view_10,
+            "2.5.4.5=#131038376634353134343735626130613262", R.raw.intermediate_wahoo);
 
     private static byte[] getChallengeIndex(final Context context) {
         final SharedPreferences global = PreferenceManager.getDefaultSharedPreferences(context);
@@ -693,13 +696,9 @@ class AttestationProtocol {
         deserializer.get(signature);
 
         final X500Principal issuer = ((X509Certificate) certificates[certificates.length - 3]).getIssuerX500Principal();
-        for (final int intermediate : deviceIntermediates.values()) {
-            final X509Certificate intermediateCert = generateCertificate(context.getResources(), intermediate);
-            if (intermediateCert.getSubjectX500Principal().equals(issuer)) {
-                certificates[certificates.length - 2] = intermediateCert;
-                break;
-            }
-        }
+        certificates[certificates.length - 2] = generateCertificate(context.getResources(),
+                deviceIntermediatesByName.get(issuer.getName(X500Principal.CANONICAL)));
+
         if (certificates[certificates.length - 2] == null) {
             throw new GeneralSecurityException("unknown intermediate");
         }
