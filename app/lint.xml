@@ -24,4 +24,9 @@
     <issue id="UseCompoundDrawables">
       <ignore path="src/main/res/layout/content_attestation.xml"/>
     </issue>
+
+    <!-- AsyncTask intentionally holds onto the JobService to call jobFinished -->
+    <issue id="StaticFieldLeak">
+        <ignore path="src/main/java/co/copperhead/attestation/SubmitSampleJob.java"/>
+    </issue>
 </lint>

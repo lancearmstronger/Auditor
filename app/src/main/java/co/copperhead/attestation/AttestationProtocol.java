@@ -96,9 +96,9 @@ class AttestationProtocol {
     private static final String KEY_VERIFIED_TIME_LAST = "verified_time_last";
 
     private static final int CHALLENGE_LENGTH = 32;
-    private static final String EC_CURVE = "secp256r1";
+    static final String EC_CURVE = "secp256r1";
     private static final String SIGNATURE_ALGORITHM = "SHA256WithECDSA";
-    private static final String KEY_DIGEST = DIGEST_SHA256;
+    static final String KEY_DIGEST = DIGEST_SHA256;
     private static final HashFunction FINGERPRINT_HASH_FUNCTION = Hashing.sha256();
     private static final int FINGERPRINT_LENGTH = FINGERPRINT_HASH_FUNCTION.bits() / 8;
 
@@ -914,7 +914,7 @@ class AttestationProtocol {
         return new AttestationResult(!hasPersistentKey, serialized);
     }
 
-    private static void generateKeyPair(final String algorithm, final KeyGenParameterSpec spec)
+    static void generateKeyPair(final String algorithm, final KeyGenParameterSpec spec)
             throws NoSuchAlgorithmException, NoSuchProviderException,
             InvalidAlgorithmParameterException {
         final KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(algorithm,

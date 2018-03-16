@@ -78,7 +78,18 @@ public class AttestationActivity extends AppCompatActivity {
             "BKL-L04", "H3113", "Pixel 2", "Pixel 2 XL");
 
     private static boolean isSupportedAuditee() {
-        return BuildConfig.DEBUG || supportedModels.contains(Build.MODEL);
+        return supportedModels.contains(Build.MODEL);
+    }
+
+    private static int getFirstApiLevel() {
+        return Integer.parseInt(SystemProperties.get("ro.product.first_api_level",
+                Integer.toString(Build.VERSION.SDK_INT)));
+    }
+
+    private static boolean potentialSupportedAuditee() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                getFirstApiLevel() >= Build.VERSION_CODES.O &&
+                SystemProperties.get("ro.boot.verifiedbootstate", "orange").equals("green");
     }
 
     @Override
@@ -370,8 +381,11 @@ public class AttestationActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(final Menu menu) {
         getMenuInflater().inflate(R.menu.menu_attestation, menu);
-        if (!isSupportedAuditee()) {
-            menu.findItem(R.id.action_clear_auditee).setEnabled(false);
+        final boolean supported = isSupportedAuditee();
+        menu.findItem(R.id.action_clear_auditee).setEnabled(supported);
+        menu.findItem(R.id.action_submit_sample).setEnabled(potentialSupportedAuditee());
+        if (supported) {
+            menu.removeItem(R.id.action_submit_sample);
         }
         return true;
     }
@@ -389,6 +403,10 @@ public class AttestationActivity extends AppCompatActivity {
                 final Intent intent = new Intent(this, VerifyAttestationService.class);
                 intent.putExtra(VerifyAttestationService.EXTRA_CLEAR, true);
                 startService(intent);
+                return true;
+            }
+            case R.id.action_submit_sample: {
+                SubmitSampleJob.schedule(this);
                 return true;
             }
         }
