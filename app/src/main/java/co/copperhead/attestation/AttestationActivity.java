@@ -24,7 +24,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.google.common.collect.ImmutableSet;
-
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
 import com.google.zxing.WriterException;

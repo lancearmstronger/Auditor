@@ -2,8 +2,8 @@ package co.copperhead.attestation;
 
 import android.app.KeyguardManager;
 import android.app.admin.DevicePolicyManager;
-import android.content.Context;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
