@@ -214,12 +214,12 @@ class AttestationProtocol {
     private static final int FINGERPRINT_SPLIT_INTERVAL = 4;
 
     private static final ImmutableMap<String, String> fingerprintsCopperheadOS = ImmutableMap.of(
-            "815DCBA82BAC1B1758211FF53CAA0B6883CB6C901BE285E1B291C8BDAA12DF75", "Pixel 2 XL",
-            "36D067F8517A2284781B99A2984966BFF02D3F47310F831FCDCC4D792426B6DF", "Pixel 2");
+            "36D067F8517A2284781B99A2984966BFF02D3F47310F831FCDCC4D792426B6DF", "Pixel 2",
+            "815DCBA82BAC1B1758211FF53CAA0B6883CB6C901BE285E1B291C8BDAA12DF75", "Pixel 2 XL");
     private static final ImmutableMap<String, String> fingerprintsStock = ImmutableMap.of(
             "5341E6B2646979A70E57653007A1F310169421EC9BDD9F1A5648F75ADE005AF1", "BKL-L04",
-            "171616EAEF26009FC46DC6D89F3D24217E926C81A67CE65D2E3A9DC27040C7AB", "Pixel 2 XL",
-            "1962B0538579FFCE9AC9F507C46AFE3B92055BAC7146462283C85C500BE78D82", "Pixel 2");
+            "1962B0538579FFCE9AC9F507C46AFE3B92055BAC7146462283C85C500BE78D82", "Pixel 2",
+            "171616EAEF26009FC46DC6D89F3D24217E926C81A67CE65D2E3A9DC27040C7AB", "Pixel 2 XL");
     // No guarantee is provided that the devices use these intermediates, but in practice each
     // device appears to have a universal intermediate. This lets us provide marginally better
     // security for the initial unpaired verification and reduces the size of the attestations.
