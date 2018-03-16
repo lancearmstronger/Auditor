@@ -13,7 +13,6 @@ import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
-import android.util.Base64;
 import android.util.Log;
 import android.view.accessibility.AccessibilityManager;
 
@@ -417,7 +416,7 @@ class AttestationProtocol {
             throws GeneralSecurityException {
 
         for (final Certificate cert : certChain) {
-            Log.d(TAG, Base64.encodeToString(cert.getEncoded(), Base64.NO_WRAP));
+            Log.d(TAG, BaseEncoding.base64().encode(cert.getEncoded()));
         }
 
         for (int i = 1; i < certChain.length; ++i) {

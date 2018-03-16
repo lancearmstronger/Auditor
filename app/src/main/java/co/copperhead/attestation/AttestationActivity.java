@@ -13,7 +13,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
 import android.text.Spanned;
 import android.text.method.ScrollingMovementMethod;
-import android.util.Base64;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -24,6 +23,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.io.BaseEncoding;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
 import com.google.zxing.WriterException;
@@ -156,7 +156,7 @@ public class AttestationActivity extends AppCompatActivity {
 
     private static String logFormatBytes(final byte[] bytes) {
         return String.format(Locale.US, "%d binary bytes logged here as base64 (%s)", bytes.length,
-                Base64.encodeToString(bytes, Base64.NO_WRAP));
+                BaseEncoding.base64().encode(bytes));
     }
 
     private void chooseBestLayout() {
