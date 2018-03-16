@@ -7,6 +7,7 @@ import android.content.ComponentName;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.hardware.fingerprint.FingerprintManager;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
@@ -212,62 +213,6 @@ class AttestationProtocol {
     // Split displayed fingerprint into groups of 4 characters
     private static final int FINGERPRINT_SPLIT_INTERVAL = 4;
 
-    // Intermediate for Pixel 2 and Pixel 2 XL devices.
-    //
-    // Google doesn't provide any kind of guarantee that this intermediate is
-    // used on the Pixel 2 and Pixel 2 XL but it appears universal in practice.
-    //
-    // 'wahoo' is the shared codename for walleye (Pixel 2) and taimen (Pixel 2 XL)
-    private static final String WAHOO_INTERMEDIATE_CERTIFICATE =
-            "-----BEGIN CERTIFICATE-----\n" +
-            "MIIDwzCCAaugAwIBAgIKA4gmZ2BliZaFdTANBgkqhkiG9w0BAQsFADAbMRkwFwYD" +
-            "VQQFExBmOTIwMDllODUzYjZiMDQ1MB4XDTE2MDUyNjE3MDE1MVoXDTI2MDUyNDE3" +
-            "MDE1MVowGzEZMBcGA1UEBRMQODdmNDUxNDQ3NWJhMGEyYjB2MBAGByqGSM49AgEG" +
-            "BSuBBAAiA2IABGQ7VmgdJ/rEgs9sIE3rzvApXDUMAaqMMn8+1fRJrvQpZkJfOT2E" +
-            "djtdrVaxDQRZxixqT5MlVqiSk8PRTqLx3+8OPLoicqMiOeGytH2sVQurvFynVeKq" +
-            "SGKK1jx2/2fccqOBtjCBszAdBgNVHQ4EFgQUMEQj5aL2BuFQq3dfFha7kcxjxlkw" +
-            "HwYDVR0jBBgwFoAUNmHhAHyIBQlRi0RsR/8aTMnqTxIwDwYDVR0TAQH/BAUwAwEB" +
-            "/zAOBgNVHQ8BAf8EBAMCAYYwUAYDVR0fBEkwRzBFoEOgQYY/aHR0cHM6Ly9hbmRy" +
-            "b2lkLmdvb2dsZWFwaXMuY29tL2F0dGVzdGF0aW9uL2NybC9FOEZBMTk2MzE0RDJG" +
-            "QTE4MA0GCSqGSIb3DQEBCwUAA4ICAQBAOYqLNryTmbOlnrjnIvDoXxzaLOgCXu29" +
-            "l7KpbFHacVLxgYuGRiIEQqzZBqUYSt9Pgx+P2KvoHtz99sEZr2xTe0Dw6CTHTAmx" +
-            "WXUFdrlvEMm2GySfvJRfMNCuX1oIS/M5PfREY2YZHyLq/sn1sJr3FjbKMdUMBo5A" +
-            "camcD3H8wl9O/6qfhX+57iXzoK6yMzJRG/Mlkm58/sFk0pjayUBchmUJL0FQ6IhK" +
-            "Ygy8RKE2UDyXKOE7+ZMSMUUkAdzyn2PFv7TvQtDk0ge2mkVrNrfPSglMzBNvrSDH" +
-            "PBmTktXzwseVagIRT5WI91OrUOYPFgostsfH42hs5wJtAFGPwDg/1mNa8UyH9k1b" +
-            "MrRq3Srez1XG0Ju7SGN/uNX5dkcwvfAmadtmM7Pp+l2VHRYRR600jAcM2+7bl8eg" +
-            "qfM/A7vyDLZqPIxDwkLXj2eN99nJZJVaGfB9dHyFOqBqBM6SdyV6MSIr3AHoo6u+" +
-            "BWIX9+q8n1qg5I6JWeEe+K58SbRDVoNQgsKP9/iPruXMU5rm2ywPxICVGysl1GgA" +
-            "P+FJ3X6oP0tXFWQlYoWdSloSVHNZQqj2ev/69sMnGsTeJw1V7I0gR+eZNEfxe+vZ" +
-            "D4KP88KxuiPCe94rp+Aqs5/YwuCo6rQ+HGi5OZNBsQXYIufClSBje+OpjQb7HJgi" +
-            "hJdzo2/IBw==\n" +
-            "-----END CERTIFICATE-----";
-
-    private static final String BKL_L04_INTERMEDIATE_CERTIFICATE =
-            "-----BEGIN CERTIFICATE-----\n" +
-            "MIIDwzCCAaugAwIBAgIKA4gmZ2BliZaFdzANBgkqhkiG9w0BAQsFADAbMRkwFwYD" +
-            "VQQFExBmOTIwMDllODUzYjZiMDQ1MB4XDTE2MDUyNjE3MjIxOVoXDTI2MDUyNDE3" +
-            "MjIxOVowGzEZMBcGA1UEBRMQYmU0MDY0NjZiZWEzNzgyYjB2MBAGByqGSM49AgEG" +
-            "BSuBBAAiA2IABNG7VnbdYr9743R76MZBPgjpEy54v1pz7FyAgnATGLfiCjHvXtxm" +
-            "T7uvCB0bUvGPTfU2JMoKGXjxBBVA2RVDN01jZ65EpXntTvctKV9SlwFgubp0w4tB" +
-            "0IJNGo5SxOF1YaOBtjCBszAdBgNVHQ4EFgQUprPevzFgmWV9vksDm3PQsGV3SgEw" +
-            "HwYDVR0jBBgwFoAUNmHhAHyIBQlRi0RsR/8aTMnqTxIwDwYDVR0TAQH/BAUwAwEB" +
-            "/zAOBgNVHQ8BAf8EBAMCAYYwUAYDVR0fBEkwRzBFoEOgQYY/aHR0cHM6Ly9hbmRy" +
-            "b2lkLmdvb2dsZWFwaXMuY29tL2F0dGVzdGF0aW9uL2NybC9FOEZBMTk2MzE0RDJG" +
-            "QTE4MA0GCSqGSIb3DQEBCwUAA4ICAQCmQbMLG+NeRm6A/rtF1pgD8q8Sd+13RCC2" +
-            "4gMBhpdcgSJfPRF4f7Y61d2NL8OlGhVCJoqXvxVXx3lJNYJAwLeZIKk9iwZaJ7BI" +
-            "6zpxJUFaaGzf6793Z1jNLeqAMBbluxbSik+ZHdY1m/2kjLKqOIrYniCubahKl/Ow" +
-            "sQeTJibATNaSe1IbSxZGBgzgRYtpQGIUvPk4wJ9Zs1Z/drsAZ70LciS3T+68WFjW" +
-            "iBzoXZ1JBG9BpR0zQzkxN2jkSAtBmGLagR1WGbxwwehThcBi7cGCJVGGFv0TbvZO" +
-            "tmoaa0E+zPcDz0HTxk+YalABrLeUrRC9DtEl+lwM8TNzruG7/+r89Wga40/WxcTr" +
-            "dAFCExsKx6Q3RC5wMVvesUSlsa9nndLUzZbRdiyS+x477gqDt6JwQ2ZLYxpt0D94" +
-            "czJd9KY4YY246i/ge0ggAfrozoOquXWnfHb0j73SS6ZFU8uX6o8+M9Aac/ZMcLVF" +
-            "eXUCF67Sxjce0cFRKaFs63Dhph8MKjIvtsue+LxhCJ8agrULkqvNeT+6TxYicH8H" +
-            "j7K8BJmlVHsM35o90OHQtn5h755+Fjtrgcvnk0o1C/cfc4WzejGEgDuY9M6Z6kxd" +
-            "NKdomAV8YupF2PLwjdessamdr66tyt08Tea1zsxJ6e6Z/jkRFtAKbAUsfeqAD+aB" +
-            "WNgu5/XzFg==\n" +
-            "-----END CERTIFICATE-----";
-
     private static final ImmutableMap<String, String> fingerprintsCopperheadOS = ImmutableMap.of(
             "815DCBA82BAC1B1758211FF53CAA0B6883CB6C901BE285E1B291C8BDAA12DF75", "Pixel 2 XL",
             "36D067F8517A2284781B99A2984966BFF02D3F47310F831FCDCC4D792426B6DF", "Pixel 2");
@@ -275,10 +220,13 @@ class AttestationProtocol {
             "5341E6B2646979A70E57653007A1F310169421EC9BDD9F1A5648F75ADE005AF1", "BKL-L04",
             "171616EAEF26009FC46DC6D89F3D24217E926C81A67CE65D2E3A9DC27040C7AB", "Pixel 2 XL",
             "1962B0538579FFCE9AC9F507C46AFE3B92055BAC7146462283C85C500BE78D82", "Pixel 2");
-    private static final ImmutableMap<String, String> deviceIntermediates = ImmutableMap.of(
-            "BKL-L04", BKL_L04_INTERMEDIATE_CERTIFICATE,
-            "Pixel 2", WAHOO_INTERMEDIATE_CERTIFICATE,
-            "Pixel 2 XL", WAHOO_INTERMEDIATE_CERTIFICATE);
+    // No guarantee is provided that the devices use these intermediates, but in practice each
+    // device appears to have a universal intermediate. This lets us provide marginally better
+    // security for the initial unpaired verification and reduces the size of the attestations.
+    private static final ImmutableMap<String, Integer> deviceIntermediates = ImmutableMap.of(
+            "BKL-L04", R.raw.intermediate_honor_view_10,
+            "Pixel 2", R.raw.intermediate_wahoo,
+            "Pixel 2 XL", R.raw.intermediate_wahoo);
 
     private static byte[] getChallengeIndex(final Context context) {
         final SharedPreferences global = PreferenceManager.getDefaultSharedPreferences(context);
@@ -332,8 +280,16 @@ class AttestationProtocol {
         return (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(in);
     }
 
+    private static X509Certificate generateCertificate(final Resources resources, final int id)
+            throws CertificateException, IOException {
+        try (final InputStream stream = resources.openRawResource(id)) {
+            return generateCertificate(stream);
+        }
+    }
+
     private static Verified verifyStateless(final Certificate[] certificates,
-            final byte[] challenge, final Certificate root) throws GeneralSecurityException {
+            final byte[] challenge, final Certificate root, final Resources resources)
+            throws GeneralSecurityException, IOException {
 
         verifyCertificateSignatures(certificates);
 
@@ -445,8 +401,7 @@ class AttestationProtocol {
         }
 
         // check that 2nd last certificate is the expected intermediate (may prove to be too strict)
-        final Certificate deviceIntermediate = generateCertificate(
-                new ByteArrayInputStream(deviceIntermediates.get(device).getBytes()));
+        final Certificate deviceIntermediate = generateCertificate(resources, deviceIntermediates.get(device));
         final Certificate intermediateCert = certificates[certificates.length - 2];
         if (!Arrays.equals(deviceIntermediate.getEncoded(), intermediateCert.getEncoded())) {
             throw new GeneralSecurityException("2nd last certificate is not the correct intermediate for " + device);
@@ -566,7 +521,8 @@ class AttestationProtocol {
 
         final Verified verified;
         try (final InputStream stream = context.getResources().openRawResource(R.raw.google_root)) {
-            verified = verifyStateless(attestationCertificates, challenge, generateCertificate(stream));
+            verified = verifyStateless(attestationCertificates, challenge,
+                    generateCertificate(stream), context.getResources());
         }
 
         final StringBuilder teeEnforced = new StringBuilder();
@@ -737,9 +693,8 @@ class AttestationProtocol {
         deserializer.get(signature);
 
         final X500Principal issuer = ((X509Certificate) certificates[certificates.length - 3]).getIssuerX500Principal();
-        for (final String intermediate : deviceIntermediates.values()) {
-            final X509Certificate intermediateCert = generateCertificate(
-                new ByteArrayInputStream(intermediate.getBytes()));
+        for (final int intermediate : deviceIntermediates.values()) {
+            final X509Certificate intermediateCert = generateCertificate(context.getResources(), intermediate);
             if (intermediateCert.getSubjectX500Principal().equals(issuer)) {
                 certificates[certificates.length - 2] = intermediateCert;
                 break;
@@ -820,7 +775,8 @@ class AttestationProtocol {
 
         // sanity check on the device being verified before sending it off to the verifying device
         try (final InputStream stream = context.getResources().openRawResource(R.raw.google_root)) {
-            verifyStateless(attestationCertificates, challenge, generateCertificate(stream));
+            verifyStateless(attestationCertificates, challenge, generateCertificate(stream),
+                    context.getResources());
         }
 
         // OS-enforced checks and information
