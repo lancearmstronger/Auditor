@@ -212,40 +212,6 @@ class AttestationProtocol {
     // Split displayed fingerprint into groups of 4 characters
     private static final int FINGERPRINT_SPLIT_INTERVAL = 4;
 
-    // Root for Google certified devices.
-    private static final String GOOGLE_ROOT_CERTIFICATE =
-            "-----BEGIN CERTIFICATE-----\n" +
-            "MIIFYDCCA0igAwIBAgIJAOj6GWMU0voYMA0GCSqGSIb3DQEBCwUAMBsxGTAXBgNV" +
-            "BAUTEGY5MjAwOWU4NTNiNmIwNDUwHhcNMTYwNTI2MTYyODUyWhcNMjYwNTI0MTYy" +
-            "ODUyWjAbMRkwFwYDVQQFExBmOTIwMDllODUzYjZiMDQ1MIICIjANBgkqhkiG9w0B" +
-            "AQEFAAOCAg8AMIICCgKCAgEAr7bHgiuxpwHsK7Qui8xUFmOr75gvMsd/dTEDDJdS" +
-            "Sxtf6An7xyqpRR90PL2abxM1dEqlXnf2tqw1Ne4Xwl5jlRfdnJLmN0pTy/4lj4/7" +
-            "tv0Sk3iiKkypnEUtR6WfMgH0QZfKHM1+di+y9TFRtv6y//0rb+T+W8a9nsNL/ggj" +
-            "nar86461qO0rOs2cXjp3kOG1FEJ5MVmFmBGtnrKpa73XpXyTqRxB/M0n1n/W9nGq" +
-            "C4FSYa04T6N5RIZGBN2z2MT5IKGbFlbC8UrW0DxW7AYImQQcHtGl/m00QLVWutHQ" +
-            "oVJYnFPlXTcHYvASLu+RhhsbDmxMgJJ0mcDpvsC4PjvB+TxywElgS70vE0XmLD+O" +
-            "JtvsBslHZvPBKCOdT0MS+tgSOIfga+z1Z1g7+DVagf7quvmag8jfPioyKvxnK/Eg" +
-            "sTUVi2ghzq8wm27ud/mIM7AY2qEORR8Go3TVB4HzWQgpZrt3i5MIlCaY504LzSRi" +
-            "igHCzAPlHws+W0rB5N+er5/2pJKnfBSDiCiFAVtCLOZ7gLiMm0jhO2B6tUXHI/+M" +
-            "RPjy02i59lINMRRev56GKtcd9qO/0kUJWdZTdA2XoS82ixPvZtXQpUpuL12ab+9E" +
-            "aDK8Z4RHJYYfCT3Q5vNAXaiWQ+8PTWm2QgBR/bkwSWc+NpUFgNPN9PvQi8WEg5Um" +
-            "AGMCAwEAAaOBpjCBozAdBgNVHQ4EFgQUNmHhAHyIBQlRi0RsR/8aTMnqTxIwHwYD" +
-            "VR0jBBgwFoAUNmHhAHyIBQlRi0RsR/8aTMnqTxIwDwYDVR0TAQH/BAUwAwEB/zAO" +
-            "BgNVHQ8BAf8EBAMCAYYwQAYDVR0fBDkwNzA1oDOgMYYvaHR0cHM6Ly9hbmRyb2lk" +
-            "Lmdvb2dsZWFwaXMuY29tL2F0dGVzdGF0aW9uL2NybC8wDQYJKoZIhvcNAQELBQAD" +
-            "ggIBACDIw41L3KlXG0aMiS//cqrG+EShHUGo8HNsw30W1kJtjn6UBwRM6jnmiwfB" +
-            "Pb8VA91chb2vssAtX2zbTvqBJ9+LBPGCdw/E53Rbf86qhxKaiAHOjpvAy5Y3m00m" +
-            "qC0w/Zwvju1twb4vhLaJ5NkUJYsUS7rmJKHHBnETLi8GFqiEsqTWpG/6ibYCv7rY" +
-            "DBJDcR9W62BW9jfIoBQcxUCUJouMPH25lLNcDc1ssqvC2v7iUgI9LeoM1sNovqPm" +
-            "QUiG9rHli1vXxzCyaMTjwftkJLkf6724DFhuKug2jITV0QkXvaJWF4nUaHOTNA4u" +
-            "JU9WDvZLI1j83A+/xnAJUucIv/zGJ1AMH2boHqF8CY16LpsYgBt6tKxxWH00XcyD" +
-            "CdW2KlBCeqbQPcsFmWyWugxdcekhYsAWyoSf818NUsZdBWBaR/OukXrNLfkQ79Iy" +
-            "ZohZbvabO/X+MVT3rriAoKc8oE2Uws6DF+60PV7/WIPjNvXySdqspImSN78mflxD" +
-            "qwLqRBYkA3I75qppLGG9rp7UCdRjxMl8ZDBld+7yvHVgt1cVzJx9xnyGCC23Uaic" +
-            "MDSXYrB4I4WHXPGjxhZuCuPBLTdOLU8YRvMYdEvYebWHMpvwGCF6bAx3JBpIeOQ1" +
-            "wDB5y0USicV3YgYGmi+NZfhA4URSh77Yd6uuJOJENRaNVTzk\n" +
-            "-----END CERTIFICATE-----";
-
     // Intermediate for Pixel 2 and Pixel 2 XL devices.
     //
     // Google doesn't provide any kind of guarantee that this intermediate is
@@ -367,7 +333,7 @@ class AttestationProtocol {
     }
 
     private static Verified verifyStateless(final Certificate[] certificates,
-            final byte[] challenge) throws GeneralSecurityException {
+            final byte[] challenge, final Certificate root) throws GeneralSecurityException {
 
         verifyCertificateSignatures(certificates);
 
@@ -377,10 +343,7 @@ class AttestationProtocol {
         }
 
         // check that the root certificate is the Google key attestation root
-        final Certificate secureRoot = generateCertificate(
-                new ByteArrayInputStream(GOOGLE_ROOT_CERTIFICATE.getBytes()));
-        final Certificate rootCert = certificates[certificates.length - 1];
-        if (!Arrays.equals(secureRoot.getEncoded(), rootCert.getEncoded())) {
+        if (!Arrays.equals(root.getEncoded(), certificates[certificates.length - 1].getEncoded())) {
             throw new GeneralSecurityException("root certificate is not the Google key attestation root");
         }
 
@@ -585,7 +548,7 @@ class AttestationProtocol {
             final boolean accessibility, final boolean deviceAdmin,
             final boolean deviceAdminNonSystem, final boolean adbEnabled,
             final boolean addUsersWhenLocked, final boolean enrolledFingerprints,
-            final boolean denyNewUsb) throws GeneralSecurityException {
+            final boolean denyNewUsb) throws GeneralSecurityException, IOException {
 
         final String fingerprintHex = BaseEncoding.base16().encode(fingerprint);
         final byte[] currentFingerprint = getFingerprint(attestationCertificates[0]);
@@ -601,7 +564,10 @@ class AttestationProtocol {
                     "\nIf the initial pairing was simply not completed, clear the pairing data on either the Auditee or the Auditor via the menu and try again.\n");
         }
 
-        final Verified verified = verifyStateless(attestationCertificates, challenge);
+        final Verified verified;
+        try (final InputStream stream = context.getResources().openRawResource(R.raw.google_root)) {
+            verified = verifyStateless(attestationCertificates, challenge, generateCertificate(stream));
+        }
 
         final StringBuilder teeEnforced = new StringBuilder();
 
@@ -783,8 +749,9 @@ class AttestationProtocol {
             throw new GeneralSecurityException("unknown intermediate");
         }
 
-        certificates[certificates.length - 1] = generateCertificate(
-                new ByteArrayInputStream(GOOGLE_ROOT_CERTIFICATE.getBytes()));
+        try (final InputStream stream = context.getResources().openRawResource(R.raw.google_root)) {
+            certificates[certificates.length - 1] = generateCertificate(stream);
+        }
 
         deserializer.rewind();
         deserializer.limit(deserializer.capacity() - signature.length);
@@ -852,7 +819,9 @@ class AttestationProtocol {
         final Certificate[] attestationCertificates = keyStore.getCertificateChain(attestationKeystoreAlias);
 
         // sanity check on the device being verified before sending it off to the verifying device
-        verifyStateless(attestationCertificates, challenge);
+        try (final InputStream stream = context.getResources().openRawResource(R.raw.google_root)) {
+            verifyStateless(attestationCertificates, challenge, generateCertificate(stream));
+        }
 
         // OS-enforced checks and information
 
