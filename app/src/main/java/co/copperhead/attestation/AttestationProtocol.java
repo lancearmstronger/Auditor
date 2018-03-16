@@ -213,20 +213,20 @@ class AttestationProtocol {
     private static final int FINGERPRINT_SPLIT_INTERVAL = 4;
 
     private static final ImmutableMap<String, String> fingerprintsCopperheadOS = ImmutableMap.of(
-            "36D067F8517A2284781B99A2984966BFF02D3F47310F831FCDCC4D792426B6DF", "Pixel 2",
-            "815DCBA82BAC1B1758211FF53CAA0B6883CB6C901BE285E1B291C8BDAA12DF75", "Pixel 2 XL");
+            "36D067F8517A2284781B99A2984966BFF02D3F47310F831FCDCC4D792426B6DF", "Google Pixel 2",
+            "815DCBA82BAC1B1758211FF53CAA0B6883CB6C901BE285E1B291C8BDAA12DF75", "Google Pixel 2 XL");
     private static final ImmutableMap<String, String> fingerprintsStock = ImmutableMap.of(
-            "5341E6B2646979A70E57653007A1F310169421EC9BDD9F1A5648F75ADE005AF1", "BKL-L04",
-            "1962B0538579FFCE9AC9F507C46AFE3B92055BAC7146462283C85C500BE78D82", "Pixel 2",
-            "171616EAEF26009FC46DC6D89F3D24217E926C81A67CE65D2E3A9DC27040C7AB", "Pixel 2 XL",
+            "5341E6B2646979A70E57653007A1F310169421EC9BDD9F1A5648F75ADE005AF1", "Huawei Honor View 10 BKL-L04",
+            "1962B0538579FFCE9AC9F507C46AFE3B92055BAC7146462283C85C500BE78D82", "Google Pixel 2",
+            "171616EAEF26009FC46DC6D89F3D24217E926C81A67CE65D2E3A9DC27040C7AB", "Google Pixel 2 XL",
             "4285AD64745CC79B4499817F264DC16BF2AF5163AF6C328964F39E61EC84693E", "Sony Xperia XA2 H3113");
     // No guarantee is provided that the devices use these intermediates, but in practice each
     // device appears to have a universal intermediate. This lets us provide marginally better
     // security for the initial unpaired verification and reduces the size of the attestations.
     private static final ImmutableMap<String, Integer> deviceIntermediates = ImmutableMap.of(
-            "BKL-L04", R.raw.intermediate_honor_view_10,
-            "Pixel 2", R.raw.intermediate_wahoo,
-            "Pixel 2 XL", R.raw.intermediate_wahoo,
+            "Huawei Honor View 10 BKL-L04", R.raw.intermediate_honor_view_10,
+            "Google Pixel 2", R.raw.intermediate_wahoo,
+            "Google Pixel 2 XL", R.raw.intermediate_wahoo,
             "Sony Xperia XA2 H3113", R.raw.intermediate_sony_xperia_xa2);
     private static final ImmutableMap<String, Integer> deviceIntermediatesByName = ImmutableMap.of(
             "2.5.4.5=#131062653430363436366265613337383262", R.raw.intermediate_honor_view_10,
