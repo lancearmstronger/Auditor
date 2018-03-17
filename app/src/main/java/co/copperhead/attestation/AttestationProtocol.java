@@ -236,13 +236,15 @@ class AttestationProtocol {
         }
     }
 
-    private static final ImmutableMap<String, DeviceInfo> fingerprintsCopperheadOS = ImmutableMap.<String, DeviceInfo>builder()
+    private static final ImmutableMap<String, DeviceInfo> fingerprintsCopperheadOS = ImmutableMap
+            .<String, DeviceInfo>builder()
             .put("36D067F8517A2284781B99A2984966BFF02D3F47310F831FCDCC4D792426B6DF",
                     new DeviceInfo(PIXEL_2, 2, 3, true, R.raw.intermediate_87f4514475ba0a2b))
             .put("815DCBA82BAC1B1758211FF53CAA0B6883CB6C901BE285E1B291C8BDAA12DF75",
                     new DeviceInfo(PIXEL_2_XL, 2, 3, true, R.raw.intermediate_87f4514475ba0a2b))
             .build();
-    private static final ImmutableMap<String, DeviceInfo> fingerprintsStock = ImmutableMap.<String, DeviceInfo>builder()
+    private static final ImmutableMap<String, DeviceInfo> fingerprintsStock = ImmutableMap
+            .<String, DeviceInfo>builder()
             .put("5341E6B2646979A70E57653007A1F310169421EC9BDD9F1A5648F75ADE005AF1",
                     new DeviceInfo(BKL_L04, 2, 3, false, R.raw.intermediate_be406466bea3782b))
             .put("1962B0538579FFCE9AC9F507C46AFE3B92055BAC7146462283C85C500BE78D82",
