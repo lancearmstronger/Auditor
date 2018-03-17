@@ -212,14 +212,18 @@ class AttestationProtocol {
     // Split displayed fingerprint into groups of 4 characters
     private static final int FINGERPRINT_SPLIT_INTERVAL = 4;
 
+    private static final String BKL_L04 = "Huawei Honor View 10 BKL-L04";
+    private static final String PIXEL_2 = "Google Pixel 2";
+    private static final String PIXEL_2_XL = "Google Pixel 2 XL";
+    private static final String H3113 = "Sony Xperia XA2 H3113";
     private static final ImmutableMap<String, String> fingerprintsCopperheadOS = ImmutableMap.of(
-            "36D067F8517A2284781B99A2984966BFF02D3F47310F831FCDCC4D792426B6DF", "Google Pixel 2",
-            "815DCBA82BAC1B1758211FF53CAA0B6883CB6C901BE285E1B291C8BDAA12DF75", "Google Pixel 2 XL");
+            "36D067F8517A2284781B99A2984966BFF02D3F47310F831FCDCC4D792426B6DF", PIXEL_2,
+            "815DCBA82BAC1B1758211FF53CAA0B6883CB6C901BE285E1B291C8BDAA12DF75", PIXEL_2_XL);
     private static final ImmutableMap<String, String> fingerprintsStock = ImmutableMap.of(
-            "5341E6B2646979A70E57653007A1F310169421EC9BDD9F1A5648F75ADE005AF1", "Huawei Honor View 10 BKL-L04",
-            "1962B0538579FFCE9AC9F507C46AFE3B92055BAC7146462283C85C500BE78D82", "Google Pixel 2",
-            "171616EAEF26009FC46DC6D89F3D24217E926C81A67CE65D2E3A9DC27040C7AB", "Google Pixel 2 XL",
-            "4285AD64745CC79B4499817F264DC16BF2AF5163AF6C328964F39E61EC84693E", "Sony Xperia XA2 H3113");
+            "5341E6B2646979A70E57653007A1F310169421EC9BDD9F1A5648F75ADE005AF1", BKL_L04,
+            "1962B0538579FFCE9AC9F507C46AFE3B92055BAC7146462283C85C500BE78D82", PIXEL_2,
+            "171616EAEF26009FC46DC6D89F3D24217E926C81A67CE65D2E3A9DC27040C7AB", PIXEL_2_XL,
+            "4285AD64745CC79B4499817F264DC16BF2AF5163AF6C328964F39E61EC84693E", H3113);
     // No guarantee is provided that the devices use these intermediates, but in practice each
     // device appears to have a universal intermediate. This lets us provide marginally better
     // security for the initial unpaired verification and reduces the size of the attestations.
@@ -399,7 +403,7 @@ class AttestationProtocol {
         if (teeEnforced.isAllApplications()) {
             throw new GeneralSecurityException("expected key only usable by attestation app");
         }
-        if (!"BKL-L04".equals(device)) {
+        if (!BKL_L04.equals(device)) {
             if (!teeEnforced.isRollbackResistant()) {
                 throw new GeneralSecurityException("expected rollback resistant key");
             }
