@@ -224,39 +224,42 @@ class AttestationProtocol {
         final int attestationVersion;
         final int keymasterVersion;
         final boolean rollbackResistant;
+        final int intermediate;
 
         DeviceInfo(final String name, final int attestationVersion, final int keymasterVersion,
-                final boolean rollbackResistant) {
+                final boolean rollbackResistant, final int intermediate) {
             this.name = name;
             this.attestationVersion = attestationVersion;
             this.keymasterVersion = keymasterVersion;
             this.rollbackResistant = rollbackResistant;
+            this.intermediate = intermediate;
         }
     }
 
-    private static final ImmutableMap<String, DeviceInfo> fingerprintsCopperheadOS = ImmutableMap.of(
-            "36D067F8517A2284781B99A2984966BFF02D3F47310F831FCDCC4D792426B6DF", new DeviceInfo(PIXEL_2, 2, 3, true),
-            "815DCBA82BAC1B1758211FF53CAA0B6883CB6C901BE285E1B291C8BDAA12DF75", new DeviceInfo(PIXEL_2_XL, 2, 3, true));
+    private static final ImmutableMap<String, DeviceInfo> fingerprintsCopperheadOS = ImmutableMap.<String, DeviceInfo>builder()
+            .put("36D067F8517A2284781B99A2984966BFF02D3F47310F831FCDCC4D792426B6DF",
+                    new DeviceInfo(PIXEL_2, 2, 3, true, R.raw.intermediate_87f4514475ba0a2b))
+            .put("815DCBA82BAC1B1758211FF53CAA0B6883CB6C901BE285E1B291C8BDAA12DF75",
+                    new DeviceInfo(PIXEL_2_XL, 2, 3, true, R.raw.intermediate_87f4514475ba0a2b))
+            .build();
     private static final ImmutableMap<String, DeviceInfo> fingerprintsStock = ImmutableMap.<String, DeviceInfo>builder()
-            .put("5341E6B2646979A70E57653007A1F310169421EC9BDD9F1A5648F75ADE005AF1", new DeviceInfo(BKL_L04, 2, 3, false))
-            .put("1962B0538579FFCE9AC9F507C46AFE3B92055BAC7146462283C85C500BE78D82", new DeviceInfo(PIXEL_2, 2, 3, true))
-            .put("171616EAEF26009FC46DC6D89F3D24217E926C81A67CE65D2E3A9DC27040C7AB", new DeviceInfo(PIXEL_2_XL, 2, 3, true))
-            .put("266869F7CF2FB56008EFC4BE8946C8F84190577F9CA688F59C72DD585E696488", new DeviceInfo(SM_G960U, 1, 2, false))
-            .put("A4A544C2CFBAEAA88C12360C2E4B44C29722FC8DBB81392A6C1FAEDB7BF63010", new DeviceInfo(SM_G965U1, 1, 2, false))
-            .put("4285AD64745CC79B4499817F264DC16BF2AF5163AF6C328964F39E61EC84693E", new DeviceInfo(H3113, 2, 3, true))
+            .put("5341E6B2646979A70E57653007A1F310169421EC9BDD9F1A5648F75ADE005AF1",
+                    new DeviceInfo(BKL_L04, 2, 3, false, R.raw.intermediate_be406466bea3782b))
+            .put("1962B0538579FFCE9AC9F507C46AFE3B92055BAC7146462283C85C500BE78D82",
+                    new DeviceInfo(PIXEL_2, 2, 3, true, R.raw.intermediate_87f4514475ba0a2b))
+            .put("171616EAEF26009FC46DC6D89F3D24217E926C81A67CE65D2E3A9DC27040C7AB",
+                    new DeviceInfo(PIXEL_2_XL, 2, 3, true, R.raw.intermediate_87f4514475ba0a2b))
+            .put("266869F7CF2FB56008EFC4BE8946C8F84190577F9CA688F59C72DD585E696488",
+                    new DeviceInfo(SM_G960U, 1, 2, false, R.raw.intermediate_87f4514475ba0a2b))
+            .put("A4A544C2CFBAEAA88C12360C2E4B44C29722FC8DBB81392A6C1FAEDB7BF63010",
+                    new DeviceInfo(SM_G965U1, 1, 2, false, R.raw.intermediate_5b0359cca8879cb5))
+            .put("4285AD64745CC79B4499817F264DC16BF2AF5163AF6C328964F39E61EC84693E",
+                    new DeviceInfo(H3113, 2, 3, true, R.raw.intermediate_87f4514475ba0a2b))
             .build();
     // No guarantee is provided that the devices use these intermediates, but in practice each
     // device appears to have a universal intermediate. This lets us provide marginally better
     // security for the initial unpaired verification and reduces the size of the attestations.
-    private static final ImmutableMap<String, Integer> deviceIntermediates = ImmutableMap.<String, Integer>builder()
-            .put(BKL_L04, R.raw.intermediate_be406466bea3782b)
-            .put(PIXEL_2, R.raw.intermediate_87f4514475ba0a2b)
-            .put(PIXEL_2_XL, R.raw.intermediate_87f4514475ba0a2b)
-            .put(SM_G960U, R.raw.intermediate_87f4514475ba0a2b)
-            .put(SM_G965U1, R.raw.intermediate_5b0359cca8879cb5)
-            .put(H3113, R.raw.intermediate_87f4514475ba0a2b)
-            .build();
-    private static final ImmutableMap<String, Integer> deviceIntermediatesByName = ImmutableMap.of(
+    private static final ImmutableMap<String, Integer> intermediatesByName = ImmutableMap.of(
             "2.5.4.5=#131062653430363436366265613337383262", R.raw.intermediate_be406466bea3782b,
             "2.5.4.5=#131038376634353134343735626130613262", R.raw.intermediate_87f4514475ba0a2b,
             "2.5.4.5=#131035623033353963636138383739636235", R.raw.intermediate_5b0359cca8879cb5);
@@ -432,7 +435,7 @@ class AttestationProtocol {
         }
 
         // check that 2nd last certificate is the expected intermediate (may prove to be too strict)
-        final Certificate deviceIntermediate = generateCertificate(resources, deviceIntermediates.get(device.name));
+        final Certificate deviceIntermediate = generateCertificate(resources, device.intermediate);
         final Certificate intermediateCert = certificates[certificates.length - 2];
         if (!Arrays.equals(deviceIntermediate.getEncoded(), intermediateCert.getEncoded())) {
             throw new GeneralSecurityException("2nd last certificate is not the correct intermediate for " + device.name);
@@ -725,7 +728,7 @@ class AttestationProtocol {
 
         final X500Principal issuer = ((X509Certificate) certificates[certificates.length - 3]).getIssuerX500Principal();
         certificates[certificates.length - 2] = generateCertificate(context.getResources(),
-                deviceIntermediatesByName.get(issuer.getName(X500Principal.CANONICAL)));
+                intermediatesByName.get(issuer.getName(X500Principal.CANONICAL)));
 
         if (certificates[certificates.length - 2] == null) {
             Log.d(TAG, "issuer Distinguished Name: " + issuer.getName(X500Principal.CANONICAL));
