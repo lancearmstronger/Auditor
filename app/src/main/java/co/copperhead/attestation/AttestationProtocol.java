@@ -17,6 +17,7 @@ import android.util.Log;
 import android.view.accessibility.AccessibilityManager;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
@@ -229,6 +230,9 @@ class AttestationProtocol {
             .put("A4A544C2CFBAEAA88C12360C2E4B44C29722FC8DBB81392A6C1FAEDB7BF63010", SM_G965U1)
             .put("4285AD64745CC79B4499817F264DC16BF2AF5163AF6C328964F39E61EC84693E", H3113)
             .build();
+    private static final ImmutableSet<String> nonRollbackResistant = ImmutableSet.of(
+            BKL_L04, SM_G960U, SM_G965U1
+    );
     // No guarantee is provided that the devices use these intermediates, but in practice each
     // device appears to have a universal intermediate. This lets us provide marginally better
     // security for the initial unpaired verification and reduces the size of the attestations.
@@ -397,7 +401,7 @@ class AttestationProtocol {
         if (teeEnforced.isAllApplications()) {
             throw new GeneralSecurityException("expected key only usable by attestation app");
         }
-        if (!BKL_L04.equals(device) && !SM_G960U.equals(device) && !SM_G965U1.equals(device)) {
+        if (!nonRollbackResistant.contains(device)) {
             if (!teeEnforced.isRollbackResistant()) {
                 throw new GeneralSecurityException("expected rollback resistant key");
             }
