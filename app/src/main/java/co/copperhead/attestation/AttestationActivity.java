@@ -401,6 +401,7 @@ public class AttestationActivity extends AppCompatActivity {
                 return true;
             }
             case R.id.action_submit_sample: {
+                snackbar.setText(R.string.schedule_submit_sample).show();
                 SubmitSampleJob.schedule(this);
                 return true;
             }

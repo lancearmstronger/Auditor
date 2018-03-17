@@ -14,6 +14,7 @@
     <string name="action_clear_auditee">Clear Auditee pairings</string>
     <string name="action_clear_auditor">Clear Auditor pairings</string>
     <string name="action_submit_sample">Submit sample data</string>
+    <string name="schedule_submit_sample">Submitting sample data</string>
     <string name="scanner_label">Scan QR code shown on the other device.</string>
     <string name="verifying_attestation">Verifying attestation…</string>
     <string name="generating_attestation">Generating attestation…</string>
