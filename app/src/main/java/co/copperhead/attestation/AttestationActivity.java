@@ -88,8 +88,7 @@ public class AttestationActivity extends AppCompatActivity {
 
     private static boolean potentialSupportedAuditee() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
-                getFirstApiLevel() >= Build.VERSION_CODES.O &&
-                SystemProperties.get("ro.boot.verifiedbootstate", "orange").equals("green");
+                getFirstApiLevel() >= Build.VERSION_CODES.O;
     }
 
     @Override
@@ -381,12 +380,8 @@ public class AttestationActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(final Menu menu) {
         getMenuInflater().inflate(R.menu.menu_attestation, menu);
-        final boolean supported = isSupportedAuditee();
-        menu.findItem(R.id.action_clear_auditee).setEnabled(supported);
+        menu.findItem(R.id.action_clear_auditee).setEnabled(isSupportedAuditee());
         menu.findItem(R.id.action_submit_sample).setEnabled(potentialSupportedAuditee());
-        if (supported) {
-            menu.removeItem(R.id.action_submit_sample);
-        }
         return true;
     }
 
