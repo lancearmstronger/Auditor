@@ -282,6 +282,30 @@ class AttestationProtocol {
     }
 
     static byte[] getChallengeMessage(final Context context) {
+        String[] sampleCertificates = {
+"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"
+        };
+
+        try {
+            Certificate[] certificates = new Certificate[sampleCertificates.length];
+
+            for (int i = 0; i < sampleCertificates.length; i++) {
+                byte[] der = BaseEncoding.base64().decode(sampleCertificates[i]);
+                certificates[i] = generateCertificate(new ByteArrayInputStream(der));
+            }
+
+            try (final InputStream stream = context.getResources().openRawResource(R.raw.google_root)) {
+                Verified verified = verifyStateless(certificates, "sample".getBytes(),
+                        generateCertificate(stream));
+                Log.d(TAG, "device: " + context.getString(verified.device) + ", osVersion: " + verified.osVersion + ", osPatchLevel: " + verified.osPatchLevel);
+            }
+        } catch (GeneralSecurityException | IOException e) {
+            Log.e(TAG, "broken", e);
+        }
+
         return Bytes.concat(new byte[]{PROTOCOL_VERSION}, getChallengeIndex(context), getChallenge());
     }
 
@@ -397,6 +421,7 @@ class AttestationProtocol {
 
         final int verifiedBootState = rootOfTrust.getVerifiedBootState();
         final String verifiedBootKey = BaseEncoding.base16().encode(rootOfTrust.getVerifiedBootKey());
+        Log.d(TAG, "verifiedBootKey: " + verifiedBootKey);
         final DeviceInfo device;
         final boolean stock;
         if (verifiedBootState == RootOfTrust.KM_VERIFIED_BOOT_SELF_SIGNED) {
