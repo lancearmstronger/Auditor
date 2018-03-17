@@ -215,6 +215,7 @@ class AttestationProtocol {
     private static final String BKL_L04 = "Huawei Honor View 10 BKL-L04";
     private static final String PIXEL_2 = "Google Pixel 2";
     private static final String PIXEL_2_XL = "Google Pixel 2 XL";
+    private static final String SM_G960U = "Samsung Galaxy S9 (SM-G960U)";
     private static final String H3113 = "Sony Xperia XA2 H3113";
     private static final ImmutableMap<String, String> fingerprintsCopperheadOS = ImmutableMap.of(
             "36D067F8517A2284781B99A2984966BFF02D3F47310F831FCDCC4D792426B6DF", PIXEL_2,
@@ -223,6 +224,7 @@ class AttestationProtocol {
             "5341E6B2646979A70E57653007A1F310169421EC9BDD9F1A5648F75ADE005AF1", BKL_L04,
             "1962B0538579FFCE9AC9F507C46AFE3B92055BAC7146462283C85C500BE78D82", PIXEL_2,
             "171616EAEF26009FC46DC6D89F3D24217E926C81A67CE65D2E3A9DC27040C7AB", PIXEL_2_XL,
+            "266869F7CF2FB56008EFC4BE8946C8F84190577F9CA688F59C72DD585E696488", SM_G960U,
             "4285AD64745CC79B4499817F264DC16BF2AF5163AF6C328964F39E61EC84693E", H3113);
     // No guarantee is provided that the devices use these intermediates, but in practice each
     // device appears to have a universal intermediate. This lets us provide marginally better
@@ -231,6 +233,7 @@ class AttestationProtocol {
             "Huawei Honor View 10 BKL-L04", R.raw.intermediate_honor_view_10,
             "Google Pixel 2", R.raw.intermediate_wahoo,
             "Google Pixel 2 XL", R.raw.intermediate_wahoo,
+            "Samsung Galaxy S9 (SM-G960U)", R.raw.intermediate_wahoo,
             "Sony Xperia XA2 H3113", R.raw.intermediate_sony_xperia_xa2);
     private static final ImmutableMap<String, Integer> deviceIntermediatesByName = ImmutableMap.of(
             "2.5.4.5=#131062653430363436366265613337383262", R.raw.intermediate_honor_view_10,
@@ -319,20 +322,6 @@ class AttestationProtocol {
             throw new GeneralSecurityException("challenge mismatch");
         }
 
-        // version sanity checks
-        if (attestation.getAttestationVersion() < 2) {
-            throw new GeneralSecurityException("attestation version below 2");
-        }
-        if (attestation.getAttestationSecurityLevel() != Attestation.KM_SECURITY_LEVEL_TRUSTED_ENVIRONMENT) {
-            throw new GeneralSecurityException("attestation security level is software");
-        }
-        if (attestation.getKeymasterVersion() < 3) {
-            throw new GeneralSecurityException("keymaster version below 3");
-        }
-        if (attestation.getKeymasterSecurityLevel() != Attestation.KM_SECURITY_LEVEL_TRUSTED_ENVIRONMENT) {
-            throw new GeneralSecurityException("keymaster security level is software");
-        }
-
         // enforce communicating with the attestation app via OS level security
         final AuthorizationList softwareEnforced = attestation.getSoftwareEnforced();
         final AttestationApplicationId attestationApplicationId = softwareEnforced.getAttestationApplicationId();
@@ -403,10 +392,36 @@ class AttestationProtocol {
         if (teeEnforced.isAllApplications()) {
             throw new GeneralSecurityException("expected key only usable by attestation app");
         }
-        if (!BKL_L04.equals(device)) {
+        if (!BKL_L04.equals(device) && !SM_G960U.equals(device)) {
             if (!teeEnforced.isRollbackResistant()) {
                 throw new GeneralSecurityException("expected rollback resistant key");
             }
+        }
+
+        // version sanity checks
+        if (SM_G960U.equals(device)) {
+            if (attestation.getAttestationVersion() < 1) {
+                throw new GeneralSecurityException("attestation version below 1");
+            }
+        } else {
+            if (attestation.getAttestationVersion() < 2) {
+                throw new GeneralSecurityException("attestation version below 2");
+            }
+        }
+        if (attestation.getAttestationSecurityLevel() != Attestation.KM_SECURITY_LEVEL_TRUSTED_ENVIRONMENT) {
+            throw new GeneralSecurityException("attestation security level is software");
+        }
+        if (SM_G960U.equals(device)) {
+            if (attestation.getKeymasterVersion() < 2) {
+                throw new GeneralSecurityException("keymaster version below 2");
+            }
+        } else {
+            if (attestation.getKeymasterVersion() < 3) {
+                throw new GeneralSecurityException("keymaster version below 3");
+            }
+        }
+        if (attestation.getKeymasterSecurityLevel() != Attestation.KM_SECURITY_LEVEL_TRUSTED_ENVIRONMENT) {
+            throw new GeneralSecurityException("keymaster security level is software");
         }
 
         // check that 2nd last certificate is the expected intermediate (may prove to be too strict)

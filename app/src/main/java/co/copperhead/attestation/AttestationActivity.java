@@ -75,7 +75,7 @@ public class AttestationActivity extends AppCompatActivity {
     private int backgroundResource;
 
     private static final ImmutableSet<String> supportedModels = ImmutableSet.of(
-            "BKL-L04", "H3113", "Pixel 2", "Pixel 2 XL");
+            "BKL-L04", "H3113", "Pixel 2", "Pixel 2 XL", "SM-G960U");
 
     private static boolean isSupportedAuditee() {
         return supportedModels.contains(Build.MODEL);
