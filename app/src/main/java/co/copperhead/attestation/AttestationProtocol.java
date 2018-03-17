@@ -234,11 +234,10 @@ class AttestationProtocol {
             "Google Pixel 2", R.raw.intermediate_wahoo,
             "Google Pixel 2 XL", R.raw.intermediate_wahoo,
             "Samsung Galaxy S9 (SM-G960U)", R.raw.intermediate_wahoo,
-            "Sony Xperia XA2 H3113", R.raw.intermediate_sony_xperia_xa2);
+            "Sony Xperia XA2 H3113", R.raw.intermediate_wahoo);
     private static final ImmutableMap<String, Integer> deviceIntermediatesByName = ImmutableMap.of(
             "2.5.4.5=#131062653430363436366265613337383262", R.raw.intermediate_honor_view_10,
-            "2.5.4.5=#131038376634353134343735626130613262", R.raw.intermediate_wahoo,
-            "2.5.4.5=#131066393230303965383533623662303435", R.raw.intermediate_sony_xperia_xa2);
+            "2.5.4.5=#131038376634353134343735626130613262", R.raw.intermediate_wahoo);
 
     private static byte[] getChallengeIndex(final Context context) {
         final SharedPreferences global = PreferenceManager.getDefaultSharedPreferences(context);
