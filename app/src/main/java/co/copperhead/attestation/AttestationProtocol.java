@@ -233,12 +233,12 @@ class AttestationProtocol {
     // device appears to have a universal intermediate. This lets us provide marginally better
     // security for the initial unpaired verification and reduces the size of the attestations.
     private static final ImmutableMap<String, Integer> deviceIntermediates = ImmutableMap.<String, Integer>builder()
-            .put("Huawei Honor View 10 BKL-L04", R.raw.intermediate_be406466bea3782b)
-            .put("Google Pixel 2", R.raw.intermediate_87f4514475ba0a2b)
-            .put("Google Pixel 2 XL", R.raw.intermediate_87f4514475ba0a2b)
-            .put("Samsung Galaxy S9 (SM-G960U)", R.raw.intermediate_87f4514475ba0a2b)
-            .put("Samsung Galaxy S9+ (SM-G965U1)", R.raw.intermediate_5b0359cca8879cb5)
-            .put("Sony Xperia XA2 H3113", R.raw.intermediate_87f4514475ba0a2b)
+            .put(BKL_L04, R.raw.intermediate_be406466bea3782b)
+            .put(PIXEL_2, R.raw.intermediate_87f4514475ba0a2b)
+            .put(PIXEL_2_XL, R.raw.intermediate_87f4514475ba0a2b)
+            .put(SM_G960U, R.raw.intermediate_87f4514475ba0a2b)
+            .put(SM_G965U1, R.raw.intermediate_5b0359cca8879cb5)
+            .put(H3113, R.raw.intermediate_87f4514475ba0a2b)
             .build();
     private static final ImmutableMap<String, Integer> deviceIntermediatesByName = ImmutableMap.of(
             "2.5.4.5=#131062653430363436366265613337383262", R.raw.intermediate_be406466bea3782b,
