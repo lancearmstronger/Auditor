@@ -216,28 +216,34 @@ class AttestationProtocol {
     private static final String PIXEL_2 = "Google Pixel 2";
     private static final String PIXEL_2_XL = "Google Pixel 2 XL";
     private static final String SM_G960U = "Samsung Galaxy S9 (SM-G960U)";
+    private static final String SM_G965U1 = "Samsung Galaxy S9+ (SM-G965U1)";
     private static final String H3113 = "Sony Xperia XA2 H3113";
     private static final ImmutableMap<String, String> fingerprintsCopperheadOS = ImmutableMap.of(
             "36D067F8517A2284781B99A2984966BFF02D3F47310F831FCDCC4D792426B6DF", PIXEL_2,
             "815DCBA82BAC1B1758211FF53CAA0B6883CB6C901BE285E1B291C8BDAA12DF75", PIXEL_2_XL);
-    private static final ImmutableMap<String, String> fingerprintsStock = ImmutableMap.of(
-            "5341E6B2646979A70E57653007A1F310169421EC9BDD9F1A5648F75ADE005AF1", BKL_L04,
-            "1962B0538579FFCE9AC9F507C46AFE3B92055BAC7146462283C85C500BE78D82", PIXEL_2,
-            "171616EAEF26009FC46DC6D89F3D24217E926C81A67CE65D2E3A9DC27040C7AB", PIXEL_2_XL,
-            "266869F7CF2FB56008EFC4BE8946C8F84190577F9CA688F59C72DD585E696488", SM_G960U,
-            "4285AD64745CC79B4499817F264DC16BF2AF5163AF6C328964F39E61EC84693E", H3113);
+    private static final ImmutableMap<String, String> fingerprintsStock = ImmutableMap.<String, String>builder()
+            .put("5341E6B2646979A70E57653007A1F310169421EC9BDD9F1A5648F75ADE005AF1", BKL_L04)
+            .put("1962B0538579FFCE9AC9F507C46AFE3B92055BAC7146462283C85C500BE78D82", PIXEL_2)
+            .put("171616EAEF26009FC46DC6D89F3D24217E926C81A67CE65D2E3A9DC27040C7AB", PIXEL_2_XL)
+            .put("266869F7CF2FB56008EFC4BE8946C8F84190577F9CA688F59C72DD585E696488", SM_G960U)
+            .put("A4A544C2CFBAEAA88C12360C2E4B44C29722FC8DBB81392A6C1FAEDB7BF63010", SM_G965U1)
+            .put("4285AD64745CC79B4499817F264DC16BF2AF5163AF6C328964F39E61EC84693E", H3113)
+            .build();
     // No guarantee is provided that the devices use these intermediates, but in practice each
     // device appears to have a universal intermediate. This lets us provide marginally better
     // security for the initial unpaired verification and reduces the size of the attestations.
-    private static final ImmutableMap<String, Integer> deviceIntermediates = ImmutableMap.of(
-            "Huawei Honor View 10 BKL-L04", R.raw.intermediate_be406466bea3782b,
-            "Google Pixel 2", R.raw.intermediate_87f4514475ba0a2b,
-            "Google Pixel 2 XL", R.raw.intermediate_87f4514475ba0a2b,
-            "Samsung Galaxy S9 (SM-G960U)", R.raw.intermediate_87f4514475ba0a2b,
-            "Sony Xperia XA2 H3113", R.raw.intermediate_87f4514475ba0a2b);
+    private static final ImmutableMap<String, Integer> deviceIntermediates = ImmutableMap.<String, Integer>builder()
+            .put("Huawei Honor View 10 BKL-L04", R.raw.intermediate_be406466bea3782b)
+            .put("Google Pixel 2", R.raw.intermediate_87f4514475ba0a2b)
+            .put("Google Pixel 2 XL", R.raw.intermediate_87f4514475ba0a2b)
+            .put("Samsung Galaxy S9 (SM-G960U)", R.raw.intermediate_87f4514475ba0a2b)
+            .put("Samsung Galaxy S9+ (SM-G965U1)", R.raw.intermediate_5b0359cca8879cb5)
+            .put("Sony Xperia XA2 H3113", R.raw.intermediate_87f4514475ba0a2b)
+            .build();
     private static final ImmutableMap<String, Integer> deviceIntermediatesByName = ImmutableMap.of(
             "2.5.4.5=#131062653430363436366265613337383262", R.raw.intermediate_be406466bea3782b,
-            "2.5.4.5=#131038376634353134343735626130613262", R.raw.intermediate_87f4514475ba0a2b);
+            "2.5.4.5=#131038376634353134343735626130613262", R.raw.intermediate_87f4514475ba0a2b,
+            "2.5.4.5=#131035623033353963636138383739636235", R.raw.intermediate_5b0359cca8879cb5);
 
     private static byte[] getChallengeIndex(final Context context) {
         final SharedPreferences global = PreferenceManager.getDefaultSharedPreferences(context);
@@ -391,14 +397,14 @@ class AttestationProtocol {
         if (teeEnforced.isAllApplications()) {
             throw new GeneralSecurityException("expected key only usable by attestation app");
         }
-        if (!BKL_L04.equals(device) && !SM_G960U.equals(device)) {
+        if (!BKL_L04.equals(device) && !SM_G960U.equals(device) && !SM_G965U1.equals(device)) {
             if (!teeEnforced.isRollbackResistant()) {
                 throw new GeneralSecurityException("expected rollback resistant key");
             }
         }
 
         // version sanity checks
-        if (SM_G960U.equals(device)) {
+        if (SM_G960U.equals(device) || SM_G965U1.equals(device)) {
             if (attestation.getAttestationVersion() < 1) {
                 throw new GeneralSecurityException("attestation version below 1");
             }
@@ -410,7 +416,7 @@ class AttestationProtocol {
         if (attestation.getAttestationSecurityLevel() != Attestation.KM_SECURITY_LEVEL_TRUSTED_ENVIRONMENT) {
             throw new GeneralSecurityException("attestation security level is software");
         }
-        if (SM_G960U.equals(device)) {
+        if (SM_G960U.equals(device) || SM_G965U1.equals(device)) {
             if (attestation.getKeymasterVersion() < 2) {
                 throw new GeneralSecurityException("keymaster version below 2");
             }
