@@ -230,14 +230,14 @@ class AttestationProtocol {
     // device appears to have a universal intermediate. This lets us provide marginally better
     // security for the initial unpaired verification and reduces the size of the attestations.
     private static final ImmutableMap<String, Integer> deviceIntermediates = ImmutableMap.of(
-            "Huawei Honor View 10 BKL-L04", R.raw.intermediate_honor_view_10,
-            "Google Pixel 2", R.raw.intermediate_wahoo,
-            "Google Pixel 2 XL", R.raw.intermediate_wahoo,
-            "Samsung Galaxy S9 (SM-G960U)", R.raw.intermediate_wahoo,
-            "Sony Xperia XA2 H3113", R.raw.intermediate_wahoo);
+            "Huawei Honor View 10 BKL-L04", R.raw.intermediate_be406466bea3782b,
+            "Google Pixel 2", R.raw.intermediate_87f4514475ba0a2b,
+            "Google Pixel 2 XL", R.raw.intermediate_87f4514475ba0a2b,
+            "Samsung Galaxy S9 (SM-G960U)", R.raw.intermediate_87f4514475ba0a2b,
+            "Sony Xperia XA2 H3113", R.raw.intermediate_87f4514475ba0a2b);
     private static final ImmutableMap<String, Integer> deviceIntermediatesByName = ImmutableMap.of(
-            "2.5.4.5=#131062653430363436366265613337383262", R.raw.intermediate_honor_view_10,
-            "2.5.4.5=#131038376634353134343735626130613262", R.raw.intermediate_wahoo);
+            "2.5.4.5=#131062653430363436366265613337383262", R.raw.intermediate_be406466bea3782b,
+            "2.5.4.5=#131038376634353134343735626130613262", R.raw.intermediate_87f4514475ba0a2b);
 
     private static byte[] getChallengeIndex(final Context context) {
         final SharedPreferences global = PreferenceManager.getDefaultSharedPreferences(context);
