@@ -17,7 +17,6 @@ import android.util.Log;
 import android.view.accessibility.AccessibilityManager;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
@@ -219,20 +218,33 @@ class AttestationProtocol {
     private static final String SM_G960U = "Samsung Galaxy S9 (SM-G960U)";
     private static final String SM_G965U1 = "Samsung Galaxy S9+ (SM-G965U1)";
     private static final String H3113 = "Sony Xperia XA2 H3113";
-    private static final ImmutableMap<String, String> fingerprintsCopperheadOS = ImmutableMap.of(
-            "36D067F8517A2284781B99A2984966BFF02D3F47310F831FCDCC4D792426B6DF", PIXEL_2,
-            "815DCBA82BAC1B1758211FF53CAA0B6883CB6C901BE285E1B291C8BDAA12DF75", PIXEL_2_XL);
-    private static final ImmutableMap<String, String> fingerprintsStock = ImmutableMap.<String, String>builder()
-            .put("5341E6B2646979A70E57653007A1F310169421EC9BDD9F1A5648F75ADE005AF1", BKL_L04)
-            .put("1962B0538579FFCE9AC9F507C46AFE3B92055BAC7146462283C85C500BE78D82", PIXEL_2)
-            .put("171616EAEF26009FC46DC6D89F3D24217E926C81A67CE65D2E3A9DC27040C7AB", PIXEL_2_XL)
-            .put("266869F7CF2FB56008EFC4BE8946C8F84190577F9CA688F59C72DD585E696488", SM_G960U)
-            .put("A4A544C2CFBAEAA88C12360C2E4B44C29722FC8DBB81392A6C1FAEDB7BF63010", SM_G965U1)
-            .put("4285AD64745CC79B4499817F264DC16BF2AF5163AF6C328964F39E61EC84693E", H3113)
+
+    private static class DeviceInfo {
+        final String name;
+        final int attestationVersion;
+        final int keymasterVersion;
+        final boolean rollbackResistant;
+
+        DeviceInfo(final String name, final int attestationVersion, final int keymasterVersion,
+                final boolean rollbackResistant) {
+            this.name = name;
+            this.attestationVersion = attestationVersion;
+            this.keymasterVersion = keymasterVersion;
+            this.rollbackResistant = rollbackResistant;
+        }
+    }
+
+    private static final ImmutableMap<String, DeviceInfo> fingerprintsCopperheadOS = ImmutableMap.of(
+            "36D067F8517A2284781B99A2984966BFF02D3F47310F831FCDCC4D792426B6DF", new DeviceInfo(PIXEL_2, 2, 3, true),
+            "815DCBA82BAC1B1758211FF53CAA0B6883CB6C901BE285E1B291C8BDAA12DF75", new DeviceInfo(PIXEL_2_XL, 2, 3, true));
+    private static final ImmutableMap<String, DeviceInfo> fingerprintsStock = ImmutableMap.<String, DeviceInfo>builder()
+            .put("5341E6B2646979A70E57653007A1F310169421EC9BDD9F1A5648F75ADE005AF1", new DeviceInfo(BKL_L04, 2, 3, false))
+            .put("1962B0538579FFCE9AC9F507C46AFE3B92055BAC7146462283C85C500BE78D82", new DeviceInfo(PIXEL_2, 2, 3, true))
+            .put("171616EAEF26009FC46DC6D89F3D24217E926C81A67CE65D2E3A9DC27040C7AB", new DeviceInfo(PIXEL_2_XL, 2, 3, true))
+            .put("266869F7CF2FB56008EFC4BE8946C8F84190577F9CA688F59C72DD585E696488", new DeviceInfo(SM_G960U, 1, 2, false))
+            .put("A4A544C2CFBAEAA88C12360C2E4B44C29722FC8DBB81392A6C1FAEDB7BF63010", new DeviceInfo(SM_G965U1, 1, 2, false))
+            .put("4285AD64745CC79B4499817F264DC16BF2AF5163AF6C328964F39E61EC84693E", new DeviceInfo(H3113, 2, 3, true))
             .build();
-    private static final ImmutableSet<String> nonRollbackResistant = ImmutableSet.of(
-            BKL_L04, SM_G960U, SM_G965U1
-    );
     // No guarantee is provided that the devices use these intermediates, but in practice each
     // device appears to have a universal intermediate. This lets us provide marginally better
     // security for the initial unpaired verification and reduces the size of the attestations.
@@ -378,7 +390,7 @@ class AttestationProtocol {
 
         final int verifiedBootState = rootOfTrust.getVerifiedBootState();
         final String verifiedBootKey = BaseEncoding.base16().encode(rootOfTrust.getVerifiedBootKey());
-        final String device;
+        final DeviceInfo device;
         final boolean stock;
         if (verifiedBootState == RootOfTrust.KM_VERIFIED_BOOT_SELF_SIGNED) {
             device = fingerprintsCopperheadOS.get(verifiedBootKey);
@@ -401,46 +413,32 @@ class AttestationProtocol {
         if (teeEnforced.isAllApplications()) {
             throw new GeneralSecurityException("expected key only usable by attestation app");
         }
-        if (!nonRollbackResistant.contains(device)) {
-            if (!teeEnforced.isRollbackResistant()) {
-                throw new GeneralSecurityException("expected rollback resistant key");
-            }
+        if (device.rollbackResistant && !teeEnforced.isRollbackResistant()) {
+            throw new GeneralSecurityException("expected rollback resistant key");
         }
 
         // version sanity checks
-        if (SM_G960U.equals(device) || SM_G965U1.equals(device)) {
-            if (attestation.getAttestationVersion() < 1) {
-                throw new GeneralSecurityException("attestation version below 1");
-            }
-        } else {
-            if (attestation.getAttestationVersion() < 2) {
-                throw new GeneralSecurityException("attestation version below 2");
-            }
+        if (attestation.getAttestationVersion() < device.attestationVersion) {
+            throw new GeneralSecurityException("attestation version below " + device.attestationVersion);
         }
         if (attestation.getAttestationSecurityLevel() != Attestation.KM_SECURITY_LEVEL_TRUSTED_ENVIRONMENT) {
             throw new GeneralSecurityException("attestation security level is software");
         }
-        if (SM_G960U.equals(device) || SM_G965U1.equals(device)) {
-            if (attestation.getKeymasterVersion() < 2) {
-                throw new GeneralSecurityException("keymaster version below 2");
-            }
-        } else {
-            if (attestation.getKeymasterVersion() < 3) {
-                throw new GeneralSecurityException("keymaster version below 3");
-            }
+        if (attestation.getKeymasterVersion() < device.keymasterVersion) {
+            throw new GeneralSecurityException("keymaster version below " + device.keymasterVersion);
         }
         if (attestation.getKeymasterSecurityLevel() != Attestation.KM_SECURITY_LEVEL_TRUSTED_ENVIRONMENT) {
             throw new GeneralSecurityException("keymaster security level is software");
         }
 
         // check that 2nd last certificate is the expected intermediate (may prove to be too strict)
-        final Certificate deviceIntermediate = generateCertificate(resources, deviceIntermediates.get(device));
+        final Certificate deviceIntermediate = generateCertificate(resources, deviceIntermediates.get(device.name));
         final Certificate intermediateCert = certificates[certificates.length - 2];
         if (!Arrays.equals(deviceIntermediate.getEncoded(), intermediateCert.getEncoded())) {
-            throw new GeneralSecurityException("2nd last certificate is not the correct intermediate for " + device);
+            throw new GeneralSecurityException("2nd last certificate is not the correct intermediate for " + device.name);
         }
 
-        return new Verified(device, osVersion, osPatchLevel, appVersion, stock);
+        return new Verified(device.name, osVersion, osPatchLevel, appVersion, stock);
     }
 
     private static void verifyCertificateSignatures(Certificate[] certChain)
