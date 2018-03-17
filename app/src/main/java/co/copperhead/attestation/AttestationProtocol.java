@@ -480,7 +480,7 @@ class AttestationProtocol {
             final StringBuilder builder, final Verified verified, final String fingerprint) {
         builder.append(context.getString(R.string.device, verified.device));
         if (verified.isStock) {
-            builder.append(context.getString(R.string.os, "Google Android"));
+            builder.append(context.getString(R.string.os, context.getString(R.string.stock)));
         } else {
             builder.append(context.getString(R.string.os, "CopperheadOS"));
         }
