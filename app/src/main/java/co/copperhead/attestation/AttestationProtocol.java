@@ -655,7 +655,7 @@ class AttestationProtocol {
         final byte[] chain = new byte[MAX_ENCODED_CHAIN_LENGTH];
         final Inflater inflater = new Inflater(true);
         inflater.setInput(compressedChain);
-        try (final InputStream stream = context.getResources().openRawResource(R.raw.deflate_dictionary_1)) {
+        try (final InputStream stream = context.getResources().openRawResource(R.raw.deflate_dictionary)) {
             inflater.setDictionary(ByteStreams.toByteArray(stream));
         }
         final int chainLength = inflater.inflate(chain);
@@ -845,7 +845,7 @@ class AttestationProtocol {
 
         final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         final Deflater deflater = new Deflater(Deflater.DEFAULT_COMPRESSION, true);
-        try (final InputStream stream = context.getResources().openRawResource(R.raw.deflate_dictionary_1)) {
+        try (final InputStream stream = context.getResources().openRawResource(R.raw.deflate_dictionary)) {
             deflater.setDictionary(ByteStreams.toByteArray(stream));
         }
         final DeflaterOutputStream deflaterStream = new DeflaterOutputStream(byteStream, deflater);
