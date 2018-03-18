@@ -7,7 +7,7 @@ android {
         applicationId "co.copperhead.attestation"
         minSdkVersion 24
         targetSdkVersion 27
-        versionCode 14
+        versionCode 15
         // ATTESTATION_APP_VERSION_CODE_OFFSET = 9 in AttestationProtocol
         versionName ((versionCode - 9).toString())
     }
