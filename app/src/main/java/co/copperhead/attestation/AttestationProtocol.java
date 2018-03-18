@@ -47,6 +47,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Enumeration;
@@ -257,9 +258,7 @@ class AttestationProtocol {
             .put("4285AD64745CC79B4499817F264DC16BF2AF5163AF6C328964F39E61EC84693E",
                     new DeviceInfo(H3113, 2, 3, true))
             .build();
-    // No guarantee is provided that the devices use these intermediates, but in practice each
-    // device appears to have a universal intermediate. This lets us provide marginally better
-    // security for the initial unpaired verification and reduces the size of the attestations.
+    // TODO: remove support for Auditor 4 and earlier on Auditee
     private static final ImmutableMap<String, Integer> intermediatesByName = ImmutableMap.of(
             "2.5.4.5=#131062653430363436366265613337383262", R.raw.intermediate_be406466bea3782b,
             "2.5.4.5=#131038376634353134343735626130613262", R.raw.intermediate_87f4514475ba0a2b,
@@ -682,14 +681,15 @@ class AttestationProtocol {
         Log.d(TAG, "encoded length: " + chainLength + ", compressed length: " + compressedChain.length);
 
         final ByteBuffer chainDeserializer = ByteBuffer.wrap(chain, 0, chainLength);
-        final int certificateCount = 2;
-        final Certificate[] certificates = new Certificate[certificateCount + 2];
-        for (int i = 0; i < certificateCount; i++) {
+        final List<Certificate> certs = new ArrayList<>();
+        while (chainDeserializer.hasRemaining()) {
             final short encodedLength = chainDeserializer.getShort();
             final byte[] encoded = new byte[encodedLength];
             chainDeserializer.get(encoded);
-            certificates[i] = generateCertificate(new ByteArrayInputStream(encoded));
+            certs.add(generateCertificate(new ByteArrayInputStream(encoded)));
         }
+        // TODO: remove support for Auditor 4 and earlier on Auditee (just use certs.size())
+        final Certificate[] certificates = certs.toArray(new Certificate[Math.max(certs.size(), 3) + 1]);
 
         final byte[] fingerprint = new byte[FINGERPRINT_LENGTH];
         deserializer.get(fingerprint);
@@ -715,13 +715,16 @@ class AttestationProtocol {
         final byte[] signature = new byte[signatureLength];
         deserializer.get(signature);
 
-        final X500Principal issuer = ((X509Certificate) certificates[certificates.length - 3]).getIssuerX500Principal();
-        certificates[certificates.length - 2] = generateCertificate(context.getResources(),
-                intermediatesByName.get(issuer.getName(X500Principal.CANONICAL)));
-
+        // TODO: remove support for Auditor 4 and earlier on Auditee
         if (certificates[certificates.length - 2] == null) {
-            Log.d(TAG, "issuer Distinguished Name: " + issuer.getName(X500Principal.CANONICAL));
-            throw new GeneralSecurityException("unknown intermediate");
+            final X500Principal issuer = ((X509Certificate) certificates[certificates.length - 3]).getIssuerX500Principal();
+            certificates[certificates.length - 2] = generateCertificate(context.getResources(),
+                    intermediatesByName.get(issuer.getName(X500Principal.CANONICAL)));
+
+            if (certificates[certificates.length - 2] == null) {
+                Log.d(TAG, "issuer Distinguished Name: " + issuer.getName(X500Principal.CANONICAL));
+                throw new GeneralSecurityException("unknown intermediate");
+            }
         }
 
         try (final InputStream stream = context.getResources().openRawResource(R.raw.google_root)) {
