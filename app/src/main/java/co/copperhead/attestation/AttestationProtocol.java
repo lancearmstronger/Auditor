@@ -172,7 +172,7 @@ class AttestationProtocol {
     // the outer signature and the rest of the chain for pinning the expected chain. It enforces
     // downgrade protection for the OS version/patch (bootloader/TEE enforced) and app version (OS
     // enforced) by keeping them updated.
-    private static final byte PROTOCOL_VERSION = 0;
+    private static final byte PROTOCOL_VERSION = 1;
     // can become longer in the future, but this is the minimum length
     private static final byte CHALLENGE_MESSAGE_LENGTH = 1 + CHALLENGE_LENGTH * 2;
     private static final int MAX_ENCODED_CHAIN_LENGTH = 3000;
@@ -670,7 +670,8 @@ class AttestationProtocol {
         final byte[] chain = new byte[MAX_ENCODED_CHAIN_LENGTH];
         final Inflater inflater = new Inflater(true);
         inflater.setInput(compressedChain);
-        try (final InputStream stream = context.getResources().openRawResource(R.raw.deflate_dictionary)) {
+        final int deflateDictionary = version > 0 ? R.raw.deflate_dictionary_1 : R.raw.deflate_dictionary;
+        try (final InputStream stream = context.getResources().openRawResource(deflateDictionary)) {
             inflater.setDictionary(ByteStreams.toByteArray(stream));
         }
         final int chainLength = inflater.inflate(chain);
@@ -871,7 +872,8 @@ class AttestationProtocol {
 
         final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         final Deflater deflater = new Deflater(Deflater.DEFAULT_COMPRESSION, true);
-        try (final InputStream stream = context.getResources().openRawResource(R.raw.deflate_dictionary)) {
+        final int deflateDictionary = maxVersion > 0 ? R.raw.deflate_dictionary_1 : R.raw.deflate_dictionary;
+        try (final InputStream stream = context.getResources().openRawResource(deflateDictionary)) {
             deflater.setDictionary(ByteStreams.toByteArray(stream));
         }
         final DeflaterOutputStream deflaterStream = new DeflaterOutputStream(byteStream, deflater);
