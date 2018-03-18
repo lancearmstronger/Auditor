@@ -14,17 +14,16 @@ import android.util.Log;
 import com.google.common.io.BaseEncoding;
 import com.google.common.io.ByteStreams;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.security.KeyStore;
 import java.security.GeneralSecurityException;
+import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.spec.ECGenParameterSpec;
 
-import static android.security.keystore.KeyProperties.DIGEST_SHA256;
 import static android.security.keystore.KeyProperties.KEY_ALGORITHM_EC;
 
 public class SubmitSampleJob extends JobService {
