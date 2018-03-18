@@ -225,41 +225,39 @@ class AttestationProtocol {
         final int attestationVersion;
         final int keymasterVersion;
         final boolean rollbackResistant;
-        final int intermediate;
 
         DeviceInfo(final String name, final int attestationVersion, final int keymasterVersion,
-                final boolean rollbackResistant, final int intermediate) {
+                final boolean rollbackResistant) {
             this.name = name;
             this.attestationVersion = attestationVersion;
             this.keymasterVersion = keymasterVersion;
             this.rollbackResistant = rollbackResistant;
-            this.intermediate = intermediate;
         }
     }
 
     private static final ImmutableMap<String, DeviceInfo> fingerprintsCopperheadOS = ImmutableMap
             .<String, DeviceInfo>builder()
             .put("36D067F8517A2284781B99A2984966BFF02D3F47310F831FCDCC4D792426B6DF",
-                    new DeviceInfo(PIXEL_2, 2, 3, true, R.raw.intermediate_87f4514475ba0a2b))
+                    new DeviceInfo(PIXEL_2, 2, 3, true))
             .put("815DCBA82BAC1B1758211FF53CAA0B6883CB6C901BE285E1B291C8BDAA12DF75",
-                    new DeviceInfo(PIXEL_2_XL, 2, 3, true, R.raw.intermediate_87f4514475ba0a2b))
+                    new DeviceInfo(PIXEL_2_XL, 2, 3, true))
             .build();
     private static final ImmutableMap<String, DeviceInfo> fingerprintsStock = ImmutableMap
             .<String, DeviceInfo>builder()
             .put("5341E6B2646979A70E57653007A1F310169421EC9BDD9F1A5648F75ADE005AF1",
-                    new DeviceInfo(BKL_L04, 2, 3, false, R.raw.intermediate_be406466bea3782b))
+                    new DeviceInfo(BKL_L04, 2, 3, false))
             .put("1962B0538579FFCE9AC9F507C46AFE3B92055BAC7146462283C85C500BE78D82",
-                    new DeviceInfo(PIXEL_2, 2, 3, true, R.raw.intermediate_87f4514475ba0a2b))
+                    new DeviceInfo(PIXEL_2, 2, 3, true))
             .put("171616EAEF26009FC46DC6D89F3D24217E926C81A67CE65D2E3A9DC27040C7AB",
-                    new DeviceInfo(PIXEL_2_XL, 2, 3, true, R.raw.intermediate_87f4514475ba0a2b))
+                    new DeviceInfo(PIXEL_2_XL, 2, 3, true))
             .put("266869F7CF2FB56008EFC4BE8946C8F84190577F9CA688F59C72DD585E696488",
-                    new DeviceInfo(SM_G960U, 1, 2, false, R.raw.intermediate_87f4514475ba0a2b))
+                    new DeviceInfo(SM_G960U, 1, 2, false))
             .put("D1C53B7A931909EC37F1939B14621C6E4FD19BF9079D195F86B3CEA47CD1F92D",
-                    new DeviceInfo(SM_G965F, 1, 2, false, R.raw.intermediate_5b0359cca8879cb5))
+                    new DeviceInfo(SM_G965F, 1, 2, false))
             .put("A4A544C2CFBAEAA88C12360C2E4B44C29722FC8DBB81392A6C1FAEDB7BF63010",
-                    new DeviceInfo(SM_G965U1, 1, 2, false, R.raw.intermediate_5b0359cca8879cb5))
+                    new DeviceInfo(SM_G965U1, 1, 2, false))
             .put("4285AD64745CC79B4499817F264DC16BF2AF5163AF6C328964F39E61EC84693E",
-                    new DeviceInfo(H3113, 2, 3, true, R.raw.intermediate_87f4514475ba0a2b))
+                    new DeviceInfo(H3113, 2, 3, true))
             .build();
     // No guarantee is provided that the devices use these intermediates, but in practice each
     // device appears to have a universal intermediate. This lets us provide marginally better
@@ -333,11 +331,6 @@ class AttestationProtocol {
             throws GeneralSecurityException, IOException {
 
         verifyCertificateSignatures(certificates);
-
-        // Pixel 2 (XL) is expected to use a 4 certificate chain (likely to always be the case)
-        if (certificates.length != 4) {
-            throw new GeneralSecurityException("certificate chain does not match expected length for a supported device");
-        }
 
         // check that the root certificate is the Google key attestation root
         if (!Arrays.equals(root.getEncoded(), certificates[certificates.length - 1].getEncoded())) {
@@ -437,13 +430,6 @@ class AttestationProtocol {
         }
         if (attestation.getKeymasterSecurityLevel() != Attestation.KM_SECURITY_LEVEL_TRUSTED_ENVIRONMENT) {
             throw new GeneralSecurityException("keymaster security level is software");
-        }
-
-        // check that 2nd last certificate is the expected intermediate (may prove to be too strict)
-        final Certificate deviceIntermediate = generateCertificate(resources, device.intermediate);
-        final Certificate intermediateCert = certificates[certificates.length - 2];
-        if (!Arrays.equals(deviceIntermediate.getEncoded(), intermediateCert.getEncoded())) {
-            throw new GeneralSecurityException("2nd last certificate is not the correct intermediate for " + device.name);
         }
 
         return new Verified(device.name, osVersion, osPatchLevel, appVersion, stock);
