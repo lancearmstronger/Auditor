@@ -121,8 +121,6 @@ class AttestationProtocol {
     //
     // Attestation message:
     //
-    // PROTOCOL_VERSION == 1 implies certificateCount == 2
-    //
     // The Auditor will eventually start trying to be backwards compatible with older Auditee app
     // versions but not the other way around.
     //
@@ -132,7 +130,7 @@ class AttestationProtocol {
     // signed message {
     // byte version = min(maxVersion, PROTOCOL_VERSION)
     // short compressedChainLength
-    // byte[] compressedChain { [short encodedCertificateLength, byte[] encodedCertificate] x certificateCount }
+    // byte[] compressedChain { [short encodedCertificateLength, byte[] encodedCertificate] }
     // byte[] fingerprint (length: FINGERPRINT_LENGTH)
     // byte osEnforcedFlags
     // }
@@ -851,7 +849,7 @@ class AttestationProtocol {
         serializer.put((byte) Math.min(PROTOCOL_VERSION, maxVersion));
 
         final ByteBuffer chainSerializer = ByteBuffer.allocate(MAX_ENCODED_CHAIN_LENGTH);
-        final int certificateCount = attestationCertificates.length - 2;
+        final int certificateCount = attestationCertificates.length - 1;
         for (int i = 0; i < certificateCount; i++) {
             final byte[] encoded = attestationCertificates[i].getEncoded();
             if (encoded.length > Short.MAX_VALUE) {
