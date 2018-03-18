@@ -216,6 +216,7 @@ class AttestationProtocol {
     private static final String PIXEL_2 = "Google Pixel 2";
     private static final String PIXEL_2_XL = "Google Pixel 2 XL";
     private static final String SM_G960U = "Samsung Galaxy S9 (SM-G960U)";
+    private static final String SM_G965F = "Samsung Galaxy S9+ (SM-G965F)";
     private static final String SM_G965U1 = "Samsung Galaxy S9+ (SM-G965U1)";
     private static final String H3113 = "Sony Xperia XA2 H3113";
 
@@ -253,6 +254,8 @@ class AttestationProtocol {
                     new DeviceInfo(PIXEL_2_XL, 2, 3, true, R.raw.intermediate_87f4514475ba0a2b))
             .put("266869F7CF2FB56008EFC4BE8946C8F84190577F9CA688F59C72DD585E696488",
                     new DeviceInfo(SM_G960U, 1, 2, false, R.raw.intermediate_87f4514475ba0a2b))
+            .put("D1C53B7A931909EC37F1939B14621C6E4FD19BF9079D195F86B3CEA47CD1F92D",
+                    new DeviceInfo(SM_G965F, 1, 2, false, R.raw.intermediate_5b0359cca8879cb5))
             .put("A4A544C2CFBAEAA88C12360C2E4B44C29722FC8DBB81392A6C1FAEDB7BF63010",
                     new DeviceInfo(SM_G965U1, 1, 2, false, R.raw.intermediate_5b0359cca8879cb5))
             .put("4285AD64745CC79B4499817F264DC16BF2AF5163AF6C328964F39E61EC84693E",
