@@ -212,13 +212,13 @@ class AttestationProtocol {
     // Split displayed fingerprint into groups of 4 characters
     private static final int FINGERPRINT_SPLIT_INTERVAL = 4;
 
-    private static final String BKL_L04 = "Huawei Honor View 10 BKL-L04";
+    private static final String BKL_L04 = "Huawei Honor View 10 (BKL-L04)";
     private static final String PIXEL_2 = "Google Pixel 2";
     private static final String PIXEL_2_XL = "Google Pixel 2 XL";
     private static final String SM_G960U = "Samsung Galaxy S9 (SM-G960U)";
     private static final String SM_G965F = "Samsung Galaxy S9+ (SM-G965F)";
     private static final String SM_G965U1 = "Samsung Galaxy S9+ (SM-G965U1)";
-    private static final String H3113 = "Sony Xperia XA2 H3113";
+    private static final String H3113 = "Sony Xperia XA2 (H3113)";
 
     private static class DeviceInfo {
         final String name;
