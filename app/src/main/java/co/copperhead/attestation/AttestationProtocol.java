@@ -58,8 +58,6 @@ import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
 
-import javax.security.auth.x500.X500Principal;
-
 import co.copperhead.attestation.attestation.Attestation;
 import co.copperhead.attestation.attestation.AttestationApplicationId;
 import co.copperhead.attestation.attestation.AttestationPackageInfo;
@@ -175,6 +173,7 @@ class AttestationProtocol {
     // downgrade protection for the OS version/patch (bootloader/TEE enforced) and app version (OS
     // enforced) by keeping them updated.
     static final byte PROTOCOL_VERSION = 1;
+    private static final byte PROTOCOL_VERSION_MINIMUM = 1;
     // can become longer in the future, but this is the minimum length
     static final byte CHALLENGE_MESSAGE_LENGTH = 1 + CHALLENGE_LENGTH * 2;
     private static final int MAX_ENCODED_CHAIN_LENGTH = 3000;
@@ -252,11 +251,6 @@ class AttestationProtocol {
             .put("4285AD64745CC79B4499817F264DC16BF2AF5163AF6C328964F39E61EC84693E",
                     new DeviceInfo(R.string.device_h3113, 2, 3, true))
             .build();
-    // TODO: remove support for Auditor 4 and earlier on Auditee
-    private static final ImmutableMap<String, Integer> intermediatesByName = ImmutableMap.of(
-            "2.5.4.5=#131062653430363436366265613337383262", R.raw.intermediate_be406466bea3782b,
-            "2.5.4.5=#131038376634353134343735626130613262", R.raw.intermediate_87f4514475ba0a2b,
-            "2.5.4.5=#131035623033353963636138383739636235", R.raw.intermediate_5b0359cca8879cb5);
 
     private static byte[] getChallengeIndex(final Context context) {
         final SharedPreferences global = PreferenceManager.getDefaultSharedPreferences(context);
@@ -650,6 +644,8 @@ class AttestationProtocol {
         final byte version = deserializer.get();
         if (version > PROTOCOL_VERSION) {
             throw new GeneralSecurityException("unsupported protocol version: " + version);
+        } else if (version < PROTOCOL_VERSION_MINIMUM) {
+            throw new GeneralSecurityException("App version on the other device too old, update to 5 or later");
         }
 
         final short compressedChainLength = deserializer.getShort();
@@ -659,8 +655,7 @@ class AttestationProtocol {
         final byte[] chain = new byte[MAX_ENCODED_CHAIN_LENGTH];
         final Inflater inflater = new Inflater(true);
         inflater.setInput(compressedChain);
-        final int deflateDictionary = version > 0 ? R.raw.deflate_dictionary_1 : R.raw.deflate_dictionary;
-        try (final InputStream stream = context.getResources().openRawResource(deflateDictionary)) {
+        try (final InputStream stream = context.getResources().openRawResource(R.raw.deflate_dictionary_1)) {
             inflater.setDictionary(ByteStreams.toByteArray(stream));
         }
         final int chainLength = inflater.inflate(chain);
@@ -678,8 +673,7 @@ class AttestationProtocol {
             chainDeserializer.get(encoded);
             certs.add(generateCertificate(new ByteArrayInputStream(encoded)));
         }
-        // TODO: remove support for Auditor 4 and earlier on Auditee (just use certs.size())
-        final Certificate[] certificates = certs.toArray(new Certificate[Math.max(certs.size(), 3) + 1]);
+        final Certificate[] certificates = certs.toArray(new Certificate[certs.size() + 1]);
 
         final byte[] fingerprint = new byte[FINGERPRINT_LENGTH];
         deserializer.get(fingerprint);
@@ -704,18 +698,6 @@ class AttestationProtocol {
         final int signatureLength = deserializer.remaining();
         final byte[] signature = new byte[signatureLength];
         deserializer.get(signature);
-
-        // TODO: remove support for Auditor 4 and earlier on Auditee
-        if (certificates[certificates.length - 2] == null) {
-            final X500Principal issuer = ((X509Certificate) certificates[certificates.length - 3]).getIssuerX500Principal();
-            certificates[certificates.length - 2] = generateCertificate(context.getResources(),
-                    intermediatesByName.get(issuer.getName(X500Principal.CANONICAL)));
-
-            if (certificates[certificates.length - 2] == null) {
-                Log.d(TAG, "issuer Distinguished Name: " + issuer.getName(X500Principal.CANONICAL));
-                throw new GeneralSecurityException("unknown intermediate");
-            }
-        }
 
         try (final InputStream stream = context.getResources().openRawResource(R.raw.google_root)) {
             certificates[certificates.length - 1] = generateCertificate(stream);
@@ -749,6 +731,9 @@ class AttestationProtocol {
         final byte maxVersion = challengeMessage[0];
         if (maxVersion <= PROTOCOL_VERSION && challengeMessage.length != CHALLENGE_MESSAGE_LENGTH) {
             throw new GeneralSecurityException("challenge message is not the expected size");
+        }
+        if (maxVersion < PROTOCOL_VERSION_MINIMUM) {
+            throw new GeneralSecurityException("App version on the other device too old, update to 5 or later");
         }
         final byte[] challengeIndex = Arrays.copyOfRange(challengeMessage, 1, 1 + CHALLENGE_LENGTH);
         final byte[] challenge = Arrays.copyOfRange(challengeMessage, 1 + CHALLENGE_LENGTH, 1 + CHALLENGE_LENGTH * 2);
@@ -860,8 +845,7 @@ class AttestationProtocol {
 
         final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         final Deflater deflater = new Deflater(Deflater.DEFAULT_COMPRESSION, true);
-        final int deflateDictionary = maxVersion > 0 ? R.raw.deflate_dictionary_1 : R.raw.deflate_dictionary;
-        try (final InputStream stream = context.getResources().openRawResource(deflateDictionary)) {
+        try (final InputStream stream = context.getResources().openRawResource(R.raw.deflate_dictionary_1)) {
             deflater.setDictionary(ByteStreams.toByteArray(stream));
         }
         final DeflaterOutputStream deflaterStream = new DeflaterOutputStream(byteStream, deflater);
