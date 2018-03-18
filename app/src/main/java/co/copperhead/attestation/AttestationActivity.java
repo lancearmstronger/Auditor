@@ -331,7 +331,7 @@ public class AttestationActivity extends AppCompatActivity {
             }
             if (intent.hasExtra(VerifyAttestationService.EXTRA_ERROR)) {
                 setBackgroundResource(R.color.red200);
-                textView.setText(getString(R.string.verify_error));
+                textView.setText(R.string.verify_error);
                 textView.append(intent.getStringExtra(VerifyAttestationService.EXTRA_ERROR));
                 return;
             }

@@ -6,8 +6,8 @@
     <string name="auditee_button">Auditee (device being verified)</string>
     <string name="auditor_button">Auditor (device performing verification)</string>
     <string name="qrcode_content_description">QR code</string>
-    <string name="generate_error">Error encountered generating attestation:\n\n</string>
-    <string name="verify_error">Error encountered verifying attestation:\n\n</string>
+    <string name="generate_error"><b>Error encountered generating attestation:\n\n</b></string>
+    <string name="verify_error"><b>Error encountered verifying attestation:\n\n</b></string>
     <string name="qr_code_scan_hint_auditee">Now scan this QR Code from the other device.</string>
     <string name="qr_code_scan_hint_auditee_pairing">Now scan this QR Code from the other device.\n\nThis is the initial pairing and needs to be completed or pairings will need to be cleared on either side to try again.</string>
     <string name="qr_code_scan_hint_auditor">Now scan this QR Code from the other device.\n\nTap this QR code after scanning to proceed.</string>
