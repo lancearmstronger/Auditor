@@ -22,8 +22,6 @@ public class RemoteVerifyJob extends JobService {
     private static final int CONNECT_TIMEOUT = 60000;
     private static final int READ_TIMEOUT = 60000;
 
-    private static final String KEYSTORE_ALIAS_SAMPLE = "sample_attestation_key";
-
     private RemoteVerifyTask task;
 
     static void schedule(final Context context) {
@@ -61,7 +59,7 @@ public class RemoteVerifyJob extends JobService {
                 // TODO: fetch from server
                 final byte[] challengeMessage = new byte[AttestationProtocol.CHALLENGE_MESSAGE_LENGTH];
                 challengeMessage[0] = AttestationProtocol.PROTOCOL_VERSION;
-                AttestationProtocol.generateSerialized(RemoteVerifyJob.this, challengeMessage);
+                AttestationProtocol.generateSerialized(RemoteVerifyJob.this, challengeMessage, "remote_");
 
                 final OutputStream output = connection.getOutputStream();
                 output.close();

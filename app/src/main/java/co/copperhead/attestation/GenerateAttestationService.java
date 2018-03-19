@@ -53,7 +53,7 @@ public class GenerateAttestationService extends IntentService {
 
         try {
             final AttestationProtocol.AttestationResult result =
-                    AttestationProtocol.generateSerialized(this, challengeMessage);
+                    AttestationProtocol.generateSerialized(this, challengeMessage, "");
             resultIntent.putExtra(EXTRA_PAIRING, result.pairing);
             resultIntent.putExtra(EXTRA_ATTESTATION, result.serialized);
         } catch (final GeneralSecurityException | IOException e) {

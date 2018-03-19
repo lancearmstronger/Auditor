@@ -751,8 +751,8 @@ class AttestationProtocol {
         }
     }
 
-    static AttestationResult generateSerialized(final Context context, final byte[] challengeMessage)
-            throws GeneralSecurityException, IOException {
+    static AttestationResult generateSerialized(final Context context, final byte[] challengeMessage,
+            final String statePrefix) throws GeneralSecurityException, IOException {
         if (challengeMessage.length < CHALLENGE_MESSAGE_LENGTH) {
             throw new GeneralSecurityException("challenge message is too small");
         }
@@ -768,14 +768,14 @@ class AttestationProtocol {
         keyStore.load(null);
 
         final String persistentKeystoreAlias =
-                KEYSTORE_ALIAS_PERSISTENT_PREFIX + BaseEncoding.base16().encode(challengeIndex);
+                statePrefix + KEYSTORE_ALIAS_PERSISTENT_PREFIX + BaseEncoding.base16().encode(challengeIndex);
 
         // generate a new key for fresh attestation results unless the persistent key is not yet created
-        keyStore.deleteEntry(KEYSTORE_ALIAS_FRESH);
+        keyStore.deleteEntry(statePrefix + KEYSTORE_ALIAS_FRESH);
         final boolean hasPersistentKey = keyStore.containsAlias(persistentKeystoreAlias);
         final String attestationKeystoreAlias;
         if (hasPersistentKey) {
-            attestationKeystoreAlias = KEYSTORE_ALIAS_FRESH;
+            attestationKeystoreAlias = statePrefix + KEYSTORE_ALIAS_FRESH;
         } else {
             attestationKeystoreAlias = persistentKeystoreAlias;
         }
