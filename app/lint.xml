@@ -27,6 +27,7 @@
 
     <!-- AsyncTask intentionally holds onto the JobService to call jobFinished -->
     <issue id="StaticFieldLeak">
+        <ignore path="src/main/java/co/copperhead/attestation/RemoteVerifyJob.java"/>
         <ignore path="src/main/java/co/copperhead/attestation/SubmitSampleJob.java"/>
     </issue>
 </lint>
