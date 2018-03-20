@@ -320,8 +320,7 @@ class AttestationProtocol {
     }
 
     private static Verified verifyStateless(final Certificate[] certificates,
-            final byte[] challenge, final Certificate root, final Resources resources)
-            throws GeneralSecurityException, IOException {
+            final byte[] challenge, final Certificate root) throws GeneralSecurityException {
 
         verifyCertificateSignatures(certificates);
 
@@ -540,7 +539,7 @@ class AttestationProtocol {
         final Verified verified;
         try (final InputStream stream = context.getResources().openRawResource(R.raw.google_root)) {
             verified = verifyStateless(attestationCertificates, challenge,
-                    generateCertificate(stream), context.getResources());
+                    generateCertificate(stream));
         }
 
         final StringBuilder teeEnforced = new StringBuilder();
@@ -798,8 +797,7 @@ class AttestationProtocol {
 
         // sanity check on the device being verified before sending it off to the verifying device
         verifyStateless(attestationCertificates, challenge,
-                attestationCertificates[attestationCertificates.length - 1],
-                context.getResources());
+                attestationCertificates[attestationCertificates.length - 1]);
 
         // OS-enforced checks and information
 
