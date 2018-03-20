@@ -44,4 +44,11 @@
     <string name="deny_new_usb">Disallow new USB peripherals when locked: %s\n</string>
     <string name="no">no</string>
     <string name="yes">yes</string>
+    <string name="device_bkl_l04">Huawei Honor View 10 (BKL-L04)</string>
+    <string name="device_pixel_2">Google Pixel 2</string>
+    <string name="device_pixel_2_xl">Google Pixel 2 XL</string>
+    <string name="device_sm_g960u">Samsung Galaxy S9 (SM-G960U)</string>
+    <string name="device_sm_g965f">Samsung Galaxy S9+ (SM-G965F)</string>
+    <string name="device_sm_g965_msm">Samsung Galaxy S9+ (Snapdragon)</string>
+    <string name="device_h3113">Sony Xperia XA2 (H3113)</string>
 </resources>

@@ -213,21 +213,13 @@ class AttestationProtocol {
     // Split displayed fingerprint into groups of 4 characters
     private static final int FINGERPRINT_SPLIT_INTERVAL = 4;
 
-    private static final String BKL_L04 = "Huawei Honor View 10 (BKL-L04)";
-    private static final String PIXEL_2 = "Google Pixel 2";
-    private static final String PIXEL_2_XL = "Google Pixel 2 XL";
-    private static final String SM_G960U = "Samsung Galaxy S9 (SM-G960U)";
-    private static final String SM_G965F = "Samsung Galaxy S9+ (SM-G965F)";
-    private static final String SM_G965_MSM = "Samsung Galaxy S9+ (Snapdragon)";
-    private static final String H3113 = "Sony Xperia XA2 (H3113)";
-
     private static class DeviceInfo {
-        final String name;
+        final int name;
         final int attestationVersion;
         final int keymasterVersion;
         final boolean rollbackResistant;
 
-        DeviceInfo(final String name, final int attestationVersion, final int keymasterVersion,
+        DeviceInfo(final int name, final int attestationVersion, final int keymasterVersion,
                 final boolean rollbackResistant) {
             this.name = name;
             this.attestationVersion = attestationVersion;
@@ -239,26 +231,26 @@ class AttestationProtocol {
     private static final ImmutableMap<String, DeviceInfo> fingerprintsCopperheadOS = ImmutableMap
             .<String, DeviceInfo>builder()
             .put("36D067F8517A2284781B99A2984966BFF02D3F47310F831FCDCC4D792426B6DF",
-                    new DeviceInfo(PIXEL_2, 2, 3, true))
+                    new DeviceInfo(R.string.device_pixel_2, 2, 3, true))
             .put("815DCBA82BAC1B1758211FF53CAA0B6883CB6C901BE285E1B291C8BDAA12DF75",
-                    new DeviceInfo(PIXEL_2_XL, 2, 3, true))
+                    new DeviceInfo(R.string.device_pixel_2_xl, 2, 3, true))
             .build();
     private static final ImmutableMap<String, DeviceInfo> fingerprintsStock = ImmutableMap
             .<String, DeviceInfo>builder()
             .put("5341E6B2646979A70E57653007A1F310169421EC9BDD9F1A5648F75ADE005AF1",
-                    new DeviceInfo(BKL_L04, 2, 3, false))
+                    new DeviceInfo(R.string.device_bkl_l04, 2, 3, false))
             .put("1962B0538579FFCE9AC9F507C46AFE3B92055BAC7146462283C85C500BE78D82",
-                    new DeviceInfo(PIXEL_2, 2, 3, true))
+                    new DeviceInfo(R.string.device_pixel_2, 2, 3, true))
             .put("171616EAEF26009FC46DC6D89F3D24217E926C81A67CE65D2E3A9DC27040C7AB",
-                    new DeviceInfo(PIXEL_2_XL, 2, 3, true))
+                    new DeviceInfo(R.string.device_pixel_2_xl, 2, 3, true))
             .put("266869F7CF2FB56008EFC4BE8946C8F84190577F9CA688F59C72DD585E696488",
-                    new DeviceInfo(SM_G960U, 1, 2, false))
+                    new DeviceInfo(R.string.device_sm_g960u, 1, 2, false))
             .put("D1C53B7A931909EC37F1939B14621C6E4FD19BF9079D195F86B3CEA47CD1F92D",
-                    new DeviceInfo(SM_G965F, 1, 2, false))
+                    new DeviceInfo(R.string.device_sm_g965f, 1, 2, false))
             .put("A4A544C2CFBAEAA88C12360C2E4B44C29722FC8DBB81392A6C1FAEDB7BF63010",
-                    new DeviceInfo(SM_G965_MSM, 1, 2, false))
+                    new DeviceInfo(R.string.device_sm_g965_msm, 1, 2, false))
             .put("4285AD64745CC79B4499817F264DC16BF2AF5163AF6C328964F39E61EC84693E",
-                    new DeviceInfo(H3113, 2, 3, true))
+                    new DeviceInfo(R.string.device_h3113, 2, 3, true))
             .build();
     // TODO: remove support for Auditor 4 and earlier on Auditee
     private static final ImmutableMap<String, Integer> intermediatesByName = ImmutableMap.of(
@@ -297,14 +289,14 @@ class AttestationProtocol {
     }
 
     private static class Verified {
-        final String device;
+        final int device;
         final String verifiedBootKey;
         final int osVersion;
         final int osPatchLevel;
         final int appVersion;
         final boolean isStock;
 
-        Verified(final String device, final String verifiedBootKey, final int osVersion,
+        Verified(final int device, final String verifiedBootKey, final int osVersion,
                 final int osPatchLevel, final int appVersion, final boolean isStock) {
             this.device = device;
             this.verifiedBootKey = verifiedBootKey;
@@ -468,7 +460,7 @@ class AttestationProtocol {
 
     private static void appendVerifiedInformation(final Context context,
             final StringBuilder builder, final Verified verified, final String fingerprint) {
-        builder.append(context.getString(R.string.device, verified.device));
+        builder.append(context.getString(R.string.device, context.getString(verified.device)));
         if (verified.isStock) {
             builder.append(context.getString(R.string.os, context.getString(R.string.stock)));
         } else {
