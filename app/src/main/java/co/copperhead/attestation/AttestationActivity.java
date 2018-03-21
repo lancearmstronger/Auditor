@@ -23,7 +23,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.io.BaseEncoding;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
 import com.google.zxing.WriterException;
@@ -32,7 +31,6 @@ import com.google.zxing.qrcode.QRCodeWriter;
 
 import java.io.UnsupportedEncodingException;
 import java.util.EnumMap;
-import java.util.Locale;
 import java.util.Map;
 
 import static android.graphics.Color.BLACK;
@@ -164,11 +162,6 @@ public class AttestationActivity extends AppCompatActivity {
         savedInstanceState.putInt(STATE_BACKGROUND_RESOURCE, backgroundResource);
     }
 
-    private static String logFormatBytes(final byte[] bytes) {
-        return String.format(Locale.US, "%d binary bytes logged here as base64 (%s)", bytes.length,
-                BaseEncoding.base64().encode(bytes));
-    }
-
     private void chooseBestLayout() {
         final View content = findViewById(R.id.content_attestation);
         final LinearLayout resultLayout = findViewById(R.id.result);
@@ -181,7 +174,7 @@ public class AttestationActivity extends AppCompatActivity {
         if (auditorChallenge == null) {
             auditorChallenge = AttestationProtocol.getChallengeMessage(this);
         }
-        Log.d(TAG, "sending random challenge: " + logFormatBytes(auditorChallenge));
+        Log.d(TAG, "sending random challenge: " + Utils.logFormatBytes(auditorChallenge));
         textView.setText(R.string.qr_code_scan_hint_auditor);
         chooseBestLayout();
 
@@ -199,7 +192,7 @@ public class AttestationActivity extends AppCompatActivity {
     }
 
     private void showAuditorResults(final byte[] serialized) {
-        Log.d(TAG, "received attestation: " + logFormatBytes(serialized));
+        Log.d(TAG, "received attestation: " + Utils.logFormatBytes(serialized));
         textView.setText(R.string.verifying_attestation);
         final PendingIntent pending = createPendingResult(VERIFY_REQUEST_CODE, new Intent(), 0);
         final Intent intent = new Intent(this, VerifyAttestationService.class);
@@ -214,7 +207,7 @@ public class AttestationActivity extends AppCompatActivity {
     }
 
     private void continueAuditee(final byte[] challenge) {
-        Log.d(TAG, "received random challenge: " + logFormatBytes(challenge));
+        Log.d(TAG, "received random challenge: " + Utils.logFormatBytes(challenge));
         textView.setText(R.string.generating_attestation);
         final PendingIntent pending = createPendingResult(GENERATE_REQUEST_CODE, new Intent(), 0);
         final Intent intent = new Intent(this, GenerateAttestationService.class);
@@ -224,7 +217,7 @@ public class AttestationActivity extends AppCompatActivity {
     }
 
     private void auditeeShowAttestation(final byte[] serialized) {
-        Log.d(TAG, "sending attestation: " + logFormatBytes(serialized));
+        Log.d(TAG, "sending attestation: " + Utils.logFormatBytes(serialized));
         auditeeSerializedAttestation = serialized;
         mStage = Stage.AuditeeResults;
         if (auditeePairing) {

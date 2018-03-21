@@ -10,6 +10,7 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 import java.io.IOException;
+import java.io.DataInputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -51,25 +52,33 @@ public class RemoteVerifyJob extends JobService {
         @Override
         protected Boolean doInBackground(final Void... params) {
             try {
-                final HttpURLConnection connection = (HttpURLConnection) new URL(VERIFY_URL).openConnection();
-                connection.setConnectTimeout(CONNECT_TIMEOUT);
-                connection.setReadTimeout(READ_TIMEOUT);
-                connection.setDoOutput(true);
+                final HttpURLConnection getChallenge = (HttpURLConnection) new URL(VERIFY_URL).openConnection();
+                getChallenge.setConnectTimeout(CONNECT_TIMEOUT);
+                getChallenge.setReadTimeout(READ_TIMEOUT);
 
-                // TODO: fetch from server
+                final DataInputStream input = new DataInputStream(getChallenge.getInputStream());
                 final byte[] challengeMessage = new byte[AttestationProtocol.CHALLENGE_MESSAGE_LENGTH];
-                challengeMessage[0] = AttestationProtocol.PROTOCOL_VERSION;
+                input.readFully(challengeMessage);
+                input.close();
+
+                Log.d(TAG, "received random challenge: " + Utils.logFormatBytes(challengeMessage));
+
                 AttestationProtocol.generateSerialized(RemoteVerifyJob.this, challengeMessage, "remote_");
 
-                final OutputStream output = connection.getOutputStream();
+                final HttpURLConnection postAttestation = (HttpURLConnection) new URL(VERIFY_URL).openConnection();
+                postAttestation.setConnectTimeout(CONNECT_TIMEOUT);
+                postAttestation.setReadTimeout(READ_TIMEOUT);
+                postAttestation.setDoOutput(true);
+
+                final OutputStream output = postAttestation.getOutputStream();
                 output.close();
 
-                final int responseCode = connection.getResponseCode();
+                final int responseCode = postAttestation.getResponseCode();
                 if (responseCode != 200) {
                     throw new IOException("response code: " + responseCode);
                 }
 
-                connection.disconnect();
+                postAttestation.disconnect();
             } catch (final GeneralSecurityException | IOException e) {
                 Log.e(TAG, "remote verify failure", e);
                 return true;
