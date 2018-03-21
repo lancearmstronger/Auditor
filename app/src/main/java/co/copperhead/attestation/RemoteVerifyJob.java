@@ -63,7 +63,7 @@ public class RemoteVerifyJob extends JobService {
 
                 Log.d(TAG, "received random challenge: " + Utils.logFormatBytes(challengeMessage));
 
-                AttestationProtocol.generateSerialized(RemoteVerifyJob.this, challengeMessage, "remote_");
+                final byte[] result = AttestationProtocol.generateSerialized(RemoteVerifyJob.this, challengeMessage, "remote_").serialized;
 
                 final HttpURLConnection postAttestation = (HttpURLConnection) new URL(VERIFY_URL).openConnection();
                 postAttestation.setConnectTimeout(CONNECT_TIMEOUT);
@@ -71,6 +71,7 @@ public class RemoteVerifyJob extends JobService {
                 postAttestation.setDoOutput(true);
 
                 final OutputStream output = postAttestation.getOutputStream();
+                output.write(result);
                 output.close();
 
                 final int responseCode = postAttestation.getResponseCode();
