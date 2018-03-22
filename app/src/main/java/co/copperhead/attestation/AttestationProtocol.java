@@ -89,7 +89,6 @@ class AttestationProtocol {
     private static final String KEY_PINNED_CERTIFICATE = "pinned_certificate_";
     private static final String KEY_PINNED_CERTIFICATE_LENGTH = "pinned_certificate_length";
     private static final String KEY_PINNED_VERIFIED_BOOT_KEY = "pinned_verified_boot_key";
-    private static final String KEY_PINNED_OS_STOCK = "pinned_os_stock";
     private static final String KEY_PINNED_OS_VERSION = "pinned_os_version";
     private static final String KEY_PINNED_OS_PATCH_LEVEL = "pinned_os_patch_level";
     private static final String KEY_PINNED_APP_VERSION = "pinned_app_version";
@@ -97,6 +96,7 @@ class AttestationProtocol {
     private static final String KEY_VERIFIED_TIME_LAST = "verified_time_last";
 
     private static final String KEY_PINNED_DEVICE_DEPRECATED = "pinned_device";
+    private static final String KEY_PINNED_OS_STOCK_DEPRECATED = "pinned_os_stock";
 
     private static final int CHALLENGE_LENGTH = 32;
     static final String EC_CURVE = "secp256r1";
@@ -567,10 +567,6 @@ class AttestationProtocol {
             if (!verified.verifiedBootKey.equals(preferences.getString(KEY_PINNED_VERIFIED_BOOT_KEY, verified.verifiedBootKey))) {
                 throw new GeneralSecurityException("pinned verified boot key mismatch");
             }
-            if (verified.isStock != preferences.getBoolean(KEY_PINNED_OS_STOCK, true)) {
-                throw new GeneralSecurityException("OS does not match");
-            }
-
             if (verified.osVersion < preferences.getInt(KEY_PINNED_OS_VERSION, Integer.MAX_VALUE)) {
                 throw new GeneralSecurityException("OS version downgrade detected");
             }
@@ -595,6 +591,7 @@ class AttestationProtocol {
                     .putLong(KEY_VERIFIED_TIME_LAST, new Date().getTime())
                     .putString(KEY_PINNED_VERIFIED_BOOT_KEY, verified.verifiedBootKey) // TODO: remove in a future release
                     .remove(KEY_PINNED_DEVICE_DEPRECATED) // TODO: remove in a future release
+                    .remove(KEY_PINNED_OS_STOCK_DEPRECATED) // TODO: remove in a future release
                     .apply();
         } else {
             verifySignature(attestationCertificates[0].getPublicKey(), signedMessage, signature);
@@ -609,7 +606,6 @@ class AttestationProtocol {
             }
 
             editor.putString(KEY_PINNED_VERIFIED_BOOT_KEY, verified.verifiedBootKey);
-            editor.putBoolean(KEY_PINNED_OS_STOCK, verified.isStock);
             editor.putInt(KEY_PINNED_OS_VERSION, verified.osVersion);
             editor.putInt(KEY_PINNED_OS_PATCH_LEVEL, verified.osPatchLevel);
             editor.putInt(KEY_PINNED_APP_VERSION, verified.appVersion);
