@@ -14,7 +14,10 @@ import java.io.DataInputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Arrays;
 import java.security.GeneralSecurityException;
+
+import co.copperhead.attestation.AttestationProtocol.AttestationResult;
 
 public class RemoteVerifyJob extends JobService {
     private static final String TAG = "RemoteVerifyJob";
@@ -22,6 +25,7 @@ public class RemoteVerifyJob extends JobService {
     private static final String VERIFY_URL = "https://attestation.copperhead.co/verify";
     private static final int CONNECT_TIMEOUT = 60000;
     private static final int READ_TIMEOUT = 60000;
+    private static final String STATE_PREFIX = "remote_";
 
     private RemoteVerifyTask task;
 
@@ -63,7 +67,8 @@ public class RemoteVerifyJob extends JobService {
 
                 Log.d(TAG, "received random challenge: " + Utils.logFormatBytes(challengeMessage));
 
-                final byte[] result = AttestationProtocol.generateSerialized(RemoteVerifyJob.this, challengeMessage, "remote_").serialized;
+                final AttestationResult result =
+                        AttestationProtocol.generateSerialized(RemoteVerifyJob.this, challengeMessage, STATE_PREFIX);
 
                 final HttpURLConnection postAttestation = (HttpURLConnection) new URL(VERIFY_URL).openConnection();
                 postAttestation.setConnectTimeout(CONNECT_TIMEOUT);
@@ -71,15 +76,18 @@ public class RemoteVerifyJob extends JobService {
                 postAttestation.setDoOutput(true);
 
                 final OutputStream output = postAttestation.getOutputStream();
-                output.write(result);
+                output.write(result.serialized);
                 output.close();
 
                 final int responseCode = postAttestation.getResponseCode();
+                postAttestation.disconnect();
                 if (responseCode != 200) {
+                    if (result.pairing) {
+                        final byte[] challengeIndex = Arrays.copyOfRange(challengeMessage, 1, 1 + AttestationProtocol.CHALLENGE_LENGTH);
+                        AttestationProtocol.clearAuditee(STATE_PREFIX, challengeIndex);
+                    }
                     throw new IOException("response code: " + responseCode);
                 }
-
-                postAttestation.disconnect();
             } catch (final GeneralSecurityException | IOException e) {
                 Log.e(TAG, "remote verify failure", e);
                 return true;

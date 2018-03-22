@@ -98,7 +98,7 @@ class AttestationProtocol {
     private static final String KEY_PINNED_DEVICE_DEPRECATED = "pinned_device";
     private static final String KEY_PINNED_OS_STOCK_DEPRECATED = "pinned_os_stock";
 
-    private static final int CHALLENGE_LENGTH = 32;
+    static final int CHALLENGE_LENGTH = 32;
     static final String EC_CURVE = "secp256r1";
     private static final String SIGNATURE_ALGORITHM = "SHA256WithECDSA";
     static final String KEY_DIGEST = DIGEST_SHA256;
@@ -946,6 +946,16 @@ class AttestationProtocol {
                 keyStore.deleteEntry(alias);
             }
         }
+    }
+
+    static void clearAuditee(final String statePrefix, final byte[] challengeIndex)
+            throws GeneralSecurityException, IOException {
+        final KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
+        keyStore.load(null);
+
+        final String alias = statePrefix + KEYSTORE_ALIAS_PERSISTENT_PREFIX + BaseEncoding.base16().encode(challengeIndex);
+        Log.d(TAG, "deleting key " + alias);
+        keyStore.deleteEntry(alias);
     }
 
     static void clearAuditor(final Context context) {
