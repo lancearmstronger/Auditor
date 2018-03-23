@@ -99,7 +99,7 @@ public class AttestationActivity extends AppCompatActivity {
         snackbar = Snackbar.make(findViewById(R.id.content_attestation), "", Snackbar.LENGTH_LONG);
 
         findViewById(R.id.auditee).setOnClickListener((final View view) -> {
-            if (isSupportedAuditee) {
+            if (!isSupportedAuditee) {
                 snackbar.setText(R.string.unsupported_auditee).show();
                 return;
             }
