@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <base-config cleartextTrafficPermitted="false"></base-config>
+    <base-config cleartextTrafficPermitted="false"/>
     <domain-config>
         <domain includeSubdomains="true">copperhead.co</domain>
         <!-- no expiry since we'll expect the app to be kept relatively up-to-date to use the services -->
