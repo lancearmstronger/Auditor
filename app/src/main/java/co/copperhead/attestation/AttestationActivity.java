@@ -361,14 +361,14 @@ public class AttestationActivity extends AppCompatActivity {
                     mStage = Stage.None;
                     Log.d(TAG, "account: " + contents);
                     final String[] values = contents.split(" ");
-                    if (values.length < 2) {
+                    if (values.length < 3 || !RemoteVerifyJob.DOMAIN.equals(values[0])) {
                         snackbar.setText(R.string.scanned_invalid_account_qr_code).show();
                         return;
                     }
                     PreferenceManager.getDefaultSharedPreferences(this)
-                            .edit().putString(RemoteVerifyJob.KEY_REMOTE_ACCOUNT, values[0]).apply();
+                            .edit().putString(RemoteVerifyJob.KEY_REMOTE_ACCOUNT, values[1]).apply();
                     try {
-                        if (RemoteVerifyJob.schedule(this, Integer.parseInt(values[1]))) {
+                        if (RemoteVerifyJob.schedule(this, Integer.parseInt(values[2]))) {
                             snackbar.setText(R.string.enable_remote_verify).show();
                         }
                     } catch (final RemoteVerifyJob.InvalidInterval | NumberFormatException e) {

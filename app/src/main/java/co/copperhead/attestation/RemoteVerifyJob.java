@@ -27,7 +27,8 @@ import co.copperhead.attestation.AttestationProtocol.AttestationResult;
 public class RemoteVerifyJob extends JobService {
     private static final String TAG = "RemoteVerifyJob";
     private static final int JOB_ID = 0;
-    private static final String VERIFY_URL = "https://attestation.copperhead.co/verify";
+    static final String DOMAIN = "attestation.copperhead.co";
+    private static final String VERIFY_URL = "https:/" + DOMAIN + "/verify";
     private static final int CONNECT_TIMEOUT = 60000;
     private static final int READ_TIMEOUT = 60000;
     private static final int MAX_INTERVAL = 60 * 60 * 24 * 7;
