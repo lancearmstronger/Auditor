@@ -30,7 +30,6 @@ public class RemoteVerifyJob extends JobService {
     private static final String VERIFY_URL = "https://attestation.copperhead.co/verify";
     private static final int CONNECT_TIMEOUT = 60000;
     private static final int READ_TIMEOUT = 60000;
-    private static final int VERIFY_INTERVAL = 60 * 60 * 24;
     private static final String STATE_PREFIX = "remote_";
     static final String KEY_REMOTE_ACCOUNT = "remote_account";
 
@@ -53,10 +52,6 @@ public class RemoteVerifyJob extends JobService {
             .setPersisted(true)
             .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
             .build()) == JobScheduler.RESULT_SUCCESS;
-    }
-
-    static boolean schedule(final Context context) {
-        return schedule(context, VERIFY_INTERVAL);
     }
 
     static void cancel(final Context context) {

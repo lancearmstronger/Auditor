@@ -359,12 +359,21 @@ public class AttestationActivity extends AppCompatActivity {
                     showAuditorResults(contentsBytes);
                 } else if (mStage == Stage.EnableRemoteVerify) {
                     mStage = Stage.None;
-                    final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
                     Log.d(TAG, "account: " + contents);
-                    preferences.edit().putString(RemoteVerifyJob.KEY_REMOTE_ACCOUNT, contents).apply();
-                    if (RemoteVerifyJob.schedule(this)) {
-                        snackbar.setText(R.string.enable_remote_verify).show();
-                        invalidateOptionsMenu();
+                    final String[] values = contents.split(" ");
+                    if (values.length < 2) {
+                        snackbar.setText(R.string.scanned_invalid_account_qr_code).show();
+                        return;
+                    }
+                    PreferenceManager.getDefaultSharedPreferences(this)
+                            .edit().putString(RemoteVerifyJob.KEY_REMOTE_ACCOUNT, values[0]).apply();
+                    try {
+                        if (RemoteVerifyJob.schedule(this, Integer.parseInt(values[1]))) {
+                            snackbar.setText(R.string.enable_remote_verify).show();
+                            invalidateOptionsMenu();
+                        }
+                    } catch (NumberFormatException e) {
+                        snackbar.setText(R.string.scanned_invalid_account_qr_code).show();
                     }
                 } else {
                     throw new RuntimeException("received unexpected scan result");
