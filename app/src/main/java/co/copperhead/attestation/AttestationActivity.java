@@ -3,10 +3,12 @@ package co.copperhead.attestation;
 import android.Manifest;
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -65,7 +67,8 @@ public class AttestationActivity extends AppCompatActivity {
         AuditeeGenerate,
         AuditeeResults,
         Auditor,
-        AuditorResults
+        AuditorResults,
+        EnableRemoteVerify
     }
 
     private Stage mStage = Stage.None;
@@ -190,7 +193,7 @@ public class AttestationActivity extends AppCompatActivity {
             }
         });
 
-        imageView.setOnClickListener(view -> showQrScanner("Auditor"));
+        imageView.setOnClickListener(view -> showQrScanner());
     }
 
     private void showAuditorResults(final byte[] serialized) {
@@ -205,7 +208,7 @@ public class AttestationActivity extends AppCompatActivity {
     }
 
     private void runAuditee() {
-        showQrScanner("Auditee");
+        showQrScanner();
     }
 
     private void continueAuditee(final byte[] challenge) {
@@ -270,9 +273,7 @@ public class AttestationActivity extends AppCompatActivity {
         return Bitmap.createBitmap(pixels, width, height, Bitmap.Config.RGB_565);
     }
 
-    private void showQrScanner(final String initiator) {
-        Log.d(TAG, "showQrScanner: " + initiator);
-
+    private void showQrScanner() {
         if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.CAMERA},
                     PERMISSIONS_REQUEST_CAMERA);
@@ -361,6 +362,15 @@ public class AttestationActivity extends AppCompatActivity {
                     mStage = Stage.AuditorResults;
                     imageView.setVisibility(View.GONE);
                     showAuditorResults(contentsBytes);
+                } else if (mStage == Stage.EnableRemoteVerify) {
+                    final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+                    Log.d(TAG, "account: " + contents);
+                    preferences.edit().putString(RemoteVerifyJob.KEY_REMOTE_ACCOUNT, contents).apply();
+                    if (RemoteVerifyJob.schedule(this)) {
+                        snackbar.setText(R.string.enable_remote_verify).show();
+                        enableRemoteVerify.setEnabled(false);
+                        disableRemoteVerify.setEnabled(true);
+                    }
                 } else {
                     throw new RuntimeException("received unexpected scan result");
                 }
@@ -407,15 +417,14 @@ public class AttestationActivity extends AppCompatActivity {
                 return true;
             }
             case R.id.action_enable_remote_verify: {
-                if (RemoteVerifyJob.schedule(this)) {
-                    snackbar.setText(R.string.enable_remote_verify).show();
-                    item.setEnabled(false);
-                    disableRemoteVerify.setEnabled(true);
-                }
+                mStage = Stage.EnableRemoteVerify;
+                showQrScanner();
                 return true;
             }
             case R.id.action_disable_remote_verify: {
                 RemoteVerifyJob.cancel(this);
+                final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+                preferences.edit().remove(RemoteVerifyJob.KEY_REMOTE_ACCOUNT).apply();
                 snackbar.setText(R.string.disable_remote_verify).show();
                 item.setEnabled(false);
                 enableRemoteVerify.setEnabled(true);

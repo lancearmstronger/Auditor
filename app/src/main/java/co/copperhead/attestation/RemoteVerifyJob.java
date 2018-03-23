@@ -6,19 +6,21 @@ import android.app.job.JobScheduler;
 import android.app.job.JobService;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
-import java.io.DataInputStream;
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Arrays;
 import java.security.GeneralSecurityException;
+import java.util.Arrays;
 
 import co.copperhead.attestation.AttestationProtocol.AttestationResult;
 
@@ -30,6 +32,7 @@ public class RemoteVerifyJob extends JobService {
     private static final int READ_TIMEOUT = 60000;
     private static final int VERIFY_INTERVAL = 60 * 60 * 24;
     private static final String STATE_PREFIX = "remote_";
+    static final String KEY_REMOTE_ACCOUNT = "remote_account";
 
     private RemoteVerifyTask task;
 
@@ -89,7 +92,13 @@ public class RemoteVerifyJob extends JobService {
                 final AttestationResult result =
                         AttestationProtocol.generateSerialized(RemoteVerifyJob.this, challengeMessage, STATE_PREFIX);
 
-                final HttpURLConnection postAttestation = (HttpURLConnection) new URL(VERIFY_URL).openConnection();
+                final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(RemoteVerifyJob.this);
+                final String account = preferences.getString(KEY_REMOTE_ACCOUNT, null);
+                if (account == null) {
+                    throw new IOException("missing account");
+                }
+
+                final HttpURLConnection postAttestation = (HttpURLConnection) new URL(VERIFY_URL + "/" + account).openConnection();
                 postAttestation.setConnectTimeout(CONNECT_TIMEOUT);
                 postAttestation.setReadTimeout(READ_TIMEOUT);
                 postAttestation.setDoOutput(true);
