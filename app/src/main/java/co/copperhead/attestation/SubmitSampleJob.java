@@ -63,8 +63,9 @@ public class SubmitSampleJob extends JobService {
 
         @Override
         protected Boolean doInBackground(final Void... params) {
+            HttpURLConnection connection = null;
             try {
-                final HttpURLConnection connection = (HttpURLConnection) new URL(SUBMIT_URL).openConnection();
+                connection = (HttpURLConnection) new URL(SUBMIT_URL).openConnection();
                 connection.setConnectTimeout(CONNECT_TIMEOUT);
                 connection.setReadTimeout(READ_TIMEOUT);
                 connection.setDoOutput(true);
@@ -97,11 +98,13 @@ public class SubmitSampleJob extends JobService {
                 if (responseCode != 200) {
                     throw new IOException("response code: " + responseCode);
                 }
-
-                connection.disconnect();
             } catch (final GeneralSecurityException | IOException e) {
                 Log.e(TAG, "submit failure", e);
                 return true;
+            } finally {
+                if (connection != null) {
+                    connection.disconnect();
+                }
             }
             return false;
         }

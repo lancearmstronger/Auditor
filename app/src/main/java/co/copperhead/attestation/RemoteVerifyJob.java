@@ -72,12 +72,13 @@ public class RemoteVerifyJob extends JobService {
 
         @Override
         protected Boolean doInBackground(final Void... params) {
+            HttpURLConnection connection = null;
             try {
-                final HttpURLConnection getChallenge = (HttpURLConnection) new URL(VERIFY_URL).openConnection();
-                getChallenge.setConnectTimeout(CONNECT_TIMEOUT);
-                getChallenge.setReadTimeout(READ_TIMEOUT);
+                connection = (HttpURLConnection) new URL(VERIFY_URL).openConnection();
+                connection.setConnectTimeout(CONNECT_TIMEOUT);
+                connection.setReadTimeout(READ_TIMEOUT);
 
-                final DataInputStream input = new DataInputStream(getChallenge.getInputStream());
+                final DataInputStream input = new DataInputStream(connection.getInputStream());
                 final byte[] challengeMessage = new byte[AttestationProtocol.CHALLENGE_MESSAGE_LENGTH];
                 input.readFully(challengeMessage);
                 input.close();
@@ -93,24 +94,22 @@ public class RemoteVerifyJob extends JobService {
                     throw new IOException("missing account");
                 }
 
-                final HttpURLConnection postAttestation = (HttpURLConnection) new URL(VERIFY_URL + "/" + account).openConnection();
-                postAttestation.setConnectTimeout(CONNECT_TIMEOUT);
-                postAttestation.setReadTimeout(READ_TIMEOUT);
-                postAttestation.setDoOutput(true);
+                connection = (HttpURLConnection) new URL(VERIFY_URL + "/" + account).openConnection();
+                connection.setConnectTimeout(CONNECT_TIMEOUT);
+                connection.setReadTimeout(READ_TIMEOUT);
+                connection.setDoOutput(true);
 
-                final OutputStream output = postAttestation.getOutputStream();
+                final OutputStream output = connection.getOutputStream();
                 output.write(result.serialized);
                 output.close();
 
-                final int responseCode = postAttestation.getResponseCode();
+                final int responseCode = connection.getResponseCode();
                 if (responseCode == 200) {
-                    try (final InputStream postResponse = postAttestation.getInputStream()) {
+                    try (final InputStream postResponse = connection.getInputStream()) {
                         final BufferedReader postReader = new BufferedReader(new InputStreamReader(postResponse));
                         schedule(RemoteVerifyJob.this, Integer.parseInt(postReader.readLine()));
                     }
-                    postAttestation.disconnect();
                 } else {
-                    postAttestation.disconnect();
                     if (result.pairing) {
                         final byte[] challengeIndex = Arrays.copyOfRange(challengeMessage, 1, 1 + AttestationProtocol.CHALLENGE_LENGTH);
                         AttestationProtocol.clearAuditee(STATE_PREFIX, challengeIndex);
@@ -120,6 +119,10 @@ public class RemoteVerifyJob extends JobService {
             } catch (final GeneralSecurityException | IOException | NumberFormatException e) {
                 Log.e(TAG, "remote verify failure", e);
                 return true;
+            } finally {
+                if (connection != null) {
+                    connection.disconnect();
+                }
             }
             return false;
         }
