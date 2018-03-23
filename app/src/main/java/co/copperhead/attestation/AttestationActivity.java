@@ -56,6 +56,8 @@ public class AttestationActivity extends AppCompatActivity {
     private ImageView imageView;
     private View buttons;
     private Snackbar snackbar;
+    private MenuItem enableRemoteVerify;
+    private MenuItem disableRemoteVerify;
 
     private enum Stage {
         None,
@@ -376,10 +378,14 @@ public class AttestationActivity extends AppCompatActivity {
         final boolean supportedAuditee = isSupportedAuditee();
         menu.findItem(R.id.action_clear_auditee).setEnabled(supportedAuditee);
         if (BuildConfig.DEBUG) {
-            menu.findItem(R.id.action_enable_remote_verify)
-                    .setEnabled(supportedAuditee && !RemoteVerifyJob.isScheduled(this));
+            enableRemoteVerify = menu.findItem(R.id.action_enable_remote_verify);
+            enableRemoteVerify.setEnabled(supportedAuditee && !RemoteVerifyJob.isScheduled(this));
+
+            disableRemoteVerify = menu.findItem(R.id.action_disable_remote_verify);
+            disableRemoteVerify.setEnabled(RemoteVerifyJob.isScheduled(this));
         } else {
             menu.removeItem(R.id.action_enable_remote_verify);
+            menu.removeItem(R.id.action_disable_remote_verify);
         }
         menu.findItem(R.id.action_submit_sample).setEnabled(potentialSupportedAuditee());
         return true;
@@ -401,8 +407,18 @@ public class AttestationActivity extends AppCompatActivity {
                 return true;
             }
             case R.id.action_enable_remote_verify: {
-                snackbar.setText(R.string.enable_remote_verify).show();
-                RemoteVerifyJob.schedule(this);
+                if (RemoteVerifyJob.schedule(this)) {
+                    snackbar.setText(R.string.enable_remote_verify).show();
+                    item.setEnabled(false);
+                    disableRemoteVerify.setEnabled(true);
+                }
+                return true;
+            }
+            case R.id.action_disable_remote_verify: {
+                RemoteVerifyJob.cancel(this);
+                snackbar.setText(R.string.disable_remote_verify).show();
+                item.setEnabled(false);
+                enableRemoteVerify.setEnabled(true);
                 return true;
             }
             case R.id.action_submit_sample: {

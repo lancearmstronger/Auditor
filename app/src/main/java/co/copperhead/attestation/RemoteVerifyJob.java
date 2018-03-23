@@ -37,26 +37,27 @@ public class RemoteVerifyJob extends JobService {
         return context.getSystemService(JobScheduler.class).getPendingJob(JOB_ID) != null;
     }
 
-    static void schedule(final Context context, final int interval) {
+    static boolean schedule(final Context context, final int interval) {
         final JobScheduler scheduler = context.getSystemService(JobScheduler.class);
         final JobInfo jobInfo = scheduler.getPendingJob(JOB_ID);
         if (jobInfo != null && jobInfo.getIntervalMillis() == interval * 1000) {
             Log.d(TAG, "job already registered");
-            return;
+            return true;
         }
         final ComponentName serviceName = new ComponentName(context, RemoteVerifyJob.class);
-        final int result = scheduler.schedule(new JobInfo.Builder(JOB_ID, serviceName)
+        return scheduler.schedule(new JobInfo.Builder(JOB_ID, serviceName)
             .setPeriodic(interval * 1000)
             .setPersisted(true)
             .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
-            .build());
-        if (result == JobScheduler.RESULT_FAILURE) {
-            Log.d(TAG, "job schedule failed");
-        }
+            .build()) == JobScheduler.RESULT_SUCCESS;
     }
 
-    static void schedule(final Context context) {
-        schedule(context, VERIFY_INTERVAL);
+    static boolean schedule(final Context context) {
+        return schedule(context, VERIFY_INTERVAL);
+    }
+
+    static void cancel(final Context context) {
+        context.getSystemService(JobScheduler.class).cancel(JOB_ID);
     }
 
     private class RemoteVerifyTask extends AsyncTask<Void, Void, Boolean> {
