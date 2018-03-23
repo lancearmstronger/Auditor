@@ -104,7 +104,7 @@ public class AttestationActivity extends AppCompatActivity {
                 return;
             }
             mStage = Stage.Auditee;
-            runAuditee();
+            showQrScanner();
         });
 
         findViewById(R.id.auditor).setOnClickListener(view -> {
@@ -136,9 +136,7 @@ public class AttestationActivity extends AppCompatActivity {
                 imageView.getViewTreeObserver().removeOnPreDrawListener(this);
                 if (mStage != Stage.None) {
                     buttons.setVisibility(View.GONE);
-                    if (mStage == Stage.Auditee) {
-                        runAuditee();
-                    } else if (mStage == Stage.AuditeeResults) {
+                    if (mStage == Stage.AuditeeResults) {
                         auditeeShowAttestation(auditeeSerializedAttestation);
                     } else if (mStage == Stage.Auditor) {
                         runAuditor();
@@ -200,10 +198,6 @@ public class AttestationActivity extends AppCompatActivity {
         intent.putExtra(VerifyAttestationService.EXTRA_SERIALIZED, serialized);
         intent.putExtra(VerifyAttestationService.EXTRA_PENDING_RESULT, pending);
         startService(intent);
-    }
-
-    private void runAuditee() {
-        showQrScanner();
     }
 
     private void continueAuditee(final byte[] challenge) {
