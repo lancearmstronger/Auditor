@@ -13,8 +13,8 @@
     <string name="qr_code_scan_hint_auditor">Now scan this QR Code from the other device.\n\nTap this QR code after scanning to proceed.</string>
     <string name="action_clear_auditee">Clear Auditee pairings</string>
     <string name="action_clear_auditor">Clear Auditor pairings</string>
-    <string name="action_remote_verify">Remote verify</string>
-    <string name="schedule_remote_verify">Performing remote verification</string>
+    <string name="action_enable_remote_verify">Enable remote verification</string>
+    <string name="enable_remote_verify">Scheduling regular remote verification</string>
     <string name="action_submit_sample">Submit sample data</string>
     <string name="schedule_submit_sample">Submitting sample data</string>
     <string name="scanner_label">Scan QR code shown on the other device.</string>

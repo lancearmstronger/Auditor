@@ -9,8 +9,11 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import java.io.IOException;
 import java.io.DataInputStream;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -25,20 +28,35 @@ public class RemoteVerifyJob extends JobService {
     private static final String VERIFY_URL = "https://attestation.copperhead.co/verify";
     private static final int CONNECT_TIMEOUT = 60000;
     private static final int READ_TIMEOUT = 60000;
+    private static final int VERIFY_INTERVAL = 60 * 60 * 24;
     private static final String STATE_PREFIX = "remote_";
 
     private RemoteVerifyTask task;
 
-    static void schedule(final Context context) {
-        final ComponentName serviceName = new ComponentName(context, RemoteVerifyJob.class);
+    static boolean isScheduled(final Context context) {
+        return context.getSystemService(JobScheduler.class).getPendingJob(JOB_ID) != null;
+    }
+
+    static void schedule(final Context context, final int interval) {
         final JobScheduler scheduler = context.getSystemService(JobScheduler.class);
+        final JobInfo jobInfo = scheduler.getPendingJob(JOB_ID);
+        if (jobInfo != null && jobInfo.getIntervalMillis() == interval * 1000) {
+            Log.d(TAG, "job already registered");
+            return;
+        }
+        final ComponentName serviceName = new ComponentName(context, RemoteVerifyJob.class);
         final int result = scheduler.schedule(new JobInfo.Builder(JOB_ID, serviceName)
-            .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+            .setPeriodic(interval * 1000)
             .setPersisted(true)
+            .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
             .build());
         if (result == JobScheduler.RESULT_FAILURE) {
             Log.d(TAG, "job schedule failed");
         }
+    }
+
+    static void schedule(final Context context) {
+        schedule(context, VERIFY_INTERVAL);
     }
 
     private class RemoteVerifyTask extends AsyncTask<Void, Void, Boolean> {
@@ -80,15 +98,21 @@ public class RemoteVerifyJob extends JobService {
                 output.close();
 
                 final int responseCode = postAttestation.getResponseCode();
-                postAttestation.disconnect();
-                if (responseCode != 200) {
+                if (responseCode == 200) {
+                    try (final InputStream postResponse = postAttestation.getInputStream()) {
+                        final BufferedReader postReader = new BufferedReader(new InputStreamReader(postResponse));
+                        schedule(RemoteVerifyJob.this, Integer.parseInt(postReader.readLine()));
+                    }
+                    postAttestation.disconnect();
+                } else {
+                    postAttestation.disconnect();
                     if (result.pairing) {
                         final byte[] challengeIndex = Arrays.copyOfRange(challengeMessage, 1, 1 + AttestationProtocol.CHALLENGE_LENGTH);
                         AttestationProtocol.clearAuditee(STATE_PREFIX, challengeIndex);
                     }
                     throw new IOException("response code: " + responseCode);
                 }
-            } catch (final GeneralSecurityException | IOException e) {
+            } catch (final GeneralSecurityException | IOException | NumberFormatException e) {
                 Log.e(TAG, "remote verify failure", e);
                 return true;
             }
