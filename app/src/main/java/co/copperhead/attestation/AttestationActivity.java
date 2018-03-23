@@ -370,7 +370,6 @@ public class AttestationActivity extends AppCompatActivity {
                     try {
                         if (RemoteVerifyJob.schedule(this, Integer.parseInt(values[1]))) {
                             snackbar.setText(R.string.enable_remote_verify).show();
-                            invalidateOptionsMenu();
                         }
                     } catch (final RemoteVerifyJob.InvalidInterval | NumberFormatException e) {
                         snackbar.setText(R.string.scanned_invalid_account_qr_code).show();
@@ -396,10 +395,10 @@ public class AttestationActivity extends AppCompatActivity {
 
     @Override
     public boolean onPrepareOptionsMenu(final Menu menu) {
+        final boolean isScheduled = RemoteVerifyJob.isScheduled(this);
         menu.findItem(R.id.action_enable_remote_verify)
-                .setEnabled(isSupportedAuditee && !RemoteVerifyJob.isScheduled(this));
-        menu.findItem(R.id.action_disable_remote_verify)
-                .setEnabled(RemoteVerifyJob.isScheduled(this));
+                .setEnabled(isSupportedAuditee && !isScheduled);
+        menu.findItem(R.id.action_disable_remote_verify).setEnabled(isScheduled);
         return true;
     }
 
@@ -428,7 +427,6 @@ public class AttestationActivity extends AppCompatActivity {
                 final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
                 preferences.edit().remove(RemoteVerifyJob.KEY_REMOTE_ACCOUNT).apply();
                 snackbar.setText(R.string.disable_remote_verify).show();
-                invalidateOptionsMenu();
                 return true;
             }
             case R.id.action_submit_sample: {
