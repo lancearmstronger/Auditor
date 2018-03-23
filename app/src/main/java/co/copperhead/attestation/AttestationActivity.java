@@ -58,8 +58,6 @@ public class AttestationActivity extends AppCompatActivity {
     private ImageView imageView;
     private View buttons;
     private Snackbar snackbar;
-    private MenuItem enableRemoteVerify;
-    private MenuItem disableRemoteVerify;
 
     private enum Stage {
         None,
@@ -79,10 +77,7 @@ public class AttestationActivity extends AppCompatActivity {
 
     private static final ImmutableSet<String> supportedModels = ImmutableSet.of(
             "BKL-L04", "H3113", "Pixel 2", "Pixel 2 XL", "SM-G960U", "SM-G965F", "SM-G965U1", "SM-G965W");
-
-    private static boolean isSupportedAuditee() {
-        return supportedModels.contains(Build.MODEL);
-    }
+    private static final boolean isSupportedAuditee = supportedModels.contains(Build.MODEL);
 
     private static int getFirstApiLevel() {
         return Integer.parseInt(SystemProperties.get("ro.product.first_api_level",
@@ -104,7 +99,7 @@ public class AttestationActivity extends AppCompatActivity {
         snackbar = Snackbar.make(findViewById(R.id.content_attestation), "", Snackbar.LENGTH_LONG);
 
         findViewById(R.id.auditee).setOnClickListener((final View view) -> {
-            if (!isSupportedAuditee()) {
+            if (isSupportedAuditee) {
                 snackbar.setText(R.string.unsupported_auditee).show();
                 return;
             }
@@ -363,13 +358,13 @@ public class AttestationActivity extends AppCompatActivity {
                     imageView.setVisibility(View.GONE);
                     showAuditorResults(contentsBytes);
                 } else if (mStage == Stage.EnableRemoteVerify) {
+                    mStage = Stage.None;
                     final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
                     Log.d(TAG, "account: " + contents);
                     preferences.edit().putString(RemoteVerifyJob.KEY_REMOTE_ACCOUNT, contents).apply();
                     if (RemoteVerifyJob.schedule(this)) {
                         snackbar.setText(R.string.enable_remote_verify).show();
-                        enableRemoteVerify.setEnabled(false);
-                        disableRemoteVerify.setEnabled(true);
+                        invalidateOptionsMenu();
                     }
                 } else {
                     throw new RuntimeException("received unexpected scan result");
@@ -385,19 +380,23 @@ public class AttestationActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(final Menu menu) {
         getMenuInflater().inflate(R.menu.menu_attestation, menu);
-        final boolean supportedAuditee = isSupportedAuditee();
-        menu.findItem(R.id.action_clear_auditee).setEnabled(supportedAuditee);
-        if (BuildConfig.DEBUG) {
-            enableRemoteVerify = menu.findItem(R.id.action_enable_remote_verify);
-            enableRemoteVerify.setEnabled(supportedAuditee && !RemoteVerifyJob.isScheduled(this));
-
-            disableRemoteVerify = menu.findItem(R.id.action_disable_remote_verify);
-            disableRemoteVerify.setEnabled(RemoteVerifyJob.isScheduled(this));
-        } else {
+        menu.findItem(R.id.action_clear_auditee).setEnabled(isSupportedAuditee);
+        if (!BuildConfig.DEBUG) {
             menu.removeItem(R.id.action_enable_remote_verify);
             menu.removeItem(R.id.action_disable_remote_verify);
         }
         menu.findItem(R.id.action_submit_sample).setEnabled(potentialSupportedAuditee());
+        return true;
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(final Menu menu) {
+        if (BuildConfig.DEBUG) {
+            menu.findItem(R.id.action_enable_remote_verify)
+                    .setEnabled(isSupportedAuditee && !RemoteVerifyJob.isScheduled(this));
+            menu.findItem(R.id.action_disable_remote_verify)
+                    .setEnabled(RemoteVerifyJob.isScheduled(this));
+        }
         return true;
     }
 
@@ -426,8 +425,7 @@ public class AttestationActivity extends AppCompatActivity {
                 final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
                 preferences.edit().remove(RemoteVerifyJob.KEY_REMOTE_ACCOUNT).apply();
                 snackbar.setText(R.string.disable_remote_verify).show();
-                item.setEnabled(false);
-                enableRemoteVerify.setEnabled(true);
+                invalidateOptionsMenu();
                 return true;
             }
             case R.id.action_submit_sample: {
