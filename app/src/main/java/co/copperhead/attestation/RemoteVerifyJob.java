@@ -30,6 +30,7 @@ public class RemoteVerifyJob extends JobService {
     private static final String VERIFY_URL = "https://attestation.copperhead.co/verify";
     private static final int CONNECT_TIMEOUT = 60000;
     private static final int READ_TIMEOUT = 60000;
+    private static final int MAX_INTERVAL = 60 * 60 * 24 * 7;
     private static final String STATE_PREFIX = "remote_";
     static final String KEY_REMOTE_ACCOUNT = "remote_account";
 
@@ -39,7 +40,16 @@ public class RemoteVerifyJob extends JobService {
         return context.getSystemService(JobScheduler.class).getPendingJob(JOB_ID) != null;
     }
 
-    static boolean schedule(final Context context, final int interval) {
+    static class InvalidInterval extends Exception {
+        InvalidInterval() {
+            super("invalid interval");
+        }
+    }
+
+    static boolean schedule(final Context context, final int interval) throws InvalidInterval {
+        if (interval > MAX_INTERVAL) {
+            throw new InvalidInterval();
+        }
         final JobScheduler scheduler = context.getSystemService(JobScheduler.class);
         final JobInfo jobInfo = scheduler.getPendingJob(JOB_ID);
         if (jobInfo != null && jobInfo.getIntervalMillis() == interval * 1000) {
@@ -116,7 +126,7 @@ public class RemoteVerifyJob extends JobService {
                     }
                     throw new IOException("response code: " + responseCode);
                 }
-            } catch (final GeneralSecurityException | IOException | NumberFormatException e) {
+            } catch (final GeneralSecurityException | IOException | InvalidInterval | NumberFormatException e) {
                 Log.e(TAG, "remote verify failure", e);
                 return true;
             } finally {

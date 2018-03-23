@@ -372,7 +372,7 @@ public class AttestationActivity extends AppCompatActivity {
                             snackbar.setText(R.string.enable_remote_verify).show();
                             invalidateOptionsMenu();
                         }
-                    } catch (NumberFormatException e) {
+                    } catch (final RemoteVerifyJob.InvalidInterval | NumberFormatException e) {
                         snackbar.setText(R.string.scanned_invalid_account_qr_code).show();
                     }
                 } else {
