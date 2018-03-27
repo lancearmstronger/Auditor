@@ -53,5 +53,5 @@
     <string name="device_sm_g960u">Samsung Galaxy S9 (SM-G960U)</string>
     <string name="device_sm_g965f">Samsung Galaxy S9+ (SM-G965F)</string>
     <string name="device_sm_g965_msm">Samsung Galaxy S9+ (Snapdragon)</string>
-    <string name="device_h3113">Sony Xperia XA2 (H3113)</string>
+    <string name="device_sony_xperia_xa2">Sony Xperia XA2</string>
 </resources>
