@@ -116,17 +116,12 @@ public class RemoteVerifyJob extends JobService {
                     throw new IOException("missing subscribeKey");
                 }
 
-                final JSONObject token = new JSONObject();
-                token.put("userId", userId);
-                if (result.pairing) {
-                    token.put("subscribeKey", subscribeKey);
-                }
-
                 connection = (HttpURLConnection) new URL(VERIFY_URL).openConnection();
                 connection.setConnectTimeout(CONNECT_TIMEOUT);
                 connection.setReadTimeout(READ_TIMEOUT);
                 connection.setDoOutput(true);
-                connection.setRequestProperty("Authorization", "Auditor " + token);
+                final String extra = result.pairing ? " " + subscribeKey : "";
+                connection.setRequestProperty("Authorization", "Auditor " + userId + extra);
 
                 final OutputStream output = connection.getOutputStream();
                 output.write(result.serialized);
