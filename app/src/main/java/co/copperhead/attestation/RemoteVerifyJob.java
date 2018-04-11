@@ -11,9 +11,6 @@ import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
-import org.json.JSONObject;
-import org.json.JSONException;
-
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -131,12 +128,12 @@ public class RemoteVerifyJob extends JobService {
                 if (responseCode == 200) {
                     try (final InputStream postResponse = connection.getInputStream()) {
                         final BufferedReader postReader = new BufferedReader(new InputStreamReader(postResponse));
-                        final String json = postReader.lines().collect(Collectors.joining());
-                        final JSONObject data = new JSONObject(json);
-
-                        schedule(RemoteVerifyJob.this, data.getInt("verifyInterval"));
-                        preferences.edit().putString(KEY_SUBSCRIBE_KEY,
-                                data.getString("subscribeKey")).apply();
+                        final String[] tokens = postReader.readLine().split(" ");
+                        if (tokens.length < 2) {
+                            throw new GeneralSecurityException("missing fields");
+                        }
+                        preferences.edit().putString(KEY_SUBSCRIBE_KEY, tokens[0]).apply();
+                        schedule(RemoteVerifyJob.this, Integer.parseInt(tokens[1]));
                     }
                 } else {
                     if (result.pairing) {
@@ -145,8 +142,8 @@ public class RemoteVerifyJob extends JobService {
                     }
                     throw new IOException("response code: " + responseCode);
                 }
-            } catch (final GeneralSecurityException | IOException | JSONException |
-                    InvalidInterval | NumberFormatException e) {
+            } catch (final GeneralSecurityException | IOException | InvalidInterval |
+                    NumberFormatException e) {
                 Log.e(TAG, "remote verify failure", e);
                 return true;
             } finally {
