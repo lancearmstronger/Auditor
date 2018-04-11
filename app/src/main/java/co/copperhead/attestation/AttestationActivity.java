@@ -3,7 +3,6 @@ package co.copperhead.attestation;
 import android.Manifest;
 import android.app.PendingIntent;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Build;
