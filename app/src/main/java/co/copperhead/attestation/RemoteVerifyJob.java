@@ -24,6 +24,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import co.copperhead.attestation.AttestationProtocol.AttestationResult;
 
@@ -133,7 +134,12 @@ public class RemoteVerifyJob extends JobService {
                 if (responseCode == 200) {
                     try (final InputStream postResponse = connection.getInputStream()) {
                         final BufferedReader postReader = new BufferedReader(new InputStreamReader(postResponse));
-                        schedule(RemoteVerifyJob.this, Integer.parseInt(postReader.readLine()));
+                        final String json = postReader.lines().collect(Collectors.joining());
+                        final JSONObject data = new JSONObject(json);
+
+                        schedule(RemoteVerifyJob.this, data.getInt("verifyInterval"));
+                        preferences.edit().putString(KEY_SUBSCRIBE_KEY,
+                                data.getString("subscribeKey")).apply();
                     }
                 } else {
                     if (result.pairing) {
