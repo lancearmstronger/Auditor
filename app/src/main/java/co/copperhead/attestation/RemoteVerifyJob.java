@@ -126,7 +126,7 @@ public class RemoteVerifyJob extends JobService {
                 connection.setConnectTimeout(CONNECT_TIMEOUT);
                 connection.setReadTimeout(READ_TIMEOUT);
                 connection.setDoOutput(true);
-                connection.setRequestProperty("Authorization", "Bearer " + token);
+                connection.setRequestProperty("Authorization", "Auditor " + token);
 
                 final OutputStream output = connection.getOutputStream();
                 output.write(result.serialized);
