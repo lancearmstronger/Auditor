@@ -118,7 +118,9 @@ public class RemoteVerifyJob extends JobService {
 
                 final JSONObject token = new JSONObject();
                 token.put("userId", userId);
-                token.put("subscribeKey", subscribeKey);
+                if (result.pairing) {
+                    token.put("subscribeKey", subscribeKey);
+                }
 
                 connection = (HttpURLConnection) new URL(VERIFY_URL).openConnection();
                 connection.setConnectTimeout(CONNECT_TIMEOUT);
