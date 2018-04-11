@@ -360,7 +360,7 @@ public class AttestationActivity extends AppCompatActivity {
                         return;
                     }
                     PreferenceManager.getDefaultSharedPreferences(this).edit()
-                            .putInt(RemoteVerifyJob.KEY_USER_ID, Integer.parseInt(values[1]))
+                            .putLong(RemoteVerifyJob.KEY_USER_ID, Long.parseLong(values[1]))
                             .putString(RemoteVerifyJob.KEY_SUBSCRIBE_KEY, values[2])
                             .apply();
                     try {
