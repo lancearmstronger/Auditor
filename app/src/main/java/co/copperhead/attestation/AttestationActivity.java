@@ -355,14 +355,16 @@ public class AttestationActivity extends AppCompatActivity {
                     mStage = Stage.None;
                     Log.d(TAG, "account: " + contents);
                     final String[] values = contents.split(" ");
-                    if (values.length < 3 || !RemoteVerifyJob.DOMAIN.equals(values[0])) {
+                    if (values.length < 4 || !RemoteVerifyJob.DOMAIN.equals(values[0])) {
                         snackbar.setText(R.string.scanned_invalid_account_qr_code).show();
                         return;
                     }
-                    PreferenceManager.getDefaultSharedPreferences(this)
-                            .edit().putString(RemoteVerifyJob.KEY_REMOTE_ACCOUNT, values[1]).apply();
+                    PreferenceManager.getDefaultSharedPreferences(this).edit()
+                            .putInt(RemoteVerifyJob.KEY_USER_ID, Integer.parseInt(values[1]))
+                            .putString(RemoteVerifyJob.KEY_SUBSCRIBE_KEY, values[2])
+                            .apply();
                     try {
-                        if (RemoteVerifyJob.schedule(this, Integer.parseInt(values[2]))) {
+                        if (RemoteVerifyJob.schedule(this, Integer.parseInt(values[3]))) {
                             snackbar.setText(R.string.enable_remote_verify).show();
                         }
                     } catch (final RemoteVerifyJob.InvalidInterval | NumberFormatException e) {
@@ -418,8 +420,10 @@ public class AttestationActivity extends AppCompatActivity {
             }
             case R.id.action_disable_remote_verify: {
                 RemoteVerifyJob.cancel(this);
-                final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-                preferences.edit().remove(RemoteVerifyJob.KEY_REMOTE_ACCOUNT).apply();
+                PreferenceManager.getDefaultSharedPreferences(this).edit()
+                        .remove(RemoteVerifyJob.KEY_USER_ID)
+                        .remove(RemoteVerifyJob.KEY_SUBSCRIBE_KEY)
+                        .apply();
                 snackbar.setText(R.string.disable_remote_verify).show();
                 return true;
             }

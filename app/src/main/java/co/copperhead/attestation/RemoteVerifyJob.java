@@ -33,7 +33,8 @@ public class RemoteVerifyJob extends JobService {
     private static final int READ_TIMEOUT = 60000;
     private static final int MAX_INTERVAL = 60 * 60 * 24 * 7;
     private static final String STATE_PREFIX = "remote_";
-    static final String KEY_REMOTE_ACCOUNT = "remote_account";
+    static final String KEY_USER_ID = "remote_user_id";
+    static final String KEY_SUBSCRIBE_KEY = "remote_subscribe_key";
 
     private RemoteVerifyTask task;
 
@@ -100,7 +101,7 @@ public class RemoteVerifyJob extends JobService {
                         AttestationProtocol.generateSerialized(RemoteVerifyJob.this, challengeMessage, STATE_PREFIX);
 
                 final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(RemoteVerifyJob.this);
-                final String account = preferences.getString(KEY_REMOTE_ACCOUNT, null);
+                final String account = preferences.getString(KEY_SUBSCRIBE_KEY, null);
                 if (account == null) {
                     throw new IOException("missing account");
                 }
