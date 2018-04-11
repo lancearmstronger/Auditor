@@ -217,39 +217,41 @@ class AttestationProtocol {
         final int attestationVersion;
         final int keymasterVersion;
         final boolean rollbackResistant;
+        final boolean perUserEncryption;
 
         DeviceInfo(final int name, final int attestationVersion, final int keymasterVersion,
-                final boolean rollbackResistant) {
+                final boolean rollbackResistant, final boolean perUserEncryption) {
             this.name = name;
             this.attestationVersion = attestationVersion;
             this.keymasterVersion = keymasterVersion;
             this.rollbackResistant = rollbackResistant;
+            this.perUserEncryption = perUserEncryption;
         }
     }
 
     private static final ImmutableMap<String, DeviceInfo> fingerprintsCopperheadOS = ImmutableMap
             .<String, DeviceInfo>builder()
             .put("36D067F8517A2284781B99A2984966BFF02D3F47310F831FCDCC4D792426B6DF",
-                    new DeviceInfo(R.string.device_pixel_2, 2, 3, true))
+                    new DeviceInfo(R.string.device_pixel_2, 2, 3, true, true))
             .put("815DCBA82BAC1B1758211FF53CAA0B6883CB6C901BE285E1B291C8BDAA12DF75",
-                    new DeviceInfo(R.string.device_pixel_2_xl, 2, 3, true))
+                    new DeviceInfo(R.string.device_pixel_2_xl, 2, 3, true, true))
             .build();
     private static final ImmutableMap<String, DeviceInfo> fingerprintsStock = ImmutableMap
             .<String, DeviceInfo>builder()
             .put("5341E6B2646979A70E57653007A1F310169421EC9BDD9F1A5648F75ADE005AF1",
-                    new DeviceInfo(R.string.device_bkl_l04, 2, 3, false))
+                    new DeviceInfo(R.string.device_bkl_l04, 2, 3, false, true))
             .put("1962B0538579FFCE9AC9F507C46AFE3B92055BAC7146462283C85C500BE78D82",
-                    new DeviceInfo(R.string.device_pixel_2, 2, 3, true))
+                    new DeviceInfo(R.string.device_pixel_2, 2, 3, true, true))
             .put("171616EAEF26009FC46DC6D89F3D24217E926C81A67CE65D2E3A9DC27040C7AB",
-                    new DeviceInfo(R.string.device_pixel_2_xl, 2, 3, true))
+                    new DeviceInfo(R.string.device_pixel_2_xl, 2, 3, true, true))
             .put("266869F7CF2FB56008EFC4BE8946C8F84190577F9CA688F59C72DD585E696488",
-                    new DeviceInfo(R.string.device_sm_g960u, 1, 2, false))
+                    new DeviceInfo(R.string.device_sm_g960u, 1, 2, false, false))
             .put("D1C53B7A931909EC37F1939B14621C6E4FD19BF9079D195F86B3CEA47CD1F92D",
-                    new DeviceInfo(R.string.device_sm_g965f, 1, 2, false))
+                    new DeviceInfo(R.string.device_sm_g965f, 1, 2, false, false))
             .put("A4A544C2CFBAEAA88C12360C2E4B44C29722FC8DBB81392A6C1FAEDB7BF63010",
-                    new DeviceInfo(R.string.device_sm_g965_msm, 1, 2, false))
+                    new DeviceInfo(R.string.device_sm_g965_msm, 1, 2, false, false))
             .put("4285AD64745CC79B4499817F264DC16BF2AF5163AF6C328964F39E61EC84693E",
-                    new DeviceInfo(R.string.device_sony_xperia_xa2, 2, 3, true))
+                    new DeviceInfo(R.string.device_sony_xperia_xa2, 2, 3, true, true))
             .build();
 
     private static byte[] getChallengeIndex(final Context context) {
@@ -289,15 +291,18 @@ class AttestationProtocol {
         final int osPatchLevel;
         final int appVersion;
         final boolean isStock;
+        final boolean perUserEncryption;
 
         Verified(final int device, final String verifiedBootKey, final int osVersion,
-                final int osPatchLevel, final int appVersion, final boolean isStock) {
+                final int osPatchLevel, final int appVersion, final boolean isStock,
+                final boolean perUserEncryption) {
             this.device = device;
             this.verifiedBootKey = verifiedBootKey;
             this.osVersion = osVersion;
             this.osPatchLevel = osPatchLevel;
             this.appVersion = appVersion;
             this.isStock = isStock;
+            this.perUserEncryption = perUserEncryption;
         }
     }
 
@@ -418,7 +423,8 @@ class AttestationProtocol {
             throw new GeneralSecurityException("keymaster security level is software");
         }
 
-        return new Verified(device.name, verifiedBootKey, osVersion, osPatchLevel, appVersion, stock);
+        return new Verified(device.name, verifiedBootKey, osVersion, osPatchLevel, appVersion,
+                stock, device.perUserEncryption);
     }
 
     private static void verifyCertificateSignatures(Certificate[] certChain)
@@ -772,7 +778,7 @@ class AttestationProtocol {
         final Certificate[] attestationCertificates = keyStore.getCertificateChain(attestationKeystoreAlias);
 
         // sanity check on the device being verified before sending it off to the verifying device
-        verifyStateless(attestationCertificates, challenge,
+        final Verified verified = verifyStateless(attestationCertificates, challenge,
                 attestationCertificates[attestationCertificates.length - 1]);
 
         // OS-enforced checks and information
@@ -797,8 +803,15 @@ class AttestationProtocol {
         }
 
         final int encryptionStatus = dpm.getStorageEncryptionStatus();
-        if (encryptionStatus != DevicePolicyManager.ENCRYPTION_STATUS_ACTIVE_PER_USER) {
-            throw new GeneralSecurityException("invalid encryption status");
+        if (verified.perUserEncryption) {
+            if (encryptionStatus != DevicePolicyManager.ENCRYPTION_STATUS_ACTIVE_PER_USER) {
+                throw new GeneralSecurityException("invalid encryption status");
+            }
+        } else {
+            if (encryptionStatus != DevicePolicyManager.ENCRYPTION_STATUS_ACTIVE &&
+                    encryptionStatus != DevicePolicyManager.ENCRYPTION_STATUS_ACTIVE_DEFAULT_KEY) {
+                throw new GeneralSecurityException("invalid encryption status");
+            }
         }
         final KeyguardManager keyguard = context.getSystemService(KeyguardManager.class);
         final boolean userProfileSecure = keyguard.isDeviceSecure();
