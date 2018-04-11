@@ -11,6 +11,9 @@ import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
+import org.json.JSONObject;
+import org.json.JSONException;
+
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -101,15 +104,24 @@ public class RemoteVerifyJob extends JobService {
                         AttestationProtocol.generateSerialized(RemoteVerifyJob.this, challengeMessage, STATE_PREFIX);
 
                 final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(RemoteVerifyJob.this);
-                final String account = preferences.getString(KEY_SUBSCRIBE_KEY, null);
-                if (account == null) {
-                    throw new IOException("missing account");
+                final long userId = preferences.getLong(KEY_USER_ID, -1);
+                if (userId == -1) {
+                    throw new IOException("missing userId");
+                }
+                final String subscribeKey = preferences.getString(KEY_SUBSCRIBE_KEY, null);
+                if (subscribeKey == null) {
+                    throw new IOException("missing subscribeKey");
                 }
 
-                connection = (HttpURLConnection) new URL(VERIFY_URL + "/" + account).openConnection();
+                final JSONObject token = new JSONObject();
+                token.put("userId", userId);
+                token.put("subscribeKey", subscribeKey);
+
+                connection = (HttpURLConnection) new URL(VERIFY_URL).openConnection();
                 connection.setConnectTimeout(CONNECT_TIMEOUT);
                 connection.setReadTimeout(READ_TIMEOUT);
                 connection.setDoOutput(true);
+                connection.setRequestProperty("Authorization", "Bearer " + token);
 
                 final OutputStream output = connection.getOutputStream();
                 output.write(result.serialized);
@@ -128,7 +140,8 @@ public class RemoteVerifyJob extends JobService {
                     }
                     throw new IOException("response code: " + responseCode);
                 }
-            } catch (final GeneralSecurityException | IOException | InvalidInterval | NumberFormatException e) {
+            } catch (final GeneralSecurityException | IOException | JSONException |
+                    InvalidInterval | NumberFormatException e) {
                 Log.e(TAG, "remote verify failure", e);
                 return true;
             } finally {
