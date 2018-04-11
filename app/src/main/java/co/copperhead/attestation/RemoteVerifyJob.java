@@ -31,6 +31,7 @@ public class RemoteVerifyJob extends JobService {
     private static final String TAG = "RemoteVerifyJob";
     private static final int JOB_ID = 0;
     static final String DOMAIN = "attestation.copperhead.co";
+    private static final String CHALLENGE_URL = "https:/" + DOMAIN + "/challenge";
     private static final String VERIFY_URL = "https:/" + DOMAIN + "/verify";
     private static final int CONNECT_TIMEOUT = 60000;
     private static final int READ_TIMEOUT = 60000;
@@ -89,9 +90,10 @@ public class RemoteVerifyJob extends JobService {
         protected Boolean doInBackground(final Void... params) {
             HttpURLConnection connection = null;
             try {
-                connection = (HttpURLConnection) new URL(VERIFY_URL).openConnection();
+                connection = (HttpURLConnection) new URL(CHALLENGE_URL).openConnection();
                 connection.setConnectTimeout(CONNECT_TIMEOUT);
                 connection.setReadTimeout(READ_TIMEOUT);
+                connection.setRequestMethod("POST");
 
                 final DataInputStream input = new DataInputStream(connection.getInputStream());
                 final byte[] challengeMessage = new byte[AttestationProtocol.CHALLENGE_MESSAGE_LENGTH];
