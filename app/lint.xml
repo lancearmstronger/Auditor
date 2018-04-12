@@ -22,7 +22,7 @@
 
     <!-- LinearLayout is used programmatically -->
     <issue id="UseCompoundDrawables">
-      <ignore path="src/main/res/layout/content_attestation.xml"/>
+        <ignore path="src/main/res/layout/content_attestation.xml"/>
     </issue>
 
     <!-- AsyncTask intentionally holds onto the JobService to call jobFinished -->
