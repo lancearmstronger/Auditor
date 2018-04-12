@@ -99,9 +99,6 @@ public class RemoteVerifyJob extends JobService {
 
                 Log.d(TAG, "received random challenge: " + Utils.logFormatBytes(challengeMessage));
 
-                final AttestationResult result =
-                        AttestationProtocol.generateSerialized(RemoteVerifyJob.this, challengeMessage, STATE_PREFIX);
-
                 final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(RemoteVerifyJob.this);
                 final long userId = preferences.getLong(KEY_USER_ID, -1);
                 if (userId == -1) {
@@ -111,6 +108,9 @@ public class RemoteVerifyJob extends JobService {
                 if (subscribeKey == null) {
                     throw new IOException("missing subscribeKey");
                 }
+
+                final AttestationResult result = AttestationProtocol.generateSerialized(
+                        RemoteVerifyJob.this, challengeMessage, Long.toString(userId), STATE_PREFIX);
 
                 connection = (HttpURLConnection) new URL(VERIFY_URL).openConnection();
                 connection.setConnectTimeout(CONNECT_TIMEOUT);
@@ -136,8 +136,7 @@ public class RemoteVerifyJob extends JobService {
                     }
                 } else {
                     if (result.pairing) {
-                        final byte[] challengeIndex = Arrays.copyOfRange(challengeMessage, 1, 1 + AttestationProtocol.CHALLENGE_LENGTH);
-                        AttestationProtocol.clearAuditee(STATE_PREFIX, challengeIndex);
+                        AttestationProtocol.clearAuditee(STATE_PREFIX, Long.toString(userId));
                     }
                     throw new IOException("response code: " + responseCode);
                 }

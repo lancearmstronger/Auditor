@@ -729,7 +729,7 @@ class AttestationProtocol {
     }
 
     static AttestationResult generateSerialized(final Context context, final byte[] challengeMessage,
-            final String statePrefix) throws GeneralSecurityException, IOException {
+            String index, final String statePrefix) throws GeneralSecurityException, IOException {
         if (challengeMessage.length < CHALLENGE_MESSAGE_LENGTH) {
             throw new GeneralSecurityException("challenge message is too small");
         }
@@ -747,8 +747,12 @@ class AttestationProtocol {
         final KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
         keyStore.load(null);
 
+        if (index == null) {
+            index = BaseEncoding.base16().encode(challengeIndex);
+        }
+
         final String persistentKeystoreAlias =
-                statePrefix + KEYSTORE_ALIAS_PERSISTENT_PREFIX + BaseEncoding.base16().encode(challengeIndex);
+                statePrefix + KEYSTORE_ALIAS_PERSISTENT_PREFIX + index;
 
         // generate a new key for fresh attestation results unless the persistent key is not yet created
         keyStore.deleteEntry(statePrefix + KEYSTORE_ALIAS_FRESH);
@@ -945,12 +949,12 @@ class AttestationProtocol {
         }
     }
 
-    static void clearAuditee(final String statePrefix, final byte[] challengeIndex)
+    static void clearAuditee(final String statePrefix, final String index)
             throws GeneralSecurityException, IOException {
         final KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
         keyStore.load(null);
 
-        final String alias = statePrefix + KEYSTORE_ALIAS_PERSISTENT_PREFIX + BaseEncoding.base16().encode(challengeIndex);
+        final String alias = statePrefix + KEYSTORE_ALIAS_PERSISTENT_PREFIX + index;
         Log.d(TAG, "deleting key " + alias);
         keyStore.deleteEntry(alias);
     }
