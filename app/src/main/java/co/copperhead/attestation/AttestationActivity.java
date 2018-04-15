@@ -384,7 +384,8 @@ public class AttestationActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(final Menu menu) {
         getMenuInflater().inflate(R.menu.menu_attestation, menu);
         menu.findItem(R.id.action_clear_auditee).setEnabled(isSupportedAuditee);
-        menu.findItem(R.id.action_submit_sample).setEnabled(potentialSupportedAuditee());
+        menu.findItem(R.id.action_submit_sample)
+                .setEnabled(potentialSupportedAuditee() && !BuildConfig.DEBUG);
         return true;
     }
 
