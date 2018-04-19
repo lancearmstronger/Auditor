@@ -372,6 +372,14 @@ class AttestationProtocol {
         final AuthorizationList teeEnforced = attestation.getTeeEnforced();
 
         // verified boot security checks
+        final RootOfTrust rootOfTrust = teeEnforced.getRootOfTrust();
+        if (rootOfTrust == null) {
+            throw new GeneralSecurityException("missing root of trust");
+        }
+        if (!rootOfTrust.isDeviceLocked()) {
+            throw new GeneralSecurityException("device is not locked");
+        }
+        // may 0 if the bootloader is unlocked so these are checked after isDeviceLocked()
         final int osVersion = teeEnforced.getOsVersion();
         if (osVersion < OS_VERSION_MINIMUM) {
             throw new GeneralSecurityException("OS version too old");
@@ -379,13 +387,6 @@ class AttestationProtocol {
         final int osPatchLevel = teeEnforced.getOsPatchLevel();
         if (osPatchLevel < OS_PATCH_LEVEL_MINIMUM) {
             throw new GeneralSecurityException("OS patch level too old");
-        }
-        final RootOfTrust rootOfTrust = teeEnforced.getRootOfTrust();
-        if (rootOfTrust == null) {
-            throw new GeneralSecurityException("missing root of trust");
-        }
-        if (!rootOfTrust.isDeviceLocked()) {
-            throw new GeneralSecurityException("device is not locked");
         }
 
         final int verifiedBootState = rootOfTrust.getVerifiedBootState();
