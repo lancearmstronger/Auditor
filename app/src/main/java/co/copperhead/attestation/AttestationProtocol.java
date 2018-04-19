@@ -330,6 +330,14 @@ class AttestationProtocol {
 
         final Attestation attestation = new Attestation((X509Certificate) certificates[0]);
 
+        // enforce hardware-based attestation
+        if (attestation.getAttestationSecurityLevel() != Attestation.KM_SECURITY_LEVEL_TRUSTED_ENVIRONMENT) {
+            throw new GeneralSecurityException("attestation security level is software");
+        }
+        if (attestation.getKeymasterSecurityLevel() != Attestation.KM_SECURITY_LEVEL_TRUSTED_ENVIRONMENT) {
+            throw new GeneralSecurityException("keymaster security level is software");
+        }
+
         // prevent replay attacks
         if (!Arrays.equals(attestation.getAttestationChallenge(), challenge)) {
             throw new GeneralSecurityException("challenge mismatch");
@@ -413,14 +421,8 @@ class AttestationProtocol {
         if (attestation.getAttestationVersion() < device.attestationVersion) {
             throw new GeneralSecurityException("attestation version below " + device.attestationVersion);
         }
-        if (attestation.getAttestationSecurityLevel() != Attestation.KM_SECURITY_LEVEL_TRUSTED_ENVIRONMENT) {
-            throw new GeneralSecurityException("attestation security level is software");
-        }
         if (attestation.getKeymasterVersion() < device.keymasterVersion) {
             throw new GeneralSecurityException("keymaster version below " + device.keymasterVersion);
-        }
-        if (attestation.getKeymasterSecurityLevel() != Attestation.KM_SECURITY_LEVEL_TRUSTED_ENVIRONMENT) {
-            throw new GeneralSecurityException("keymaster security level is software");
         }
 
         return new Verified(device.name, verifiedBootKey, osVersion, osPatchLevel, appVersion,
