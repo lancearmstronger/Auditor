@@ -133,7 +133,7 @@ class AttestationProtocol {
     // short compressedChainLength
     // byte[] compressedChain { [short encodedCertificateLength, byte[] encodedCertificate] }
     // byte[] fingerprint (length: FINGERPRINT_LENGTH)
-    // byte osEnforcedFlags
+    // int osEnforcedFlags (byte rather than int for PROTOCOL_VERSION < 2)
     // }
     // byte[] signature (rest of message)
     //
@@ -172,7 +172,7 @@ class AttestationProtocol {
     // the outer signature and the rest of the chain for pinning the expected chain. It enforces
     // downgrade protection for the OS version/patch (bootloader/TEE enforced) and app version (OS
     // enforced) by keeping them updated.
-    static final byte PROTOCOL_VERSION = 1;
+    static final byte PROTOCOL_VERSION = 2;
     private static final byte PROTOCOL_VERSION_MINIMUM = 1;
     // can become longer in the future, but this is the minimum length
     static final byte CHALLENGE_MESSAGE_LENGTH = 1 + CHALLENGE_LENGTH * 2;
@@ -693,7 +693,12 @@ class AttestationProtocol {
         final byte[] fingerprint = new byte[FINGERPRINT_LENGTH];
         deserializer.get(fingerprint);
 
-        final byte osEnforcedFlags = deserializer.get();
+        final int osEnforcedFlags;
+        if (version < 2) {
+            osEnforcedFlags = deserializer.get();
+        } else {
+            osEnforcedFlags = deserializer.getInt();
+        }
         if ((osEnforcedFlags & ~OS_ENFORCED_FLAGS_ALL) != 0) {
             Log.w(TAG, "unknown OS enforced flag set (flags: " + Integer.toBinaryString(osEnforcedFlags) + ")");
         }
@@ -849,7 +854,9 @@ class AttestationProtocol {
         // Serialization
 
         final ByteBuffer serializer = ByteBuffer.allocate(MAX_MESSAGE_SIZE);
-        serializer.put((byte) Math.min(PROTOCOL_VERSION, maxVersion));
+
+        final byte version = (byte) Math.min(PROTOCOL_VERSION, maxVersion);
+        serializer.put(version);
 
         final ByteBuffer chainSerializer = ByteBuffer.allocate(MAX_ENCODED_CHAIN_LENGTH);
         final int certificateCount = attestationCertificates.length - 1;
@@ -891,7 +898,7 @@ class AttestationProtocol {
         }
         serializer.put(fingerprint);
 
-        byte osEnforcedFlags = OS_ENFORCED_FLAGS_NONE;
+        int osEnforcedFlags = OS_ENFORCED_FLAGS_NONE;
         if (userProfileSecure) {
             osEnforcedFlags |= OS_ENFORCED_FLAGS_USER_PROFILE_SECURE;
         }
@@ -916,7 +923,11 @@ class AttestationProtocol {
         if (denyNewUsb) {
             osEnforcedFlags |= OS_ENFORCED_FLAGS_DENY_NEW_USB;
         }
-        serializer.put(osEnforcedFlags);
+        if (version < 2) {
+            serializer.put((byte) osEnforcedFlags);
+        } else {
+            serializer.putInt(osEnforcedFlags);
+        }
 
         final ByteBuffer message = serializer.duplicate();
         message.flip();
