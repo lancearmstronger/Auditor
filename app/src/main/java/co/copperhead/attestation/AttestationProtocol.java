@@ -188,6 +188,7 @@ class AttestationProtocol {
     private static final int OS_ENFORCED_FLAGS_ENROLLED_FINGERPRINTS = 1 << 5;
     private static final int OS_ENFORCED_FLAGS_DENY_NEW_USB = 1 << 6;
     private static final int OS_ENFORCED_FLAGS_DEVICE_ADMIN_NON_SYSTEM = 1 << 7;
+    private static final int OS_ENFORCED_FLAGS_OEM_UNLOCK_ALLOWED = 1 << 8;
     private static final int OS_ENFORCED_FLAGS_ALL =
             OS_ENFORCED_FLAGS_USER_PROFILE_SECURE |
             OS_ENFORCED_FLAGS_ACCESSIBILITY |
@@ -196,7 +197,8 @@ class AttestationProtocol {
             OS_ENFORCED_FLAGS_ADD_USERS_WHEN_LOCKED |
             OS_ENFORCED_FLAGS_ENROLLED_FINGERPRINTS |
             OS_ENFORCED_FLAGS_DENY_NEW_USB |
-            OS_ENFORCED_FLAGS_DEVICE_ADMIN_NON_SYSTEM;
+            OS_ENFORCED_FLAGS_DEVICE_ADMIN_NON_SYSTEM |
+            OS_ENFORCED_FLAGS_OEM_UNLOCK_ALLOWED;
 
     private static final String ATTESTATION_APP_PACKAGE_NAME = "co.copperhead.attestation";
     private static final int ATTESTATION_APP_MINIMUM_VERSION = 14;
@@ -524,8 +526,8 @@ class AttestationProtocol {
             final boolean accessibility, final boolean deviceAdmin,
             final boolean deviceAdminNonSystem, final boolean adbEnabled,
             final boolean addUsersWhenLocked, final boolean enrolledFingerprints,
-            final boolean denyNewUsb) throws GeneralSecurityException, IOException {
-
+            final boolean denyNewUsb, final boolean oemUnlockAllowed)
+            throws GeneralSecurityException, IOException {
         final String fingerprintHex = BaseEncoding.base16().encode(fingerprint);
         final byte[] currentFingerprint = getFingerprint(attestationCertificates[0]);
         final boolean hasPersistentKey = !Arrays.equals(currentFingerprint, fingerprint);
@@ -649,6 +651,10 @@ class AttestationProtocol {
                 toYesNoString(context, addUsersWhenLocked)));
         osEnforced.append(context.getString(R.string.deny_new_usb,
                 toYesNoString(context, denyNewUsb)));
+        if (verified.appVersion > 10 + ATTESTATION_APP_VERSION_CODE_OFFSET) {
+            osEnforced.append(context.getString(R.string.oem_unlock_allowed,
+                        toYesNoString(context, oemUnlockAllowed)));
+        }
 
         return new VerificationResult(hasPersistentKey, teeEnforced.toString(), osEnforced.toString());
     }
@@ -710,6 +716,7 @@ class AttestationProtocol {
         final boolean addUsersWhenLocked = (osEnforcedFlags & OS_ENFORCED_FLAGS_ADD_USERS_WHEN_LOCKED) != 0;
         final boolean enrolledFingerprints = (osEnforcedFlags & OS_ENFORCED_FLAGS_ENROLLED_FINGERPRINTS) != 0;
         final boolean denyNewUsb = (osEnforcedFlags & OS_ENFORCED_FLAGS_DENY_NEW_USB) != 0;
+        final boolean oemUnlockAllowed = (osEnforcedFlags & OS_ENFORCED_FLAGS_OEM_UNLOCK_ALLOWED) != 0;
 
         if (deviceAdminNonSystem && !deviceAdmin) {
             throw new GeneralSecurityException("invalid device administrator state");
@@ -729,7 +736,7 @@ class AttestationProtocol {
         final byte[] challenge = Arrays.copyOfRange(challengeMessage, 1 + CHALLENGE_LENGTH, 1 + CHALLENGE_LENGTH * 2);
         return verify(context, fingerprint, challenge, deserializer.asReadOnlyBuffer(), signature,
                 certificates, userProfileSecure, accessibility, deviceAdmin, deviceAdminNonSystem,
-                adbEnabled, addUsersWhenLocked, enrolledFingerprints, denyNewUsb);
+                adbEnabled, addUsersWhenLocked, enrolledFingerprints, denyNewUsb, oemUnlockAllowed);
     }
 
     static class AttestationResult {
@@ -851,6 +858,9 @@ class AttestationProtocol {
                 SystemProperties.get("persist.security.deny_new_usb", "disabled");
         final boolean denyNewUsb = !denyNewUsbValue.equals("disabled");
 
+        final String oemUnlockAllowedValue = SystemProperties.get("sys.oem_unlock_allowed", "0");
+        final boolean oemUnlockAllowed = oemUnlockAllowedValue.equals("1");
+
         // Serialization
 
         final ByteBuffer serializer = ByteBuffer.allocate(MAX_MESSAGE_SIZE);
@@ -922,6 +932,9 @@ class AttestationProtocol {
         }
         if (denyNewUsb) {
             osEnforcedFlags |= OS_ENFORCED_FLAGS_DENY_NEW_USB;
+        }
+        if (oemUnlockAllowed) {
+            osEnforcedFlags |= OS_ENFORCED_FLAGS_OEM_UNLOCK_ALLOWED;
         }
         if (version < 2) {
             serializer.put((byte) osEnforcedFlags);
