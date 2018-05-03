@@ -28,8 +28,8 @@ public class RemoteVerifyJob extends JobService {
     private static final String TAG = "RemoteVerifyJob";
     private static final int JOB_ID = 0;
     static final String DOMAIN = "attestation.copperhead.co";
-    private static final String CHALLENGE_URL = "https:/" + DOMAIN + "/challenge";
-    private static final String VERIFY_URL = "https:/" + DOMAIN + "/verify";
+    private static final String CHALLENGE_URL = "https://" + DOMAIN + "/challenge";
+    private static final String VERIFY_URL = "https://" + DOMAIN + "/verify";
     private static final int CONNECT_TIMEOUT = 60000;
     private static final int READ_TIMEOUT = 60000;
     private static final int MAX_INTERVAL = 60 * 60 * 24 * 7;
