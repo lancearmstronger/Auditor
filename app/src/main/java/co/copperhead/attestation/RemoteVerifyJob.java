@@ -32,7 +32,8 @@ public class RemoteVerifyJob extends JobService {
     private static final String VERIFY_URL = "https://" + DOMAIN + "/verify";
     private static final int CONNECT_TIMEOUT = 60000;
     private static final int READ_TIMEOUT = 60000;
-    private static final int MAX_INTERVAL = 60 * 60 * 24 * 7;
+    private static final int MIN_INTERVAL = 60 * 60;
+    private static final int MAX_INTERVAL = 7 * 24 * 60 * 60;
     private static final String STATE_PREFIX = "remote_";
     static final String KEY_USER_ID = "remote_user_id";
     static final String KEY_SUBSCRIBE_KEY = "remote_subscribe_key";
@@ -50,7 +51,7 @@ public class RemoteVerifyJob extends JobService {
     }
 
     static boolean schedule(final Context context, final int interval) throws InvalidInterval {
-        if (interval > MAX_INTERVAL) {
+        if (interval < MIN_INTERVAL || interval > MAX_INTERVAL) {
             throw new InvalidInterval();
         }
         final JobScheduler scheduler = context.getSystemService(JobScheduler.class);
