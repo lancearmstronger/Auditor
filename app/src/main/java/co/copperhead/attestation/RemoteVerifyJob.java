@@ -56,13 +56,17 @@ public class RemoteVerifyJob extends JobService {
         }
         final JobScheduler scheduler = context.getSystemService(JobScheduler.class);
         final JobInfo jobInfo = scheduler.getPendingJob(JOB_ID);
-        if (jobInfo != null && jobInfo.getIntervalMillis() == interval * 1000) {
+        final long intervalMillis = interval * 1000;
+        final long flexMillis = intervalMillis / 10;
+        if (jobInfo != null &&
+                jobInfo.getIntervalMillis() == intervalMillis &&
+                jobInfo.getFlexMillis() == flexMillis) {
             Log.d(TAG, "job already registered");
             return true;
         }
         final ComponentName serviceName = new ComponentName(context, RemoteVerifyJob.class);
         return scheduler.schedule(new JobInfo.Builder(JOB_ID, serviceName)
-            .setPeriodic(interval * 1000)
+            .setPeriodic(intervalMillis, flexMillis)
             .setPersisted(true)
             .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
             .build()) == JobScheduler.RESULT_SUCCESS;
