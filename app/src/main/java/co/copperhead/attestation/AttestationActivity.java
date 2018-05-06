@@ -160,12 +160,34 @@ public class AttestationActivity extends AppCompatActivity {
         savedInstanceState.putInt(STATE_BACKGROUND_RESOURCE, backgroundResource);
     }
 
-    private void chooseBestLayout() {
+    private void chooseBestLayout(final byte[] data) {
         final View content = findViewById(R.id.content_attestation);
         final LinearLayout resultLayout = findViewById(R.id.result);
-        if (content.getHeight() - textView.getHeight() > content.getWidth() - textView.getWidth()) {
-            resultLayout.setOrientation(LinearLayout.VERTICAL);
-        }
+
+        final ViewTreeObserver vto = content.getViewTreeObserver();
+        vto.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            @Override
+            public boolean onPreDraw() {
+                content.getViewTreeObserver().removeOnPreDrawListener(this);
+                if (content.getHeight() - textView.getHeight() >
+                        content.getWidth() - textView.getWidth()) {
+                    resultLayout.setOrientation(LinearLayout.VERTICAL);
+
+                    final ViewTreeObserver vto = imageView.getViewTreeObserver();
+                    vto.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+                        @Override
+                        public boolean onPreDraw() {
+                            imageView.getViewTreeObserver().removeOnPreDrawListener(this);
+                            imageView.setImageBitmap(createQrCode(data));
+                            return true;
+                        }
+                    });
+                } else {
+                    imageView.setImageBitmap(createQrCode(data));
+                }
+                return true;
+            }
+        });
     }
 
     private void runAuditor() {
@@ -174,17 +196,9 @@ public class AttestationActivity extends AppCompatActivity {
         }
         Log.d(TAG, "sending random challenge: " + Utils.logFormatBytes(auditorChallenge));
         textView.setText(R.string.qr_code_scan_hint_auditor);
-        chooseBestLayout();
+        chooseBestLayout(auditorChallenge);
 
-        final ViewTreeObserver vto = imageView.getViewTreeObserver();
-        vto.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
-            @Override
-            public boolean onPreDraw() {
-                imageView.getViewTreeObserver().removeOnPreDrawListener(this);
-                imageView.setImageBitmap(createQrCode(auditorChallenge));
-                return true;
-            }
-        });
+
 
         imageView.setOnClickListener(view -> showQrScanner());
     }
@@ -219,17 +233,7 @@ public class AttestationActivity extends AppCompatActivity {
         } else {
             textView.setText(R.string.qr_code_scan_hint_auditee);
         }
-        chooseBestLayout();
-
-        final ViewTreeObserver vto = imageView.getViewTreeObserver();
-        vto.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
-            @Override
-            public boolean onPreDraw() {
-                imageView.getViewTreeObserver().removeOnPreDrawListener(this);
-                imageView.setImageBitmap(createQrCode(serialized));
-                return true;
-            }
-        });
+        chooseBestLayout(serialized);
     }
 
     private Bitmap createQrCode(final byte[] contents) {
