@@ -174,7 +174,7 @@ public class RemoteVerifyJob extends JobService {
 
     @Override
     public boolean onStartJob(final JobParameters params) {
-        if (params.isOverrideDeadlineExpired()) {
+        if (params.getJobId() == FIRST_RUN_JOB_ID && params.isOverrideDeadlineExpired()) {
             Log.d(TAG, "override deadline expired");
             return false;
         }
