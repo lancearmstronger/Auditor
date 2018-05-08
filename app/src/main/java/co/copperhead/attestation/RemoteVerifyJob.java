@@ -25,7 +25,8 @@ import co.copperhead.attestation.AttestationProtocol.AttestationResult;
 
 public class RemoteVerifyJob extends JobService {
     private static final String TAG = "RemoteVerifyJob";
-    private static final int JOB_ID = 0;
+    private static final int PERIODIC_JOB_ID = 0;
+    private static final int FIRST_RUN_JOB_ID = 1;
     static final String DOMAIN = "attestation.copperhead.co";
     private static final String CHALLENGE_URL = "https://" + DOMAIN + "/challenge";
     private static final String VERIFY_URL = "https://" + DOMAIN + "/verify";
@@ -33,6 +34,7 @@ public class RemoteVerifyJob extends JobService {
     private static final int READ_TIMEOUT = 60000;
     private static final int MIN_INTERVAL = 60 * 60;
     private static final int MAX_INTERVAL = 7 * 24 * 60 * 60;
+    private static final int OVERRIDE_OFFSET_MS = 10 * 60 * 1000;
     private static final String STATE_PREFIX = "remote_";
     static final String KEY_USER_ID = "remote_user_id";
     static final String KEY_SUBSCRIBE_KEY = "remote_subscribe_key";
@@ -40,7 +42,7 @@ public class RemoteVerifyJob extends JobService {
     private RemoteVerifyTask task;
 
     static boolean isScheduled(final Context context) {
-        return context.getSystemService(JobScheduler.class).getPendingJob(JOB_ID) != null;
+        return context.getSystemService(JobScheduler.class).getPendingJob(PERIODIC_JOB_ID) != null;
     }
 
     static class InvalidInterval extends Exception {
@@ -54,7 +56,7 @@ public class RemoteVerifyJob extends JobService {
             throw new InvalidInterval();
         }
         final JobScheduler scheduler = context.getSystemService(JobScheduler.class);
-        final JobInfo jobInfo = scheduler.getPendingJob(JOB_ID);
+        final JobInfo jobInfo = scheduler.getPendingJob(PERIODIC_JOB_ID);
         final long intervalMillis = interval * 1000;
         final long flexMillis = intervalMillis / 10;
         if (jobInfo != null &&
@@ -64,7 +66,16 @@ public class RemoteVerifyJob extends JobService {
             return;
         }
         final ComponentName serviceName = new ComponentName(context, RemoteVerifyJob.class);
-        if (scheduler.schedule(new JobInfo.Builder(JOB_ID, serviceName)
+        if (jobInfo == null) {
+            if (scheduler.schedule(new JobInfo.Builder(FIRST_RUN_JOB_ID, serviceName)
+                        .setOverrideDeadline(intervalMillis - OVERRIDE_OFFSET_MS)
+                        .setPersisted(true)
+                        .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                        .build()) == JobScheduler.RESULT_FAILURE) {
+                throw new RuntimeException("job schedule failed");
+            }
+        }
+        if (scheduler.schedule(new JobInfo.Builder(PERIODIC_JOB_ID, serviceName)
                 .setPeriodic(intervalMillis, flexMillis)
                 .setPersisted(true)
                 .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
@@ -74,7 +85,9 @@ public class RemoteVerifyJob extends JobService {
     }
 
     static void cancel(final Context context) {
-        context.getSystemService(JobScheduler.class).cancel(JOB_ID);
+        final JobScheduler scheduler = context.getSystemService(JobScheduler.class);
+        scheduler.cancel(PERIODIC_JOB_ID);
+        scheduler.cancel(FIRST_RUN_JOB_ID);
     }
 
     private class RemoteVerifyTask extends AsyncTask<Void, Void, Boolean> {
@@ -161,8 +174,12 @@ public class RemoteVerifyJob extends JobService {
 
     @Override
     public boolean onStartJob(final JobParameters params) {
+        if (params.isOverrideDeadlineExpired()) {
+            Log.d(TAG, "override deadline expired");
+            return false;
+        }
         task = new RemoteVerifyTask(params);
-        task.execute();
+        task.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR);
         return true;
     }
 
