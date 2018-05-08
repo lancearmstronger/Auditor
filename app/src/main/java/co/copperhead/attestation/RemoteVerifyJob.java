@@ -49,7 +49,7 @@ public class RemoteVerifyJob extends JobService {
         }
     }
 
-    static boolean schedule(final Context context, final int interval) throws InvalidInterval {
+    static void schedule(final Context context, final int interval) throws InvalidInterval {
         if (interval < MIN_INTERVAL || interval > MAX_INTERVAL) {
             throw new InvalidInterval();
         }
@@ -61,14 +61,16 @@ public class RemoteVerifyJob extends JobService {
                 jobInfo.getIntervalMillis() == intervalMillis &&
                 jobInfo.getFlexMillis() == flexMillis) {
             Log.d(TAG, "job already registered");
-            return true;
+            return;
         }
         final ComponentName serviceName = new ComponentName(context, RemoteVerifyJob.class);
-        return scheduler.schedule(new JobInfo.Builder(JOB_ID, serviceName)
-            .setPeriodic(intervalMillis, flexMillis)
-            .setPersisted(true)
-            .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
-            .build()) == JobScheduler.RESULT_SUCCESS;
+        if (scheduler.schedule(new JobInfo.Builder(JOB_ID, serviceName)
+                .setPeriodic(intervalMillis, flexMillis)
+                .setPersisted(true)
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                .build()) == JobScheduler.RESULT_FAILURE) {
+            throw new RuntimeException("job schedule failed");
+        }
     }
 
     static void cancel(final Context context) {

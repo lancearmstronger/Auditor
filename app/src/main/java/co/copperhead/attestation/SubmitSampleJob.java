@@ -40,12 +40,11 @@ public class SubmitSampleJob extends JobService {
     static void schedule(final Context context) {
         final ComponentName serviceName = new ComponentName(context, SubmitSampleJob.class);
         final JobScheduler scheduler = context.getSystemService(JobScheduler.class);
-        final int result = scheduler.schedule(new JobInfo.Builder(JOB_ID, serviceName)
-            .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
-            .setPersisted(true)
-            .build());
-        if (result == JobScheduler.RESULT_FAILURE) {
-            Log.d(TAG, "job schedule failed");
+        if (scheduler.schedule(new JobInfo.Builder(JOB_ID, serviceName)
+                .setPersisted(true)
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                .build()) == JobScheduler.RESULT_FAILURE) {
+            throw new RuntimeException("job schedule failed");
         }
     }
 

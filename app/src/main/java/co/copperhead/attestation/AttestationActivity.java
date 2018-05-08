@@ -365,9 +365,8 @@ public class AttestationActivity extends AppCompatActivity {
                             .putString(RemoteVerifyJob.KEY_SUBSCRIBE_KEY, values[2])
                             .apply();
                     try {
-                        if (RemoteVerifyJob.schedule(this, Integer.parseInt(values[3]))) {
-                            snackbar.setText(R.string.enable_remote_verify).show();
-                        }
+                        RemoteVerifyJob.schedule(this, Integer.parseInt(values[3]));
+                        snackbar.setText(R.string.enable_remote_verify).show();
                     } catch (final RemoteVerifyJob.InvalidInterval | NumberFormatException e) {
                         snackbar.setText(R.string.scanned_invalid_account_qr_code).show();
                     }
