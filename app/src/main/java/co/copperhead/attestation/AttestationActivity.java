@@ -197,9 +197,6 @@ public class AttestationActivity extends AppCompatActivity {
         Log.d(TAG, "sending random challenge: " + Utils.logFormatBytes(auditorChallenge));
         textView.setText(R.string.qr_code_scan_hint_auditor);
         chooseBestLayout(auditorChallenge);
-
-
-
         imageView.setOnClickListener(view -> showQrScanner());
     }
 
