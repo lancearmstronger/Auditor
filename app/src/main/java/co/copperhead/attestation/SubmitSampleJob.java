@@ -112,7 +112,6 @@ public class SubmitSampleJob extends JobService {
 
     @Override
     public boolean onStartJob(final JobParameters params) {
-        Log.d(TAG, "start job");
         task = new SubmitTask(params);
         task.execute();
         return true;

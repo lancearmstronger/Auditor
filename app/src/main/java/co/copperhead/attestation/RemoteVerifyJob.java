@@ -159,7 +159,6 @@ public class RemoteVerifyJob extends JobService {
 
     @Override
     public boolean onStartJob(final JobParameters params) {
-        Log.d(TAG, "start job");
         task = new RemoteVerifyTask(params);
         task.execute();
         return true;
