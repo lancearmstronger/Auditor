@@ -112,7 +112,7 @@ public class SubmitSampleJob extends JobService {
     @Override
     public boolean onStartJob(final JobParameters params) {
         task = new SubmitTask(params);
-        task.execute();
+        task.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR);
         return true;
     }
 
