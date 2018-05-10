@@ -73,6 +73,7 @@ public class AttestationActivity extends AppCompatActivity {
     private byte[] auditeeSerializedAttestation;
     private byte[] auditorChallenge;
     private int backgroundResource;
+    private boolean canSubmitSample;
 
     private static final ImmutableSet<String> supportedModels = ImmutableSet.of(
             "BKL-L04", "G8441", "H3113", "H3123", "H4113", "Nokia 6.1", "Pixel 2", "Pixel 2 XL",
@@ -385,8 +386,8 @@ public class AttestationActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(final Menu menu) {
         getMenuInflater().inflate(R.menu.menu_attestation, menu);
         menu.findItem(R.id.action_clear_auditee).setEnabled(isSupportedAuditee);
-        menu.findItem(R.id.action_submit_sample)
-                .setEnabled(potentialSupportedAuditee() && !BuildConfig.DEBUG);
+        canSubmitSample = potentialSupportedAuditee() && !BuildConfig.DEBUG;
+        menu.findItem(R.id.action_submit_sample).setEnabled(canSubmitSample);
         return true;
     }
 
@@ -396,7 +397,8 @@ public class AttestationActivity extends AppCompatActivity {
         menu.findItem(R.id.action_enable_remote_verify)
                 .setEnabled(isSupportedAuditee && !isRemoteVerifyScheduled);
         menu.findItem(R.id.action_disable_remote_verify).setEnabled(isRemoteVerifyScheduled);
-        menu.findItem(R.id.action_submit_sample).setEnabled(!SubmitSampleJob.isScheduled(this));
+        menu.findItem(R.id.action_submit_sample).setEnabled(canSubmitSample &&
+                !SubmitSampleJob.isScheduled(this));
         return true;
     }
 
