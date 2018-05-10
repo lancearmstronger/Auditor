@@ -5,9 +5,12 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -119,6 +122,13 @@ public class AttestationActivity extends AppCompatActivity {
         textView.setMovementMethod(new ScrollingMovementMethod());
 
         imageView = findViewById(R.id.imageview);
+
+        final boolean isScheduled = RemoteVerifyJob.isScheduled(this);
+        final PowerManager pm = getSystemService(PowerManager.class);
+        if (isScheduled && !pm.isIgnoringBatteryOptimizations(getPackageName())) {
+            startActivity(new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                        Uri.parse("package:" + getPackageName())));
+        }
 
         if (savedInstanceState != null) {
             auditeePairing = savedInstanceState.getBoolean(STATE_AUDITEE_PAIRING);
@@ -429,6 +439,13 @@ public class AttestationActivity extends AppCompatActivity {
                         .remove(RemoteVerifyJob.KEY_SUBSCRIBE_KEY)
                         .apply();
                 snackbar.setText(R.string.disable_remote_verify).show();
+
+                final PowerManager pm = getSystemService(PowerManager.class);
+                if (!pm.isIgnoringBatteryOptimizations(getPackageName())) {
+                    startActivity(new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                            Uri.parse("package:" + getPackageName())));
+                }
+
                 return true;
             }
             case R.id.action_submit_sample: {
