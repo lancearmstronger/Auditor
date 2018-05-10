@@ -42,6 +42,10 @@ public class SubmitSampleJob extends JobService {
 
     private SubmitTask task;
 
+    static boolean isScheduled(final Context context) {
+        return context.getSystemService(JobScheduler.class).getPendingJob(JOB_ID) != null;
+    }
+
     static void schedule(final Context context) {
         final ComponentName serviceName = new ComponentName(context, SubmitSampleJob.class);
         final JobScheduler scheduler = context.getSystemService(JobScheduler.class);
