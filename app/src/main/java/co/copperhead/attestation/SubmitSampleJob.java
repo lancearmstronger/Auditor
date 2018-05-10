@@ -31,7 +31,7 @@ import static android.security.keystore.KeyProperties.KEY_ALGORITHM_EC;
 
 public class SubmitSampleJob extends JobService {
     private static final String TAG = "SubmitSampleJob";
-    private static final int JOB_ID = 0;
+    private static final int JOB_ID = 2;
     private static final String SUBMIT_URL = "https://" + RemoteVerifyJob.DOMAIN + "/submit";
     private static final int CONNECT_TIMEOUT = 60000;
     private static final int READ_TIMEOUT = 60000;
