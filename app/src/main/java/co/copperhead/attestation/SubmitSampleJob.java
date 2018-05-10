@@ -125,7 +125,7 @@ public class SubmitSampleJob extends JobService {
                     .setContentTitle(context.getString(R.string.sample_submission_notification_title))
                     .setContentText(context.getString(R.string.sample_submission_notification_content))
                     .setShowWhen(true)
-                    .setSmallIcon(R.drawable.baseline_security_white_24)
+                    .setSmallIcon(R.drawable.baseline_cloud_upload_white_24)
                     .build());
 
             return false;
