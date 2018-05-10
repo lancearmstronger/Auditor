@@ -11,13 +11,17 @@
     <string name="qr_code_scan_hint_auditee">Now scan this QR Code from the other device.</string>
     <string name="qr_code_scan_hint_auditee_pairing">Now scan this QR Code from the other device.\n\nThis is the initial pairing and needs to be completed or pairings will need to be cleared on either side to try again.</string>
     <string name="qr_code_scan_hint_auditor">Now scan this QR Code from the other device.\n\nTap this QR code after scanning to proceed.</string>
+    <string name="scanned_invalid_account_qr_code">Scanned invalid account QR code</string>
+
     <string name="action_clear_auditee">Clear Auditee pairings</string>
     <string name="action_clear_auditor">Clear Auditor pairings</string>
-    <string name="scanned_invalid_account_qr_code">Scanned invalid account QR code</string>
     <string name="action_enable_remote_verify">Enable remote verification</string>
-    <string name="enable_remote_verify">Scheduling regular remote verification</string>
     <string name="action_disable_remote_verify">Disable remote verification</string>
+    <string name="action_submit_sample">Submit sample data</string>
+
+    <string name="enable_remote_verify">Scheduling regular remote verification</string>
     <string name="disable_remote_verify">Disabling regular remote verification</string>
+    <string name="schedule_submit_sample">Submitting sample data</string>
 
     <string name="remote_verification_notification_channel">Remote verification</string>
     <string name="remote_verification_notification_title">Remote verification</string>
@@ -28,8 +32,6 @@
     <string name="sample_submission_notification_title">Submitted sample data</string>
     <string name="sample_submission_notification_content">Successfully submitted sample data.</string>
 
-    <string name="action_submit_sample">Submit sample data</string>
-    <string name="schedule_submit_sample">Submitting sample data</string>
     <string name="scanner_label">Scan QR code shown on the other device.</string>
     <string name="verifying_attestation">Verifying attestation…</string>
     <string name="generating_attestation">Generating attestation…</string>
