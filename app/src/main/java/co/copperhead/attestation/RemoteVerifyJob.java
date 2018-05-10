@@ -109,6 +109,7 @@ public class RemoteVerifyJob extends JobService {
 
         @Override
         protected Boolean doInBackground(final Void... params) {
+            final Context context = RemoteVerifyJob.this;
             boolean failure = false;
             HttpURLConnection connection = null;
             try {
@@ -124,7 +125,7 @@ public class RemoteVerifyJob extends JobService {
 
                 Log.d(TAG, "received random challenge: " + Utils.logFormatBytes(challengeMessage));
 
-                final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(RemoteVerifyJob.this);
+                final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
                 final long userId = preferences.getLong(KEY_USER_ID, -1);
                 if (userId == -1) {
                     throw new IOException("missing userId");
@@ -135,7 +136,7 @@ public class RemoteVerifyJob extends JobService {
                 }
 
                 final AttestationResult result = AttestationProtocol.generateSerialized(
-                        RemoteVerifyJob.this, challengeMessage, Long.toString(userId), STATE_PREFIX);
+                        context, challengeMessage, Long.toString(userId), STATE_PREFIX);
 
                 connection = (HttpURLConnection) new URL(VERIFY_URL).openConnection();
                 connection.setConnectTimeout(CONNECT_TIMEOUT);
@@ -157,7 +158,7 @@ public class RemoteVerifyJob extends JobService {
                             throw new GeneralSecurityException("missing fields");
                         }
                         preferences.edit().putString(KEY_SUBSCRIBE_KEY, tokens[0]).apply();
-                        schedule(RemoteVerifyJob.this, Integer.parseInt(tokens[1]));
+                        schedule(context, Integer.parseInt(tokens[1]));
                     }
                 } else {
                     if (result.pairing) {
@@ -175,15 +176,15 @@ public class RemoteVerifyJob extends JobService {
                 }
             }
 
-            final NotificationManager manager = RemoteVerifyJob.this.getSystemService(NotificationManager.class);
+            final NotificationManager manager = context.getSystemService(NotificationManager.class);
             final NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL_ID,
-                    RemoteVerifyJob.this.getString(R.string.remote_verification_notification_channel),
+                    context.getString(R.string.remote_verification_notification_channel),
                     NotificationManager.IMPORTANCE_MIN);
             channel.setShowBadge(false);
             manager.createNotificationChannel(channel);
-            manager.notify(NOTIFICATION_ID, new Notification.Builder(RemoteVerifyJob.this, NOTIFICATION_CHANNEL_ID)
-                    .setContentTitle(RemoteVerifyJob.this.getString(R.string.remote_verification_notification_title))
-                    .setContentText(RemoteVerifyJob.this.getString(failure ?
+            manager.notify(NOTIFICATION_ID, new Notification.Builder(context, NOTIFICATION_CHANNEL_ID)
+                    .setContentTitle(context.getString(R.string.remote_verification_notification_title))
+                    .setContentText(context.getString(failure ?
                             R.string.remote_verification_notification_failure :
                             R.string.remote_verification_notification_success))
                     .setShowWhen(true)
