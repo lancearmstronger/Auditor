@@ -96,7 +96,7 @@ class AttestationProtocol {
     private static final String KEY_PINNED_DEVICE_DEPRECATED = "pinned_device";
     private static final String KEY_PINNED_OS_STOCK_DEPRECATED = "pinned_os_stock";
 
-    static final int CHALLENGE_LENGTH = 32;
+    private static final int CHALLENGE_LENGTH = 32;
     static final String EC_CURVE = "secp256r1";
     private static final String SIGNATURE_ALGORITHM = "SHA256WithECDSA";
     static final String KEY_DIGEST = DIGEST_SHA256;
@@ -172,7 +172,7 @@ class AttestationProtocol {
     // the outer signature and the rest of the chain for pinning the expected chain. It enforces
     // downgrade protection for the OS version/patch (bootloader/TEE enforced) and app version (OS
     // enforced) by keeping them updated.
-    static final byte PROTOCOL_VERSION = 2;
+    private static final byte PROTOCOL_VERSION = 2;
     private static final byte PROTOCOL_VERSION_MINIMUM = 1;
     // can become longer in the future, but this is the minimum length
     static final byte CHALLENGE_MESSAGE_LENGTH = 1 + CHALLENGE_LENGTH * 2;
