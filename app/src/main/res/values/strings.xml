@@ -18,10 +18,16 @@
     <string name="enable_remote_verify">Scheduling regular remote verification</string>
     <string name="action_disable_remote_verify">Disable remote verification</string>
     <string name="disable_remote_verify">Disabling regular remote verification</string>
+
     <string name="remote_verification_notification_channel">Remote verification</string>
     <string name="remote_verification_notification_title">Remote verification</string>
     <string name="remote_verification_notification_success">Successfully submitted remote attestation.</string>
     <string name="remote_verification_notification_failure">Failed to submit remote attestation.</string>
+
+    <string name="sample_submission_notification_channel">Sample submission</string>
+    <string name="sample_submission_notification_title">Submitted sample data</string>
+    <string name="sample_submission_notification_content">Successfully submitted sample data.</string>
+
     <string name="action_submit_sample">Submit sample data</string>
     <string name="schedule_submit_sample">Submitting sample data</string>
     <string name="scanner_label">Scan QR code shown on the other device.</string>

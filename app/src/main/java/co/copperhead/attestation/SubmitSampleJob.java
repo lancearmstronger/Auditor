@@ -1,5 +1,8 @@
 package co.copperhead.attestation;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.job.JobInfo;
 import android.app.job.JobParameters;
 import android.app.job.JobScheduler;
@@ -32,6 +35,8 @@ public class SubmitSampleJob extends JobService {
     private static final String SUBMIT_URL = "https://" + RemoteVerifyJob.DOMAIN + "/submit";
     private static final int CONNECT_TIMEOUT = 60000;
     private static final int READ_TIMEOUT = 60000;
+    private static final int NOTIFICATION_ID = 2;
+    private static final String NOTIFICATION_CHANNEL_ID = "sample_submission";
 
     private static final String KEYSTORE_ALIAS_SAMPLE = "sample_attestation_key";
 
@@ -105,6 +110,20 @@ public class SubmitSampleJob extends JobService {
                     connection.disconnect();
                 }
             }
+
+            final Context context = SubmitSampleJob.this;
+            final NotificationManager manager = context.getSystemService(NotificationManager.class);
+            final NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL_ID,
+                    context.getString(R.string.sample_submission_notification_channel),
+                    NotificationManager.IMPORTANCE_LOW);
+            manager.createNotificationChannel(channel);
+            manager.notify(NOTIFICATION_ID, new Notification.Builder(context, NOTIFICATION_CHANNEL_ID)
+                    .setContentTitle(context.getString(R.string.sample_submission_notification_title))
+                    .setContentText(context.getString(R.string.sample_submission_notification_content))
+                    .setShowWhen(true)
+                    .setSmallIcon(R.drawable.baseline_security_white_24)
+                    .build());
+
             return false;
         }
     }
