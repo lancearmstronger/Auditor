@@ -1,5 +1,8 @@
 package co.copperhead.attestation;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.job.JobInfo;
 import android.app.job.JobParameters;
 import android.app.job.JobScheduler;
@@ -38,6 +41,8 @@ public class RemoteVerifyJob extends JobService {
     private static final String STATE_PREFIX = "remote_";
     static final String KEY_USER_ID = "remote_user_id";
     static final String KEY_SUBSCRIBE_KEY = "remote_subscribe_key";
+    private static final int NOTIFICATION_ID = 1;
+    private static final String NOTIFICATION_CHANNEL_ID = "remote_verification";
 
     private RemoteVerifyTask task;
 
@@ -98,12 +103,13 @@ public class RemoteVerifyJob extends JobService {
         }
 
         @Override
-        protected void onPostExecute(final Boolean success) {
-            jobFinished(params, success);
+        protected void onPostExecute(final Boolean failure) {
+            jobFinished(params, failure);
         }
 
         @Override
         protected Boolean doInBackground(final Void... params) {
+            boolean failure = false;
             HttpURLConnection connection = null;
             try {
                 connection = (HttpURLConnection) new URL(CHALLENGE_URL).openConnection();
@@ -162,13 +168,29 @@ public class RemoteVerifyJob extends JobService {
             } catch (final GeneralSecurityException | IOException | InvalidInterval |
                     NumberFormatException e) {
                 Log.e(TAG, "remote verify failure", e);
-                return true;
+                failure = true;
             } finally {
                 if (connection != null) {
                     connection.disconnect();
                 }
             }
-            return false;
+
+            final NotificationManager manager = RemoteVerifyJob.this.getSystemService(NotificationManager.class);
+            final NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL_ID,
+                    RemoteVerifyJob.this.getString(R.string.remote_verification_notification_channel),
+                    NotificationManager.IMPORTANCE_MIN);
+            channel.setShowBadge(false);
+            manager.createNotificationChannel(channel);
+            manager.notify(NOTIFICATION_ID, new Notification.Builder(RemoteVerifyJob.this, NOTIFICATION_CHANNEL_ID)
+                    .setContentTitle(RemoteVerifyJob.this.getString(R.string.remote_verification_notification_title))
+                    .setContentText(RemoteVerifyJob.this.getString(failure ?
+                            R.string.remote_verification_notification_failure :
+                            R.string.remote_verification_notification_success))
+                    .setShowWhen(true)
+                    .setSmallIcon(R.drawable.baseline_security_white_24)
+                    .build());
+
+            return failure;
         }
     }
 
