@@ -91,16 +91,15 @@ public class SubmitSampleJob extends JobService {
                 keyStore.deleteEntry(KEYSTORE_ALIAS_SAMPLE);
 
                 final Process process = new ProcessBuilder("getprop").start();
-                final InputStream propertyStream = process.getInputStream();
-
-                final OutputStream output = connection.getOutputStream();
-                for (final Certificate cert : certs) {
-                    output.write(BaseEncoding.base64().encode(cert.getEncoded()).getBytes());
-                    output.write("\n".getBytes());
+                try (final InputStream propertyStream = process.getInputStream()) {
+                    final OutputStream output = connection.getOutputStream();
+                    for (final Certificate cert : certs) {
+                        output.write(BaseEncoding.base64().encode(cert.getEncoded()).getBytes());
+                        output.write("\n".getBytes());
+                    }
+                    ByteStreams.copy(propertyStream, output);
+                    output.close();
                 }
-                ByteStreams.copy(propertyStream, output);
-                propertyStream.close();
-                output.close();
 
                 final int responseCode = connection.getResponseCode();
                 if (responseCode != 200) {
