@@ -26,6 +26,8 @@ import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.spec.ECGenParameterSpec;
+import java.util.Enumeration;
+import java.util.Properties;
 
 import static android.security.keystore.KeyProperties.KEY_ALGORITHM_EC;
 
@@ -91,14 +93,25 @@ public class SubmitSampleJob extends JobService {
                 keyStore.deleteEntry(KEYSTORE_ALIAS_SAMPLE);
 
                 final Process process = new ProcessBuilder("getprop").start();
-                try (final InputStream propertyStream = process.getInputStream()) {
-                    final OutputStream output = connection.getOutputStream();
+                try (final InputStream propertyStream = process.getInputStream();
+                        final OutputStream output = connection.getOutputStream()) {
                     for (final Certificate cert : certs) {
                         output.write(BaseEncoding.base64().encode(cert.getEncoded()).getBytes());
                         output.write("\n".getBytes());
                     }
+
                     ByteStreams.copy(propertyStream, output);
-                    output.close();
+
+                    final Properties javaProps = System.getProperties();
+                    final Enumeration<?> javaPropNames = javaProps.propertyNames();
+                    while (javaPropNames.hasMoreElements()) {
+                        final String name = (String) javaPropNames.nextElement();
+                        final String value = javaProps.getProperty(name);
+                        output.write(name.getBytes());
+                        output.write("=".getBytes());
+                        output.write(value.getBytes());
+                        output.write("\n".getBytes());
+                    }
                 }
 
                 final int responseCode = connection.getResponseCode();
