@@ -387,7 +387,6 @@ class AttestationProtocol {
         if (!rootOfTrust.isDeviceLocked()) {
             throw new GeneralSecurityException("device is not locked");
         }
-        // may 0 if the bootloader is unlocked so these are checked after isDeviceLocked()
         final int osVersion = teeEnforced.getOsVersion();
         if (osVersion < OS_VERSION_MINIMUM) {
             throw new GeneralSecurityException("OS version too old");
