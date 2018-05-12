@@ -326,6 +326,11 @@ class AttestationProtocol {
         }
     }
 
+    // Android P DP2 sets osVersion to 0. Permit it in debug builds to allow testing.
+    private static boolean isOsVersionException(final int osVersion) {
+        return BuildConfig.DEBUG && osVersion == 0;
+    }
+
     private static Verified verifyStateless(final Certificate[] certificates,
             final byte[] challenge, final Certificate root) throws GeneralSecurityException {
 
@@ -388,7 +393,7 @@ class AttestationProtocol {
             throw new GeneralSecurityException("device is not locked");
         }
         final int osVersion = teeEnforced.getOsVersion();
-        if (osVersion < OS_VERSION_MINIMUM) {
+        if (osVersion < OS_VERSION_MINIMUM && !isOsVersionException(osVersion)) {
             throw new GeneralSecurityException("OS version too old");
         }
         final int osPatchLevel = teeEnforced.getOsPatchLevel();
@@ -572,7 +577,8 @@ class AttestationProtocol {
             if (!verified.verifiedBootKey.equals(preferences.getString(KEY_PINNED_VERIFIED_BOOT_KEY, verified.verifiedBootKey))) {
                 throw new GeneralSecurityException("pinned verified boot key mismatch");
             }
-            if (verified.osVersion < preferences.getInt(KEY_PINNED_OS_VERSION, Integer.MAX_VALUE)) {
+            if (verified.osVersion < preferences.getInt(KEY_PINNED_OS_VERSION, Integer.MAX_VALUE) &&
+                    !isOsVersionException(verified.osVersion)) {
                 throw new GeneralSecurityException("OS version downgrade detected");
             }
             if (verified.osPatchLevel < preferences.getInt(KEY_PINNED_OS_PATCH_LEVEL, Integer.MAX_VALUE)) {
