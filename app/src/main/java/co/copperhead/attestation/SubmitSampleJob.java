@@ -12,6 +12,8 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
+import android.system.Os;
+import android.system.StructUtsname;
 import android.util.Log;
 
 import com.google.common.io.BaseEncoding;
@@ -101,6 +103,10 @@ public class SubmitSampleJob extends JobService {
                     }
 
                     ByteStreams.copy(propertyStream, output);
+
+                    final StructUtsname utsname = Os.uname();
+                    output.write(utsname.toString().getBytes());
+                    output.write("\n".getBytes());
 
                     final Properties javaProps = System.getProperties();
                     final Enumeration<?> javaPropNames = javaProps.propertyNames();
